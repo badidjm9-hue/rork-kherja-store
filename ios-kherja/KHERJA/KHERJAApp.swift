@@ -1,12 +1,12 @@
 //
-//  KherjaApp.swift
-//  Kherja
+//  KHERJAApp.swift
+//  KHERJA
 //
 
 import SwiftUI
 
 @main
-struct KherjaApp: App {
+struct KHERJAApp: App {
     @StateObject private var store = AppState()
 
     var body: some Scene {

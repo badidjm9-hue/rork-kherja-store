@@ -1,6 +1,6 @@
 //
 //  L10n.swift
-//  Kherja
+//  KHERJA
 //
 //  French / Arabic strings. French is the reference language.
 //

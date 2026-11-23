@@ -6,7 +6,8 @@
       "path": "ios-kherja",
       "framework": "swift",
       "settings": {
-        "swiftSibling": false
+        "swiftSibling": false,
+        "displayName": "KHERJA"
       }
     },
     {

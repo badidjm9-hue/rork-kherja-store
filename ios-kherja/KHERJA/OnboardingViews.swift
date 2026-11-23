@@ -1,6 +1,6 @@
 //
 //  OnboardingViews.swift
-//  Kherja
+//  KHERJA
 //
 //  Splash → language → role → phone → OTP verification.
 //

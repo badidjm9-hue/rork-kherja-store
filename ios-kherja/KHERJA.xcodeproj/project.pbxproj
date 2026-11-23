@@ -16,37 +16,37 @@
 			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
-			remoteInfo = Kherja;
+			remoteInfo = KHERJA;
 		};
 		105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
-			remoteInfo = Kherja;
+			remoteInfo = KHERJA;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		105FC57A2E9EAD3100EA8BCF /* Kherja.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kherja.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		105FC5892E9EAD3200EA8BCF /* KherjaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KherjaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		105FC5932E9EAD3200EA8BCF /* KherjaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KherjaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		105FC57A2E9EAD3100EA8BCF /* KHERJA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KHERJA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		105FC5892E9EAD3200EA8BCF /* KHERJATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KHERJATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		105FC5932E9EAD3200EA8BCF /* KHERJAUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KHERJAUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		105FC57C2E9EAD3100EA8BCF /* Kherja */ = {
+		105FC57C2E9EAD3100EA8BCF /* KHERJA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Kherja;
+			path = KHERJA;
 			sourceTree = "<group>";
 		};
-		105FC58C2E9EAD3200EA8BCF /* KherjaTests */ = {
+		105FC58C2E9EAD3200EA8BCF /* KHERJATests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = KherjaTests;
+			path = KHERJATests;
 			sourceTree = "<group>";
 		};
-		105FC5962E9EAD3200EA8BCF /* KherjaUITests */ = {
+		105FC5962E9EAD3200EA8BCF /* KHERJAUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = KherjaUITests;
+			path = KHERJAUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -80,9 +80,9 @@
 		105FC5712E9EAD3100EA8BCF = {
 			isa = PBXGroup;
 			children = (
-				105FC57C2E9EAD3100EA8BCF /* Kherja */,
-				105FC58C2E9EAD3200EA8BCF /* KherjaTests */,
-				105FC5962E9EAD3200EA8BCF /* KherjaUITests */,
+				105FC57C2E9EAD3100EA8BCF /* KHERJA */,
+				105FC58C2E9EAD3200EA8BCF /* KHERJATests */,
+				105FC5962E9EAD3200EA8BCF /* KHERJAUITests */,
 				105FC57B2E9EAD3100EA8BCF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,9 +90,9 @@
 		105FC57B2E9EAD3100EA8BCF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				105FC57A2E9EAD3100EA8BCF /* Kherja.app */,
-				105FC5892E9EAD3200EA8BCF /* KherjaTests.xctest */,
-				105FC5932E9EAD3200EA8BCF /* KherjaUITests.xctest */,
+				105FC57A2E9EAD3100EA8BCF /* KHERJA.app */,
+				105FC5892E9EAD3200EA8BCF /* KHERJATests.xctest */,
+				105FC5932E9EAD3200EA8BCF /* KHERJAUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,9 +100,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		105FC5792E9EAD3100EA8BCF /* Kherja */ = {
+		105FC5792E9EAD3100EA8BCF /* KHERJA */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "Kherja" */;
+			buildConfigurationList = 105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KHERJA" */;
 			buildPhases = (
 				105FC5762E9EAD3100EA8BCF /* Sources */,
 				105FC5772E9EAD3100EA8BCF /* Frameworks */,
@@ -113,19 +113,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				105FC57C2E9EAD3100EA8BCF /* Kherja */,
+				105FC57C2E9EAD3100EA8BCF /* KHERJA */,
 			);
-			name = Kherja;
+			name = KHERJA;
 			packageProductDependencies = (
 				XX17F496E7391AF4178246XX /* Supabase */,
 			);
-			productName = Kherja;
-			productReference = 105FC57A2E9EAD3100EA8BCF /* Kherja.app */;
+			productName = KHERJA;
+			productReference = 105FC57A2E9EAD3100EA8BCF /* KHERJA.app */;
 			productType = "com.apple.product-type.application";
 		};
-		105FC5882E9EAD3200EA8BCF /* KherjaTests */ = {
+		105FC5882E9EAD3200EA8BCF /* KHERJATests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KherjaTests" */;
+			buildConfigurationList = 105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KHERJATests" */;
 			buildPhases = (
 				105FC5852E9EAD3200EA8BCF /* Sources */,
 				105FC5862E9EAD3200EA8BCF /* Frameworks */,
@@ -137,18 +137,18 @@
 				105FC58B2E9EAD3200EA8BCF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				105FC58C2E9EAD3200EA8BCF /* KherjaTests */,
+				105FC58C2E9EAD3200EA8BCF /* KHERJATests */,
 			);
-			name = KherjaTests;
+			name = KHERJATests;
 			packageProductDependencies = (
 			);
-			productName = KherjaTests;
-			productReference = 105FC5892E9EAD3200EA8BCF /* KherjaTests.xctest */;
+			productName = KHERJATests;
+			productReference = 105FC5892E9EAD3200EA8BCF /* KHERJATests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		105FC5922E9EAD3200EA8BCF /* KherjaUITests */ = {
+		105FC5922E9EAD3200EA8BCF /* KHERJAUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KherjaUITests" */;
+			buildConfigurationList = 105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KHERJAUITests" */;
 			buildPhases = (
 				105FC58F2E9EAD3200EA8BCF /* Sources */,
 				105FC5902E9EAD3200EA8BCF /* Frameworks */,
@@ -160,13 +160,13 @@
 				105FC5952E9EAD3200EA8BCF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				105FC5962E9EAD3200EA8BCF /* KherjaUITests */,
+				105FC5962E9EAD3200EA8BCF /* KHERJAUITests */,
 			);
-			name = KherjaUITests;
+			name = KHERJAUITests;
 			packageProductDependencies = (
 			);
-			productName = KherjaUITests;
-			productReference = 105FC5932E9EAD3200EA8BCF /* KherjaUITests.xctest */;
+			productName = KHERJAUITests;
+			productReference = 105FC5932E9EAD3200EA8BCF /* KHERJAUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -192,7 +192,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "Kherja" */;
+			buildConfigurationList = 105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "KHERJA" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -206,9 +206,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				105FC5792E9EAD3100EA8BCF /* Kherja */,
-				105FC5882E9EAD3200EA8BCF /* KherjaTests */,
-				105FC5922E9EAD3200EA8BCF /* KherjaUITests */,
+				105FC5792E9EAD3100EA8BCF /* KHERJA */,
+				105FC5882E9EAD3200EA8BCF /* KHERJATests */,
+				105FC5922E9EAD3200EA8BCF /* KHERJAUITests */,
 			);
 			packageReferences = (
 				XXA26CCC1C14E04A80BED3XX /* XCRemoteSwiftPackageReference "supabase-swift" */,
@@ -267,12 +267,12 @@
 /* Begin PBXTargetDependency section */
 		105FC58B2E9EAD3200EA8BCF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 105FC5792E9EAD3100EA8BCF /* Kherja */;
+			target = 105FC5792E9EAD3100EA8BCF /* KHERJA */;
 			targetProxy = 105FC58A2E9EAD3200EA8BCF /* PBXContainerItemProxy */;
 		};
 		105FC5952E9EAD3200EA8BCF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 105FC5792E9EAD3100EA8BCF /* Kherja */;
+			target = 105FC5792E9EAD3100EA8BCF /* KHERJA */;
 			targetProxy = 105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -430,6 +430,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_KEY_CFBundleDisplayName = KHERJA;
 			};
 			name = Debug;
 		};
@@ -464,6 +465,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_KEY_CFBundleDisplayName = KHERJA;
 			};
 			name = Release;
 		};
@@ -485,7 +487,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kherja.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kherja";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KHERJA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KHERJA";
 			};
 			name = Debug;
 		};
@@ -507,7 +509,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kherja.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kherja";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KHERJA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KHERJA";
 			};
 			name = Release;
 		};
@@ -527,7 +529,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Kherja;
+				TEST_TARGET_NAME = KHERJA;
 			};
 			name = Debug;
 		};
@@ -547,14 +549,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Kherja;
+				TEST_TARGET_NAME = KHERJA;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "Kherja" */ = {
+		105FC5752E9EAD3100EA8BCF /* Build configuration list for PBXProject "KHERJA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC59B2E9EAD3200EA8BCF /* Debug */,
@@ -563,7 +565,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "Kherja" */ = {
+		105FC59D2E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KHERJA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC59E2E9EAD3200EA8BCF /* Debug */,
@@ -572,7 +574,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KherjaTests" */ = {
+		105FC5A02E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KHERJATests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC5A12E9EAD3200EA8BCF /* Debug */,
@@ -581,7 +583,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KherjaUITests" */ = {
+		105FC5A32E9EAD3200EA8BCF /* Build configuration list for PBXNativeTarget "KHERJAUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				105FC5A42E9EAD3200EA8BCF /* Debug */,

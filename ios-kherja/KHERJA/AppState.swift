@@ -1,6 +1,6 @@
 //
 //  AppState.swift
-//  Kherja
+//  KHERJA
 //
 //  Global app state: language, role, session, profile, active flow ids.
 //

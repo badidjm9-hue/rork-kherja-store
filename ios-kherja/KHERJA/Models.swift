@@ -1,6 +1,6 @@
 //
 //  Models.swift
-//  Kherja
+//  KHERJA
 //
 //  Database models (snake_case columns) — all nonisolated + Sendable.
 //

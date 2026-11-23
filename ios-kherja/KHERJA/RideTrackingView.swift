@@ -1,6 +1,6 @@
 //
 //  RideTrackingView.swift
-//  Kherja
+//  KHERJA
 //
 //  Active ride: driver en route → arrived → started → completed + rating.
 //

@@ -1,6 +1,6 @@
 //
 //  PassengerMainView.swift
-//  Kherja
+//  KHERJA
 //
 //  Passenger tabs: Accueil / Historique / Portefeuille / Paramètres.
 //

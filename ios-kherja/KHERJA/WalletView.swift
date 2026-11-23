@@ -1,6 +1,6 @@
 //
 //  WalletView.swift
-//  Kherja
+//  KHERJA
 //
 //  Cash wallet: balance from transaction history (payments for passengers,
 //  earnings for drivers).

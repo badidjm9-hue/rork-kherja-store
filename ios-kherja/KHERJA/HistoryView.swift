@@ -1,6 +1,6 @@
 //
 //  HistoryView.swift
-//  Kherja
+//  KHERJA
 //
 //  Trips history with filters (Tous / Terminés / En cours / Annulés) + details.
 //

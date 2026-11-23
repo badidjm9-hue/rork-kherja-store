@@ -1,13 +1,13 @@
 //
-//  KherjaUITestsLaunchTests.swift
-//  KherjaUITests
+//  KHERJAUITestsLaunchTests.swift
+//  KHERJAUITests
 //
 //  Created by Rork on November 23, 2026.
 //
 
 import XCTest
 
-final class KherjaUITestsLaunchTests: XCTestCase {
+final class KHERJAUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

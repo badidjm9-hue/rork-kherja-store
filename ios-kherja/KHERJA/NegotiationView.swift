@@ -1,6 +1,6 @@
 //
 //  NegotiationView.swift
-//  Kherja
+//  KHERJA
 //
 //  Fare negotiation: live offers, quick replies, chat, countdown, price lock.
 //

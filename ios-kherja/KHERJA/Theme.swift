@@ -1,6 +1,6 @@
 //
 //  Theme.swift
-//  Kherja
+//  KHERJA
 //
 //  KJ design language — Blue #075BFF, Burgundy #85003F, light lavender canvas.
 //

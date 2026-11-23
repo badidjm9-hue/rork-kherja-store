@@ -1,6 +1,6 @@
 //
 //  SupabaseService.swift
-//  Kherja
+//  KHERJA
 //
 //  Supabase client with a custom phone-OTP session (access + refresh tokens in
 //  Keychain, transparent refresh), RPC helpers, and polling data access.

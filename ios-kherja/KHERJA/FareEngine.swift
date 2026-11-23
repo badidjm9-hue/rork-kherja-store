@@ -1,6 +1,6 @@
 //
 //  FareEngine.swift
-//  Kherja
+//  KHERJA
 //
 //  Prices are computed only by the server (`quote_fare`, `driver_offer_preview`,
 //  `create_request`, `make_offer`, `accept_offer`) from the admin-managed,

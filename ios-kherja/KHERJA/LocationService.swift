@@ -1,6 +1,6 @@
 //
 //  LocationService.swift
-//  Kherja
+//  KHERJA
 //
 //  CoreLocation wrapper for GPS position + reverse geocoding.
 //

@@ -1,6 +1,6 @@
 //
 //  RootView.swift
-//  Kherja
+//  KHERJA
 //
 //  Top-level routing: splash → onboarding → main app per role.
 //

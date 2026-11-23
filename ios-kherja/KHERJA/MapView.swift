@@ -1,6 +1,6 @@
 //
 //  MapView.swift
-//  Kherja
+//  KHERJA
 //
 //  MapKit wrapper: pins, route line, tap-to-pick destination.
 //

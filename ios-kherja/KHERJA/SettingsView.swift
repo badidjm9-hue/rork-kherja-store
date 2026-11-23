@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  Kherja
+//  KHERJA
 //
 //  Profile, language, role info, sign out.
 //
