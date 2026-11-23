@@ -1,0 +1,23 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "Kherja",
+      "path": "ios-kherja",
+      "framework": "swift",
+      "settings": {
+        "swiftSibling": false
+      }
+    },
+    {
+      "name": "KHERJA Admin",
+      "path": "web-kherja-admin",
+      "framework": "web"
+    },
+    {
+      "name": "KHERJA Android",
+      "path": "android-kherja",
+      "framework": "kotlin"
+    }
+  ]
+}

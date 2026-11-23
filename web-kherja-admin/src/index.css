@@ -1,0 +1,98 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap");
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* KHERJA design system — Bleu #075BFF, Bordeaux #85003F, fond #F7F8FC. All colors HSL. */
+
+@layer base {
+  :root {
+    --background: 228 45% 97.8%;
+    --foreground: 225 64% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 225 64% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 64% 12%;
+
+    --primary: 219.7 100% 51.4%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 60% 95%;
+    --secondary-foreground: 225 64% 12%;
+
+    --muted: 225 40% 95%;
+    --muted-foreground: 224 16% 46%;
+
+    --accent: 219 100% 96%;
+    --accent-foreground: 219.7 100% 40%;
+
+    --bordeaux: 331.6 100% 26.1%;
+    --bordeaux-soft: 331 70% 95%;
+    --success: 152 66% 36%;
+    --success-soft: 150 60% 94%;
+    --warning: 34 94% 46%;
+    --warning-soft: 40 95% 93%;
+
+    --destructive: 352 78% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 226 32% 90%;
+    --input: 226 32% 88%;
+    --ring: 219.7 100% 51.4%;
+
+    --radius: 0.85rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 225 30% 30%;
+    --sidebar-primary: 219.7 100% 51.4%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 219 100% 96%;
+    --sidebar-accent-foreground: 219.7 100% 42%;
+    --sidebar-border: 226 32% 91%;
+    --sidebar-ring: 219.7 100% 51.4%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: "Figtree", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  }
+
+  html[dir="rtl"] {
+    font-family: "IBM Plex Sans Arabic", "Figtree", system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@layer components {
+  .kj-card {
+    @apply rounded-2xl border border-border/70 bg-card;
+    box-shadow: 0 1px 2px hsl(225 64% 12% / 0.04), 0 8px 24px -12px hsl(219.7 100% 51.4% / 0.12);
+  }
+  .kj-num {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-feature-settings: "tnum" 1;
+  }
+  .kj-grid-bg {
+    background-image:
+      radial-gradient(circle at 15% 0%, hsl(219.7 100% 51.4% / 0.10), transparent 40%),
+      radial-gradient(circle at 100% 100%, hsl(331.6 100% 26.1% / 0.08), transparent 45%);
+  }
+}
+
+.leaflet-container {
+  font-family: inherit;
+  background: hsl(228 45% 95%);
+}

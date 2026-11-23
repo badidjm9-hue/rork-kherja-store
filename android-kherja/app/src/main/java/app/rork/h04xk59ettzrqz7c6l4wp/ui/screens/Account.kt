@@ -1,0 +1,445 @@
+package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CallMade
+import androidx.compose.material.icons.automirrored.filled.CallReceived
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.TwoWheeler
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.rork.h04xk59ettzrqz7c6l4wp.AppState
+import app.rork.h04xk59ettzrqz7c6l4wp.data.Ride
+import app.rork.h04xk59ettzrqz7c6l4wp.data.Transaction
+import app.rork.h04xk59ettzrqz7c6l4wp.data.jsonOf
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.Avatar
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.EmptyState
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.ErrorBanner
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.IconCircle
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJButton
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJCard
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJOutlineButton
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.Pill
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.PulsingDots
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.SectionTitle
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.dzd
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.formatDate
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.theme.KJ
+import kotlinx.coroutines.launch
+import java.util.Locale
+
+@Composable
+private fun ScreenHeader(title: String, subtitle: String? = null) {
+    Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 14.dp)) {
+        Text(title, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink)
+        if (subtitle != null) Text(subtitle, color = KJ.muted, fontSize = 14.sp)
+    }
+}
+
+// ===================== History =====================
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HistoryScreen(state: AppState, driver: Boolean) {
+    val scope = rememberCoroutineScope()
+    var rides by remember { mutableStateOf<List<Ride>?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var refreshing by remember { mutableStateOf(false) }
+    var filter by remember { mutableStateOf("all") }
+
+    suspend fun load() {
+        val uid = state.userId ?: return
+        runCatching { state.api.myRides(uid, driver) }
+            .onSuccess { rides = it; error = null }
+            .onFailure { error = state.serverError(it); if (rides == null) rides = emptyList() }
+    }
+    LaunchedEffect(driver) { load() }
+
+    val filtered = rides.orEmpty().filter {
+        when (filter) {
+            "completed" -> it.status == "completed"
+            "in_progress" -> it.isActive
+            "cancelled" -> it.status == "cancelled"
+            else -> true
+        }
+    }
+
+    Column(Modifier.fillMaxSize().background(KJ.canvasGradient)) {
+        ScreenHeader(state.l("my_trips"), state.l("trips_subtitle"))
+        Row(
+            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf("all", "completed", "in_progress", "cancelled").forEach { f ->
+                val sel = filter == f
+                Text(
+                    state.l(f), color = if (sel) Color.White else KJ.inkSoft, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (sel) KJ.blue else Color.White)
+                        .clickable { filter = f }.padding(horizontal = 16.dp, vertical = 9.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        error?.let { ErrorBanner(it, Modifier.padding(horizontal = 20.dp)) }
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = { refreshing = true; scope.launch { load(); refreshing = false } },
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) {
+            when {
+                rides == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PulsingDots() }
+                filtered.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
+                    item { Box(Modifier.fillMaxWidth().padding(top = 60.dp), contentAlignment = Alignment.Center) { EmptyState(Icons.Filled.History, state.l("no_trips"), state.l("no_trips_hint")) } }
+                }
+                else -> LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(filtered, key = { it.id }) { RideRow(state, it, driver) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RideRow(state: AppState, ride: Ride, driver: Boolean) {
+    val (label, fg, bg) = when {
+        ride.status == "completed" -> Triple(state.l("completed"), KJ.success, KJ.successBg)
+        ride.status == "cancelled" -> Triple(state.l("cancelled"), KJ.danger, KJ.dangerBg)
+        else -> Triple(state.l("in_progress"), KJ.blue, KJ.softBlue)
+    }
+    KJCard(Modifier.fillMaxWidth(), padding = 16.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconCircle(if (ride.vehicle == "moto") Icons.Filled.TwoWheeler else Icons.Filled.DirectionsCar, size = 40.dp)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(formatDate(ride.createdAt, state.language), color = KJ.muted, fontSize = 12.sp)
+                Pill(label, fg, bg)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(dzd(ride.fare), fontWeight = FontWeight.Black, fontSize = 18.sp, color = KJ.ink)
+                if (driver && ride.driverNet != null && ride.status == "completed") {
+                    Text("${state.l("net_earning")} ${dzd(ride.driverNet)}", color = KJ.success, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        RouteLines(ride.pickupLabel, ride.destLabel)
+        ride.distanceKm?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(String.format(Locale.US, "%.1f %s", it, state.l("km")), color = KJ.muted, fontSize = 12.sp)
+        }
+    }
+}
+
+// ===================== Wallet =====================
+
+private fun txLabel(state: AppState, kind: String): String = when (kind) {
+    "earning" -> state.l("earnings")
+    "commission" -> state.l("commission")
+    "payment" -> state.l("payment")
+    "refund" -> state.l("refund")
+    "bonus" -> state.l("bonus")
+    "adjustment" -> state.l("adjustment")
+    "withdrawal" -> state.l("withdrawal")
+    "topup" -> state.l("topup")
+    else -> kind
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WalletScreen(state: AppState, driver: Boolean) {
+    val scope = rememberCoroutineScope()
+    var txs by remember { mutableStateOf<List<Transaction>?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var refreshing by remember { mutableStateOf(false) }
+
+    suspend fun load() {
+        val uid = state.userId ?: return
+        runCatching { state.api.transactions(uid) }
+            .onSuccess { txs = it; error = null }
+            .onFailure { error = state.serverError(it); if (txs == null) txs = emptyList() }
+    }
+    LaunchedEffect(driver) { load() }
+
+    val balance = txs.orEmpty().sumOf { it.amount }
+
+    PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = { refreshing = true; scope.launch { load(); refreshing = false } },
+        modifier = Modifier.fillMaxSize().background(KJ.canvasGradient),
+    ) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item { ScreenHeader(if (driver) state.l("tab_earnings") else state.l("my_wallet"), state.l("wallet_subtitle")) }
+            item {
+                Column(
+                    Modifier.padding(horizontal = 20.dp).fillMaxWidth().clip(RoundedCornerShape(26.dp))
+                        .background(if (driver) KJ.buttonGradient else KJ.burgundyGradient).padding(22.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.AccountBalanceWallet, null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (driver) state.l("total_earnings") else state.l("total_paid"), color = Color.White.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(dzd(kotlin.math.abs(balance)), color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Payments, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(state.l("cash_note"), color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
+                    }
+                }
+            }
+            item {
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    Spacer(Modifier.height(6.dp))
+                    SectionTitle(state.l("transactions"))
+                    error?.let {
+                        Spacer(Modifier.height(8.dp))
+                        ErrorBanner(it)
+                    }
+                }
+            }
+            val list = txs
+            when {
+                list == null -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { PulsingDots() } }
+                list.isEmpty() -> item {
+                    Box(Modifier.fillMaxWidth().padding(top = 30.dp), contentAlignment = Alignment.Center) {
+                        EmptyState(Icons.Filled.AccountBalanceWallet, state.l("no_transactions"))
+                    }
+                }
+                else -> items(list, key = { it.id }) { tx -> TxRow(state, tx) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TxRow(state: AppState, tx: Transaction) {
+    val credit = tx.amount >= 0
+    Row(
+        Modifier.padding(horizontal = 20.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconCircle(
+            if (credit) Icons.AutoMirrored.Filled.CallReceived else Icons.AutoMirrored.Filled.CallMade,
+            tint = if (credit) KJ.success else KJ.danger, bg = if (credit) KJ.successBg else KJ.dangerBg, size = 42.dp,
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(tx.label?.ifBlank { null } ?: txLabel(state, tx.kind), fontWeight = FontWeight.SemiBold, color = KJ.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(formatDate(tx.createdAt, state.language), color = KJ.muted, fontSize = 12.sp)
+        }
+        Text(
+            (if (credit) "+ " else "− ") + dzd(kotlin.math.abs(tx.amount)),
+            color = if (credit) KJ.success else KJ.danger, fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+// ===================== Settings / profile =====================
+
+@Composable
+fun SettingsScreen(state: AppState) {
+    val scope = rememberCoroutineScope()
+    val p = state.profile
+    val driver = state.role == "driver"
+    var name by remember(p?.id) { mutableStateOf(p?.name ?: "") }
+    var city by remember(p?.id) { mutableStateOf(p?.city ?: "Alger") }
+    var make by remember(p?.id) { mutableStateOf(p?.vehicleMake ?: "") }
+    var model by remember(p?.id) { mutableStateOf(p?.vehicleModel ?: "") }
+    var plate by remember(p?.id) { mutableStateOf(p?.vehiclePlate ?: "") }
+    var color by remember(p?.id) { mutableStateOf(p?.vehicleColor ?: "") }
+    var saving by remember { mutableStateOf(false) }
+    var saved by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) { state.refreshProfile() }
+
+    val dirty = p != null && (name.trim() != p.name || city != p.city ||
+        (driver && (make.trim() != (p.vehicleMake ?: "") || model.trim() != (p.vehicleModel ?: "") ||
+            plate.trim() != (p.vehiclePlate ?: "") || color.trim() != (p.vehicleColor ?: ""))))
+
+    Column(
+        Modifier.fillMaxSize().background(KJ.canvasGradient).imePadding().verticalScroll(rememberScrollState()),
+    ) {
+        ScreenHeader(if (driver) state.l("tab_profile") else state.l("settings"))
+        Column(Modifier.padding(horizontal = 20.dp)) {
+            KJCard(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Avatar(p?.name ?: "K", size = 60.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(p?.name ?: "", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink)
+                        Text(if (driver) state.l("driver") else state.l("passenger"), color = KJ.muted, fontSize = 13.sp)
+                        if (driver && p?.driverStatus == "approved") {
+                            Spacer(Modifier.height(4.dp))
+                            Pill(state.l("secured"), KJ.success, KJ.successBg, icon = Icons.Filled.CheckCircle)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile(Modifier.weight(1f), String.format(Locale.US, "%.1f ★", p?.ratingAvg ?: 0.0), state.l("my_rating"))
+                    StatTile(Modifier.weight(1f), "${p?.tripsCount ?: 0}", state.l("trips"))
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+            SectionTitle(state.l("summary"))
+            Spacer(Modifier.height(8.dp))
+            KJCard(Modifier.fillMaxWidth()) {
+                Field(state.l("name"), name) { name = it.take(60) }
+                Spacer(Modifier.height(10.dp))
+                Text(state.l("city"), color = KJ.muted, fontSize = 13.sp)
+                Spacer(Modifier.height(6.dp))
+                CityGrid(selected = city) { city = it }
+            }
+
+            if (driver) {
+                Spacer(Modifier.height(18.dp))
+                SectionTitle(state.l("my_vehicle"))
+                Spacer(Modifier.height(8.dp))
+                KJCard(Modifier.fillMaxWidth()) {
+                    Field(state.l("vehicle"), make) { make = it.take(40) }
+                    Spacer(Modifier.height(8.dp))
+                    Field(state.l("model"), model) { model = it.take(40) }
+                    Spacer(Modifier.height(8.dp))
+                    Field(state.l("plate"), plate) { plate = it.take(20) }
+                    Spacer(Modifier.height(8.dp))
+                    Field(state.l("color"), color) { color = it.take(30) }
+                }
+            }
+
+            error?.let {
+                Spacer(Modifier.height(10.dp))
+                ErrorBanner(it)
+            }
+            if (saved && !dirty) {
+                Spacer(Modifier.height(10.dp))
+                Pill(state.l("profile_saved"), KJ.success, KJ.successBg, icon = Icons.Filled.CheckCircle)
+            }
+            Spacer(Modifier.height(14.dp))
+            KJButton(state.l("save"), enabled = dirty && name.trim().length >= 2, loading = saving) {
+                val id = state.userId ?: return@KJButton
+                saving = true
+                error = null
+                scope.launch {
+                    try {
+                        val fields = if (driver) {
+                            jsonOf(
+                                "name" to name.trim(), "city" to city,
+                                "vehicle_make" to make.trim().ifEmpty { null }, "vehicle_model" to model.trim().ifEmpty { null },
+                                "vehicle_plate" to plate.trim().ifEmpty { null }, "vehicle_color" to color.trim().ifEmpty { null },
+                            )
+                        } else {
+                            jsonOf("name" to name.trim(), "city" to city)
+                        }
+                        state.api.updateProfile(id, fields)
+                        state.refreshProfile()
+                        saved = true
+                    } catch (e: Exception) {
+                        error = state.serverError(e)
+                    }
+                    saving = false
+                }
+            }
+
+            Spacer(Modifier.height(22.dp))
+            SectionTitle(state.l("language"))
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LangChip(Modifier.weight(1f), "العربية", state.language == "ar") { state.setLanguage("ar") }
+                LangChip(Modifier.weight(1f), "Français", state.language == "fr") { state.setLanguage("fr") }
+            }
+
+            Spacer(Modifier.height(22.dp))
+            KJOutlineButton(state.l("logout"), color = KJ.danger, icon = Icons.AutoMirrored.Filled.Logout) { state.signOut() }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "KHERJA · ${state.l("map_attribution")}", color = KJ.muted, fontSize = 11.sp,
+                modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun StatTile(modifier: Modifier, value: String, label: String) {
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(KJ.softBlue).padding(12.dp)) {
+        Text(value, fontWeight = FontWeight.Black, fontSize = 20.sp, color = KJ.ink)
+        Text(label, color = KJ.muted, fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun Field(label: String, value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true,
+        shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
+        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = KJ.blue, unfocusedBorderColor = KJ.softBlueMid),
+    )
+}
+
+@Composable
+private fun LangChip(modifier: Modifier, label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier.clip(RoundedCornerShape(16.dp)).background(if (selected) KJ.blue else Color.White).clickable(onClick = onClick).padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = if (selected) Color.White else KJ.ink, fontWeight = FontWeight.Bold)
+    }
+}

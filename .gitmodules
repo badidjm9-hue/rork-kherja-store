@@ -1,0 +1,4 @@
+[submodule "KHERJA-store-work-jdid"]
+	path = KHERJA-store-work-jdid
+	url = https://github.com/badidjm9-hue/KHERJA-store-work-jdid.git
+	branch = main
