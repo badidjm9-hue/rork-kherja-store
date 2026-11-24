@@ -69,3 +69,53 @@ dependencies {
     implementation(libs.osmdroid.android)
     debugImplementation(libs.androidx.ui.tooling)
 }
+
+// ---------------------------------------------------------------------------
+// `Config.kt` (object Config with the Supabase settings) is gitignored, so it
+// is missing on a fresh checkout such as CI. When the file is absent, generate
+// it at build time from environment variables. Nothing is hardcoded and no
+// file with secrets is committed. A local Config.kt, if present, still wins.
+//
+//   EXPO_PUBLIC_SUPABASE_URL
+//   EXPO_PUBLIC_SUPABASE_ANON_KEY
+// ---------------------------------------------------------------------------
+val localConfigKt = file("src/main/java/app/rork/h04xk59ettzrqz7c6l4wp/Config.kt")
+if (!localConfigKt.exists()) {
+    val supabaseUrl = providers.environmentVariable("EXPO_PUBLIC_SUPABASE_URL")
+    val supabaseAnonKey = providers.environmentVariable("EXPO_PUBLIC_SUPABASE_ANON_KEY")
+    val generatedConfigDir = layout.buildDirectory.dir("generated/config/kotlin")
+
+    val generateConfig = tasks.register("generateConfig") {
+        inputs.property("supabaseUrl", supabaseUrl.orElse(""))
+        inputs.property("supabaseAnonKey", supabaseAnonKey.orElse(""))
+        outputs.dir(generatedConfigDir)
+        doLast {
+            val url = supabaseUrl.orNull?.trim().orEmpty()
+            val key = supabaseAnonKey.orNull?.trim().orEmpty()
+            val missing = listOfNotNull(
+                "EXPO_PUBLIC_SUPABASE_URL".takeIf { url.isEmpty() },
+                "EXPO_PUBLIC_SUPABASE_ANON_KEY".takeIf { key.isEmpty() },
+            )
+            if (missing.isNotEmpty()) {
+                throw GradleException(
+                    "Missing environment variable(s): ${missing.joinToString()}. " +
+                        "Set them in the build environment (e.g. Codemagic secure variables)."
+                )
+            }
+            fun esc(s: String) = s.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
+            val dir = generatedConfigDir.get().asFile.resolve("app/rork/h04xk59ettzrqz7c6l4wp")
+            dir.mkdirs()
+            dir.resolve("Config.kt").writeText(
+                """
+                |package app.rork.h04xk59ettzrqz7c6l4wp
+                |
+                |object Config {
+                |    const val EXPO_PUBLIC_SUPABASE_URL = "${esc(url)}"
+                |    const val EXPO_PUBLIC_SUPABASE_ANON_KEY = "${esc(key)}"
+                |}
+                |""".trimMargin()
+            )
+        }
+    }
+    android.sourceSets.getByName("main").java.srcDir(generateConfig)
+}
