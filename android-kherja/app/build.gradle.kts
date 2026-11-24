@@ -117,5 +117,8 @@ if (!localConfigKt.exists()) {
             )
         }
     }
-    android.sourceSets.getByName("main").java.srcDir(generateConfig)
+    android.sourceSets.getByName("main").java.srcDir(generatedConfigDir)
+    tasks.named("preBuild").configure {
+        dependsOn(generateConfig)
+    }
 }
