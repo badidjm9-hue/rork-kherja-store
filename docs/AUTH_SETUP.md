@@ -9,6 +9,12 @@ Nothing in this document has been applied to a live Supabase project. Every step
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE` | **required** | optional |
 | `KHERJA_ENV` | leave **unset** (anything but the exact string `development` is production) | `development` |
 | `OTP_HASH_SECRET` | **required**, random server-only value of at least 32 characters | same requirement |
+
+Generate a value locally and set it only in the intended Supabase project (never commit it):
+
+```sh
+supabase secrets set OTP_HASH_SECRET="$(openssl rand -hex 32)"
+```
 | `ALLOW_DEV_OTP` | leave **unset** | `true` |
 
 - `dev_code` is returned only when `KHERJA_ENV=development` AND `ALLOW_DEV_OTP=true` AND the SMS was not delivered. Both are server secrets; no request field or header can enable it.
@@ -58,13 +64,15 @@ The original passwordless SMS login (`verify` with only phone and code) is uncha
 
 ## 5. Verification status
 
-**Previously recorded test status:** the earlier auth implementation had 62 Bun tests / 232 assertions passing. The new hardening changes add tests for concurrent reservation, IP-wide caps, missing trusted IP/secret, and one-time OTP use, but this updated branch has NOT been executed in this environment. Do not treat the new tests as passing until Bun runs them.
+**Previously recorded test status:** the earlier auth implementation had 62 Bun tests / 232 assertions passing. The new hardening changes add tests for OTP hash-at-rest, handler-level concurrent requests, IP-wide caps, missing trusted IP/secret, and one-time OTP use, but this updated branch has NOT been executed in this environment. A GitHub Actions workflow was added at `.github/workflows/auth-otp-tests.yml`; GitHub currently reports no workflow runs for the latest commit, so there is no CI result yet. Run `bun test supabase/functions/auth-otp` locally or enable/inspect Actions before treating these tests as passing.
 - production never returns a verification code: 8 environment combinations, hostile body fields and headers, code absent from logs;
 - dev flag matrix, secure 503 in production without Twilio;
 - OTP request limit (3 per 5 min per phone; 20 per 5 min per IP), verify/password lockout (5 failures per 15 min per phone; 30 per 15 min per IP);
 - legacy OTP compatibility, register, reset, password login without account enumeration;
 - password rules, and passwords absent from responses and logs;
 - mutation checks: deliberately breaking the policy makes the tests fail.
+
+**Important test boundary:** the new concurrency tests exercise the handler against an in-memory fake store. They do not prove PostgreSQL advisory-lock behavior. Before production, run a database integration test that fires concurrent calls to `reserve_auth_attempt` for one phone and one IP and verifies that no more than the configured limit is reserved.
 
 **Written but NOT verified (no Android SDK, Swift toolchain, device or live Supabase in this environment):**
 - all Android Kotlin and iOS Swift code (compilation, layout, RTL, visual fidelity to the reference);
