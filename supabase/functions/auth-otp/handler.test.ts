@@ -7,8 +7,9 @@ const EMAIL = "u213555123456@phone.kherja.app";
 const SECRET_PW = "Sup3rSecretPw-do-not-leak";
 
 function fakeStore() {
-  const attempts: { phone: string; kind: AttemptKind; success: boolean; at: number }[] = [];
-  const otps = new Map<string, { code: string; expires_at: string }>();
+  const attempts: { id: number; phone: string; kind: AttemptKind; success: boolean; at: number; ipHash: string }[] = [];
+  let nextAttemptId = 1;
+  const otps = new Map<string, { code_hash: string; expires_at: string }>();
   const users = new Map<string, { id: string; password?: string; meta: Record<string, unknown> }>();
   let clock = 1_700_000_000_000;
   const calls: { updateUser: { password?: string; contactEmail?: string }[] } = { updateUser: [] };
@@ -18,12 +19,23 @@ function fakeStore() {
   });
 
   const store: Store = {
-    async countAttempts(phone, kind, sinceIso, onlyFailures) {
-      const since = new Date(sinceIso).getTime();
-      return attempts.filter((a) => a.phone === phone && a.kind === kind && a.at >= since && (!onlyFailures || !a.success)).length;
+    async reserveAttempt(phone, kind, windowSeconds, phoneLimit, failuresOnly, ipHash, ipLimit) {
+      const since = clock - windowSeconds * 1000;
+      const phoneCount = attempts.filter((a) =>
+        a.phone === phone && a.kind === kind && a.at >= since && (!failuresOnly || !a.success)
+      ).length;
+      const ipCount = attempts.filter((a) => a.ipHash === ipHash && a.kind === kind && a.at >= since).length;
+      if (phoneCount >= phoneLimit || ipCount >= ipLimit) return null;
+      const id = nextAttemptId++;
+      attempts.push({ id, phone, kind, success: false, at: clock, ipHash });
+      return id;
     },
-    async recordAttempt(phone, kind, success) { attempts.push({ phone, kind, success, at: clock }); },
-    async saveOtp(phone, code, expires_at) { otps.set(phone, { code, expires_at }); },
+    async finishAttempt(id, success) {
+      const attempt = attempts.find((a) => a.id === id);
+      if (!attempt) throw new Error("attempt not found");
+      attempt.success = success;
+    },
+    async saveOtp(phone, code_hash, expires_at) { otps.set(phone, { code_hash, expires_at }); },
     async getOtp(phone) { return otps.get(phone) ?? null; },
     async deleteOtp(phone) { otps.delete(phone); },
     async findUserIdByEmail(email) { return users.get(email)?.id ?? null; },
@@ -53,7 +65,7 @@ function setup(env: Record<string, string> = {}, smsResult = true, code = "12345
   const f = fakeStore();
   const sent: { phone: string; code: string }[] = [];
   const deps: Deps = {
-    env: (k) => env[k],
+    env: (k) => ({ OTP_HASH_SECRET: "test-only-secret-with-at-least-32-characters" , ...env })[k],
     now: f.now,
     generateCode: () => code,
     sendSms: async (phone, c) => { sent.push({ phone, code: c }); return smsResult; },
@@ -62,7 +74,7 @@ function setup(env: Record<string, string> = {}, smsResult = true, code = "12345
   const handle = createHandler(deps);
   const call = async (body: unknown, headers: Record<string, string> = {}) => {
     const res = await handle(new Request("https://x.test/auth-otp", {
-      method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body),
+      method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.10", ...headers }, body: JSON.stringify(body),
     }));
     const text = await res.text();
     return { status: res.status, text, json: JSON.parse(text) };
