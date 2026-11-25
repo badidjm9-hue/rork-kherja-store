@@ -34,10 +34,7 @@ nonisolated enum AuthRules {
         // Mirror Supabase Auth's bcrypt boundary: minimum 8 UTF-16 code units, maximum 72 UTF-8 bytes.
         guard pw.utf16.count >= 8, pw.utf8.count <= 72 else { return false }
         let scalars = pw.unicodeScalars
-        let hasLetter = scalars.contains {
-            ($0.value >= 0x41 && $0.value <= 0x5A) || ($0.value >= 0x61 && $0.value <= 0x7A)
-                || ($0.value >= 0x0600 && $0.value <= 0x06FF)
-        }
+        let hasLetter = scalars.contains { CharacterSet.letters.contains($0) }
         let hasDigit = scalars.contains { $0.value >= 0x30 && $0.value <= 0x39 }
         return hasLetter && hasDigit
     }
