@@ -70,8 +70,12 @@ function fakeStore() {
 function setup(env: Record<string, string> = {}, smsResult = true, code = "123456") {
   const f = fakeStore();
   const sent: { phone: string; code: string }[] = [];
+  const runtimeEnv: Record<string, string> = {
+    OTP_HASH_SECRET: "test-only-secret-with-at-least-32-characters",
+    ...env,
+  };
   const deps: Deps = {
-    env: (k) => ({ OTP_HASH_SECRET: "test-only-secret-with-at-least-32-characters" , ...env })[k],
+    env: (k) => runtimeEnv[k],
     now: f.now,
     generateCode: () => code,
     sendSms: async (phone, c) => { sent.push({ phone, code: c }); return smsResult; },
