@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION public.reserve_auth_attempt(
 RETURNS bigint
 LANGUAGE plpgsql
 SECURITY INVOKER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, public, pg_temp
 AS $$
 DECLARE
   v_phone_lock bigint;
@@ -96,7 +96,7 @@ CREATE OR REPLACE FUNCTION public.finish_auth_attempt(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY INVOKER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, public, pg_temp
 AS $$
 BEGIN
   UPDATE public.auth_login_attempts
@@ -125,7 +125,7 @@ CREATE OR REPLACE FUNCTION public.consume_auth_otp(
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY INVOKER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, public, pg_temp
 AS $$
 DECLARE
   v_deleted integer;
