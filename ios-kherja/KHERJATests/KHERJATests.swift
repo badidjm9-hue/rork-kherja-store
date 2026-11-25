@@ -40,13 +40,14 @@ struct KHERJATests {
         #expect(AuthRules.passwordValid("Kherja2026"))
         #expect(AuthRules.passwordValid("a" + String(repeating: "1", count: 7))) // 8 UTF-16 code units
         #expect(AuthRules.passwordValid(String(repeating: "a", count: 71) + "1")) // 72 UTF-8 bytes
+        #expect(AuthRules.passwordValid(String(repeating: "أ", count: 35) + "a1")) // 72 UTF-8 bytes
         #expect(AuthRules.passwordValid("مرحبا12345"))
     }
 
     @Test func rejectsPasswordsOutsideLengthAndUtf8ByteBoundaries() {
         #expect(!AuthRules.passwordValid("a1"))
         #expect(!AuthRules.passwordValid(String(repeating: "a", count: 72) + "1")) // 73 UTF-8 bytes
-        #expect(!AuthRules.passwordValid(String(repeating: "أ", count: 24) + "1")) // 73 UTF-8 bytes
+        #expect(!AuthRules.passwordValid(String(repeating: "أ", count: 36) + "1")) // 73 UTF-8 bytes
     }
 
     @Test func requiresAtLeastOneAllowedLetterAndAsciiDigit() {
