@@ -110,11 +110,14 @@ export function createHandler(deps: Deps) {
       // ---------- phone + password sign-in ----------
       if (action === "login") {
         const bad = () => json({ error: "Numéro ou mot de passe incorrect" }, 401);
-        if (typeof password !== "string" || password.length === 0) return bad();
         const attemptId = await reserveForRequest(
           req, deps, phone, "password", PASSWORD_WINDOW_MS, 5, true, IP_AUTH_LIMIT,
         );
         if (attemptId === null) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
+        if (typeof password !== "string" || password.length === 0) {
+          await store.finishAttempt(attemptId, false);
+          return bad();
+        }
 
         const session = await store.passwordSession(emailForPhone(phone), password);
         await store.finishAttempt(attemptId, !!session);
