@@ -10,6 +10,10 @@ ALTER TABLE public.otp_codes ALTER COLUMN code_hash SET NOT NULL;
 ALTER TABLE public.auth_login_attempts
   ADD COLUMN IF NOT EXISTS ip_hash text;
 
+-- The RPCs run as the service_role caller (SECURITY INVOKER), not as a privileged owner.
+GRANT SELECT, INSERT, UPDATE ON public.auth_login_attempts TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.otp_codes TO service_role;
+
 CREATE INDEX IF NOT EXISTS idx_auth_login_attempts_ip_kind_time
   ON public.auth_login_attempts (ip_hash, kind, attempted_at DESC)
   WHERE ip_hash IS NOT NULL;
@@ -25,7 +29,7 @@ CREATE OR REPLACE FUNCTION public.reserve_auth_attempt(
 )
 RETURNS bigint
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
@@ -91,7 +95,7 @@ CREATE OR REPLACE FUNCTION public.finish_auth_attempt(
 )
 RETURNS void
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
@@ -120,7 +124,7 @@ CREATE OR REPLACE FUNCTION public.consume_auth_otp(
 )
 RETURNS boolean
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
