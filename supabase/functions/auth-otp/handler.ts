@@ -5,7 +5,6 @@
 import { displayPhone, emailForPhone, normalizePhone } from "./phone.ts";
 import {
   FAILURE_WINDOW_MINUTES,
-  isBlocked,
   normalizeEmail,
   hashClientIp,
   hashOtpInput,
@@ -94,7 +93,6 @@ async function reserveForRequest(
 
 export function createHandler(deps: Deps) {
   const { store } = deps;
-  const sinceFailures = () => new Date(deps.now() - FAILURE_WINDOW_MINUTES * 60 * 1000).toISOString();
 
   return async (req: Request): Promise<Response> => {
     if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
