@@ -172,6 +172,19 @@ describe("development bypass works only with both server flags", () => {
   });
 });
 
+describe("OTP hash-at-rest", () => {
+  test("stores only a keyed digest, never the six-digit OTP", async () => {
+    const t = setup({}, true, "111222");
+    const response = await t.call({ action: "request", phone: PHONE });
+    expect(response.status).toBe(200);
+    const row = t.otps.get(E164);
+    expect(row).toBeDefined();
+    expect(row?.code_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(row?.code_hash).not.toBe("111222");
+    expect(JSON.stringify(row)).not.toContain("111222");
+  });
+});
+
 describe("OTP request rate limit", () => {
   test("fourth request within five minutes is blocked (limit now actually triggers)", async () => {
     const t = setup({}, true);
