@@ -37,6 +37,12 @@ function fakeStore() {
     },
     async saveOtp(phone, code_hash, expires_at) { otps.set(phone, { code_hash, expires_at }); },
     async getOtp(phone) { return otps.get(phone) ?? null; },
+    async consumeOtp(phone, codeHash) {
+      const row = otps.get(phone);
+      if (!row || row.code_hash !== codeHash || new Date(row.expires_at).getTime() <= clock) return false;
+      otps.delete(phone);
+      return true;
+    },
     async deleteOtp(phone) { otps.delete(phone); },
     async findUserIdByEmail(email) { return users.get(email)?.id ?? null; },
     async createUser(email, meta) {
