@@ -13,16 +13,26 @@ import SwiftUI
 // MARK: - Rules (client-side mirror of the server; the server re-validates everything)
 
 nonisolated enum AuthRules {
-    /// Algerian mobile: 10 digits, 05/06/07 (same rule as the legacy phone screen).
+    /// Algerian mobile: 10 ASCII digits, 05/06/07. Permit common visual separators only.
     static func normalizePhone(_ raw: String) -> String? {
-        let digits = raw.filter { $0.isNumber }
+        var digits = ""
+        for scalar in raw.unicodeScalars {
+            if scalar.value >= 0x30 && scalar.value <= 0x39 {
+                digits.unicodeScalars.append(scalar)
+            } else if CharacterSet.whitespaces.contains(scalar) || "()-".unicodeScalars.contains(scalar) {
+                continue
+            } else {
+                return nil
+            }
+        }
         guard digits.count == 10, digits.hasPrefix("0") else { return nil }
         guard ["5", "6", "7"].contains(String(digits.dropFirst().prefix(1))) else { return nil }
         return digits
     }
 
     static func passwordValid(_ pw: String) -> Bool {
-        guard (8...72).contains(pw.utf16.count) else { return false }
+        // Mirror Supabase Auth's bcrypt boundary: minimum 8 UTF-16 code units, maximum 72 UTF-8 bytes.
+        guard pw.utf16.count >= 8, pw.utf8.count <= 72 else { return false }
         let scalars = pw.unicodeScalars
         let hasLetter = scalars.contains {
             ($0.value >= 0x41 && $0.value <= 0x5A) || ($0.value >= 0x61 && $0.value <= 0x7A)
