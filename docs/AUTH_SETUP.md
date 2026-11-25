@@ -86,5 +86,5 @@ First real check: build both apps on Codemagic/Xcode, then run the flows on a de
 
 1. **Phone linking for social accounts.** Google/Apple users have no phone number, which matters for driver payouts, Flexy lookup and support. Accounts are never auto-linked by e-mail (unsafe). A "add your phone" step after social sign-in is the proposed fix.
 2. **Terms and privacy.** The register screen shows the consent text but there are no legal pages to link yet.
-3. **Trusted IP header:** the function currently requires `cf-connecting-ip`. Confirm this is present and set by the Supabase-hosted edge proxy in the target project before deployment; the handler intentionally does not trust a client-supplied `x-forwarded-for` fallback.
+3. **Trusted IP header:** the function currently requires `cf-connecting-ip`. Supabase's current API-gateway log reference lists this as a captured request header, but that alone does not prove the header reaches this function in the target project. Verify it with a temporary development-only echo/test before enabling this function; the handler intentionally does not trust a client-supplied `x-forwarded-for` fallback.
 4. **Splash variant** A/B/C is still waiting for your choice.
