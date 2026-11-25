@@ -19,7 +19,8 @@ import kotlinx.coroutines.launch
 
 /** Global app state: language, role, session, profile, active flow ids. */
 class AppState(app: Application) : AndroidViewModel(app) {
-    val session = SessionStore(app)
+    // "Remember me" off: the session lasts only until the app is started again.
+    val session = SessionStore(app).also { if (!it.rememberMe) { it.clear(); it.rememberMe = true } }
     val api = SupabaseApi(session)
     val geo = GeoService(api.http)
     val location = LocationTracker(app)
@@ -39,6 +40,14 @@ class AppState(app: Application) : AndroidViewModel(app) {
         private set
     var activeRideId by mutableStateOf(session.activeRideId)
         private set
+
+    /** Set when a Google/Apple browser sign-in comes back with an error; shown by the login screen. */
+    var oauthError by mutableStateOf<String?>(null)
+    var oauthBusy by mutableStateOf(false)
+        private set
+
+    /** Name typed on the register form; prefilled in the profile-completion step. */
+    var pendingName: String? = null
 
     val isRtl: Boolean get() = language == "ar"
     val userId: String? get() = session.userId
@@ -85,10 +94,33 @@ class AppState(app: Application) : AndroidViewModel(app) {
         session.activeRideId = id
     }
 
-    fun onSignedIn(access: String, refresh: String) {
+    fun onSignedIn(access: String, refresh: String, remember: Boolean = true) {
+        session.rememberMe = remember
         session.save(access, refresh)
         signedIn = true
         viewModelScope.launch { bootstrap() }
+    }
+
+    /** Handles the kherja://auth-callback deep link that ends a Google/Apple sign-in. */
+    fun handleAuthCallback(uri: android.net.Uri) {
+        if (uri.scheme != "kherja" || uri.host != "auth-callback") return
+        val code = uri.getQueryParameter("code")
+        if (code.isNullOrBlank() || uri.getQueryParameter("error") != null) {
+            session.oauthVerifier = null
+            oauthError = l("social_failed")
+            return
+        }
+        oauthBusy = true
+        viewModelScope.launch {
+            val t = runCatching { api.completeOAuth(code) }.getOrNull()
+            oauthBusy = false
+            if (t?.accessToken != null && t.refreshToken != null) {
+                oauthError = null
+                onSignedIn(t.accessToken, t.refreshToken)
+            } else {
+                oauthError = l("social_failed")
+            }
+        }
     }
 
     private suspend fun bootstrap() {

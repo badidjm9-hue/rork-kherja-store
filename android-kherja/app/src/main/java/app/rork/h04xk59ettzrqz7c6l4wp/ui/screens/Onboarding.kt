@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,7 +61,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -97,19 +100,31 @@ fun SplashScreen(state: AppState) {
     }
 }
 
-private enum class Step { Language, Role, Phone, Otp }
+private enum class Step { Language, Auth, Forgot, Role, Phone, Otp }
 
-/** Language → role → phone → OTP. */
+/** Auth screens follow the app language direction (Arabic = RTL) without touching the legacy screens. */
+@Composable
+private fun RtlScope(state: AppState, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalLayoutDirection provides if (state.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
+}
+
+/**
+ * Language → Auth (login / register / forgot) → SMS code.
+ * The original passwordless flow (role → phone → code) stays reachable through "Se connecter avec un code SMS".
+ */
 @Composable
 fun OnboardingFlow(state: AppState) {
-    var step by remember { mutableStateOf(if (state.session.languageChosen) Step.Role else Step.Language) }
+    var step by remember { mutableStateOf(if (state.session.languageChosen) Step.Auth else Step.Language) }
     var phone by remember { mutableStateOf("") }
     var devCode by remember { mutableStateOf<String?>(null) }
+    var otpCtx by remember { mutableStateOf(OtpContext()) }
+    var otpBack by remember { mutableStateOf(Step.Auth) }
 
     BackHandler(enabled = step != Step.Language) {
         step = when (step) {
-            Step.Otp -> Step.Phone
+            Step.Otp -> otpBack
             Step.Phone -> Step.Role
+            Step.Role, Step.Forgot -> Step.Auth
             else -> Step.Language
         }
     }
@@ -119,13 +134,35 @@ fun OnboardingFlow(state: AppState) {
             CornerBlobs()
             Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
                 when (s) {
-                    Step.Language -> LanguageStep(state) { step = Step.Role }
-                    Step.Role -> RoleStep(state, onBack = { step = Step.Language }) { step = Step.Phone }
+                    Step.Language -> LanguageStep(state) { step = Step.Auth }
+                    Step.Auth -> RtlScope(state) {
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                            AuthStep(
+                                state, startOnRegister = false,
+                                onForgot = { step = Step.Forgot },
+                                onSmsLogin = { step = Step.Role },
+                                onOtp = { p, ctx, dev ->
+                                    phone = p; otpCtx = ctx; devCode = dev; otpBack = Step.Auth; step = Step.Otp
+                                },
+                            )
+                        }
+                    }
+                    Step.Forgot -> RtlScope(state) {
+                        BackButton { step = Step.Auth }
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                            ForgotStep(state) { p, ctx, dev ->
+                                phone = p; otpCtx = ctx; devCode = dev; otpBack = Step.Forgot; step = Step.Otp
+                            }
+                        }
+                    }
+                    Step.Role -> RoleStep(state, onBack = { step = Step.Auth }) { step = Step.Phone }
                     Step.Phone -> PhoneStep(state, phone, { phone = it }, onBack = { step = Step.Role }) { code ->
                         devCode = code
+                        otpCtx = OtpContext()
+                        otpBack = Step.Phone
                         step = Step.Otp
                     }
-                    Step.Otp -> OtpStep(state, phone, devCode, { devCode = it }, onBack = { step = Step.Phone })
+                    Step.Otp -> OtpStep(state, phone, devCode, otpCtx, { devCode = it }, onBack = { step = otpBack })
                 }
             }
         }
@@ -225,7 +262,7 @@ private fun RoleCard(modifier: Modifier, title: String, icon: ImageVector, image
     }
 }
 
-private fun normalizePhone(raw: String): String? {
+internal fun normalizePhone(raw: String): String? {
     val digits = raw.filter { it.isDigit() }
     if (digits.length != 10 || !digits.startsWith("0")) return null
     if (digits[1] !in listOf('5', '6', '7')) return null
@@ -293,7 +330,7 @@ private fun PhoneStep(state: AppState, phone: String, onPhone: (String) -> Unit,
 }
 
 @Composable
-private fun OtpStep(state: AppState, phone: String, devCode: String?, onDevCode: (String?) -> Unit, onBack: () -> Unit) {
+private fun OtpStep(state: AppState, phone: String, devCode: String?, ctx: OtpContext, onDevCode: (String?) -> Unit, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val normalized = normalizePhone(phone) ?: phone
     var code by remember { mutableStateOf("") }
@@ -316,11 +353,12 @@ private fun OtpStep(state: AppState, phone: String, devCode: String?, onDevCode:
         error = null
         scope.launch {
             try {
-                val res = state.api.verifyOtp(normalized, code)
+                val res = state.api.verifyOtp(normalized, code, ctx.purpose, ctx.password, ctx.email)
                 if (res.ok && res.accessToken != null && res.refreshToken != null) {
                     state.onSignedIn(res.accessToken, res.refreshToken)
                 } else {
-                    error = state.l("wrong_code")
+                    // Legacy passwordless flow keeps its original message; new flows show the specific reason.
+                    error = state.l(if (ctx.purpose == null) "wrong_code" else AuthRules.errorKey(res.error))
                     code = ""
                 }
             } catch (e: Exception) {
@@ -405,7 +443,7 @@ private fun OtpStep(state: AppState, phone: String, devCode: String?, onDevCode:
 @Composable
 fun CompleteProfileScreen(state: AppState) {
     val scope = rememberCoroutineScope()
-    var name by remember { mutableStateOf(state.profile?.name ?: "") }
+    var name by remember { mutableStateOf(state.profile?.name?.takeIf { it.isNotBlank() } ?: state.pendingName ?: "") }
     var city by remember { mutableStateOf(state.profile?.city?.takeIf { it in CITIES } ?: "Alger") }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }

@@ -42,6 +42,23 @@ fun jsonOf(vararg pairs: Pair<String, Any?>): JsonObject = JsonObject(pairs.asso
     }
 })
 
+const val OAUTH_REDIRECT = "kherja://auth-callback"
+
+/** RFC 7636 PKCE helpers (S256). */
+object Pkce {
+    fun newVerifier(): String {
+        val bytes = ByteArray(48)
+        java.security.SecureRandom().nextBytes(bytes)
+        return b64(bytes)
+    }
+
+    fun challenge(verifier: String): String =
+        b64(java.security.MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII)))
+
+    private fun b64(b: ByteArray) =
+        android.util.Base64.encodeToString(b, android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)
+}
+
 /** Thin REST/RPC client for Supabase (PostgREST + edge functions), no SDK. */
 class SupabaseApi(private val session: SessionStore) {
     private val base = Config.EXPO_PUBLIC_SUPABASE_URL.trimEnd('/')
@@ -142,8 +159,53 @@ class SupabaseApi(private val session: SessionStore) {
 
     suspend fun requestOtp(phone: String): OtpRequestResponse = otp(jsonOf("action" to "request", "phone" to phone))
 
-    suspend fun verifyOtp(phone: String, code: String): OtpVerifyResponse =
-        KJson.decodeFromString(otpRaw(jsonOf("action" to "verify", "phone" to phone, "code" to code)))
+    /**
+     * Backward compatible: with only (phone, code) this is the original passwordless OTP login.
+     * purpose = "register" | "reset" additionally sets the password (hashed server-side by Supabase Auth).
+     */
+    suspend fun verifyOtp(
+        phone: String,
+        code: String,
+        purpose: String? = null,
+        password: String? = null,
+        email: String? = null,
+    ): OtpVerifyResponse {
+        val fields = mutableListOf<Pair<String, Any?>>("action" to "verify", "phone" to phone, "code" to code)
+        if (purpose != null) fields += "purpose" to purpose
+        if (password != null) fields += "password" to password
+        if (!email.isNullOrBlank()) fields += "email" to email.trim()
+        return KJson.decodeFromString(otpRaw(jsonOf(*fields.toTypedArray())))
+    }
+
+    /** Phone + password sign-in (server rate-limited, generic error on failure). */
+    suspend fun loginWithPassword(phone: String, password: String): OtpVerifyResponse =
+        KJson.decodeFromString(otpRaw(jsonOf("action" to "login", "phone" to phone, "password" to password)))
+
+    // ---------- Google / Apple (Supabase OAuth, PKCE, system browser) ----------
+
+    /** Builds the Supabase authorize URL for [provider] ("google" | "apple") and stores the PKCE verifier. */
+    fun oauthAuthorizeUrl(provider: String): String {
+        val verifier = Pkce.newVerifier()
+        session.oauthVerifier = verifier
+        return "$base/auth/v1/authorize?provider=${q(provider)}" +
+            "&redirect_to=${q(OAUTH_REDIRECT)}" +
+            "&code_challenge=${q(Pkce.challenge(verifier))}&code_challenge_method=s256"
+    }
+
+    /** Exchanges the `code` from the kherja://auth-callback deep link for a session. Returns false on failure. */
+    suspend fun completeOAuth(authCode: String): TokenResponse? {
+        val verifier = session.oauthVerifier ?: return null
+        session.oauthVerifier = null // single use
+        val res = http.request("$base/auth/v1/token?grant_type=pkce") {
+            method = HttpMethod.Post
+            header("apikey", anon)
+            contentType(ContentType.Application.Json)
+            setBody(jsonOf("auth_code" to authCode, "code_verifier" to verifier).toString())
+        }
+        if (res.status.value !in 200..299) return null
+        val t = KJson.decodeFromString<TokenResponse>(res.bodyAsText())
+        return if (t.accessToken != null && t.refreshToken != null) t else null
+    }
 
     private suspend fun otp(body: JsonObject): OtpRequestResponse = KJson.decodeFromString(otpRaw(body))
 

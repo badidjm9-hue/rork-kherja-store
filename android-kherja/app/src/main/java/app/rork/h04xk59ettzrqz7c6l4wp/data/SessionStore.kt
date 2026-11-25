@@ -36,6 +36,16 @@ class SessionStore(context: Context) {
         get() = prefs.getString("active_ride", null)
         set(v) { prefs.edit().putString("active_ride", v).apply() }
 
+    /** "Remember me": when false the session is dropped the next time the app starts. Default keeps legacy behaviour. */
+    var rememberMe: Boolean
+        get() = prefs.getBoolean("remember_me", true)
+        set(v) { prefs.edit().putBoolean("remember_me", v).apply() }
+
+    /** PKCE verifier of an in-flight Google/Apple browser sign-in. Never leaves the device. */
+    var oauthVerifier: String?
+        get() = prefs.getString("oauth_verifier", null)
+        set(v) { prefs.edit().putString("oauth_verifier", v).apply() }
+
     val isSignedIn: Boolean get() = refreshToken != null && userId != null
 
     val userId: String? get() = accessToken?.let { claim(it, "sub") as? String }
