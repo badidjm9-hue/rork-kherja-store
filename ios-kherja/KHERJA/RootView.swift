@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum OnboardingStep: Hashable {
-    case language, role, phone, otp
+    case language, auth, forgot, role, phone, otp
 }
 
 struct RootView: View {
@@ -23,13 +23,20 @@ struct RootView: View {
             } else if !store.session.isSignedIn {
                 NavigationStack(path: $path) {
                     LanguageSelectView(
-                        onContinue: { path.append(.role) }
+                        onContinue: { path.append(.auth) }
                     )
                     .navigationDestination(for: OnboardingStep.self) { step in
                         switch step {
-                        case .language: LanguageSelectView(onContinue: { path.append(.role) })
+                        case .language: LanguageSelectView(onContinue: { path.append(.auth) })
+                        case .auth:
+                            AuthView(
+                                onForgot: { path.append(.forgot) },
+                                onSms: { PhoneFlowManager.shared.clearCredentials(); path.append(.role) },
+                                onCodeSent: { path.append(.otp) }
+                            )
+                        case .forgot: ForgotPasswordView(onCodeSent: { path.append(.otp) })
                         case .role: RoleSelectView(onContinue: { path.append(.phone) })
-                        case .phone: PhoneEntryView(onCodeSent: { path.append(.otp) })
+                        case .phone: PhoneEntryView(onCodeSent: { PhoneFlowManager.shared.clearCredentials(); path.append(.otp) })
                         case .otp: OtpVerifyView()
                         }
                     }
@@ -108,6 +115,12 @@ struct CompleteProfileView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KJ.canvasGradient.ignoresSafeArea())
         .overlay(alignment: .top) { CornerBlobs().frame(height: 220) }
+        .onAppear {
+            if name.isEmpty {
+                let existing = store.profile?.name ?? ""
+                name = existing.isEmpty ? (PhoneFlowManager.shared.pendingName ?? "") : existing
+            }
+        }
     }
 
     private func save() {

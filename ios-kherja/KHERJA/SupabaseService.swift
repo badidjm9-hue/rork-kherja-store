@@ -102,7 +102,15 @@ final class SessionManager: ObservableObject {
 
     private var refreshing: Task<String?, Never>?
 
+    private static let ephemeralKey = "kherja.session_ephemeral"
+
     init() {
+        // "Remember me" off: the previous run asked for a session that ends with the app.
+        if UserDefaults.standard.bool(forKey: Self.ephemeralKey) {
+            TokenStore.clear()
+            UserDefaults.standard.set(false, forKey: Self.ephemeralKey)
+        }
+        isSignedIn = TokenStore.accessToken != nil
         // Restore the user id encoded in the stored token.
         if let token = TokenStore.accessToken {
             userId = TokenStore.subject(of: token)
@@ -110,8 +118,11 @@ final class SessionManager: ObservableObject {
         }
     }
 
-    func saveSession(access: String, refresh: String) {
+    /// `remember: false` keeps the session only until the app is launched again.
+    func saveSession(access: String, refresh: String, remember: Bool = true) {
         TokenStore.saveSession(access: access, refresh: refresh)
+        UserDefaults.standard.set(!remember, forKey: Self.ephemeralKey)
+        userId = TokenStore.subject(of: access)
         isSignedIn = true
     }
 
@@ -237,25 +248,78 @@ final class SupabaseService: ObservableObject {
         var phone: String
     }
 
+    /// Body for every auth-otp action. Optional fields are omitted when nil, so the legacy
+    /// {action, phone, code} payload is byte-for-byte what older clients send.
     nonisolated struct OtpVerify: Encodable, Sendable {
         var action: String
         var phone: String
-        var code: String
+        var code: String? = nil
+        var purpose: String? = nil
+        var password: String? = nil
+        var email: String? = nil
     }
 
     func requestOtp(phone: String) async throws -> OtpRequestResponse {
         try await Self.callFunction("auth-otp", body: OtpRequest(action: "request", phone: phone))
     }
 
-    func verifyOtp(phone: String, code: String) async throws -> OtpVerifyResponse {
+    /// With only (phone, code) this is the original passwordless OTP login.
+    /// purpose "register" / "reset" additionally sets the password (hashed by Supabase Auth).
+    func verifyOtp(phone: String, code: String, purpose: String? = nil, password: String? = nil, email: String? = nil) async throws -> OtpVerifyResponse {
+        let cleanEmail = (email ?? "").trimmingCharacters(in: .whitespaces)
         let result: OtpVerifyResponse = try await Self.callFunction(
             "auth-otp",
-            body: OtpVerify(action: "verify", phone: phone, code: code)
+            body: OtpVerify(action: "verify", phone: phone, code: code, purpose: purpose, password: password, email: cleanEmail.isEmpty ? nil : cleanEmail)
         )
         if result.ok, let access = result.accessToken, let refresh = result.refreshToken {
             session.saveSession(access: access, refresh: refresh)
         }
         return result
+    }
+
+    /// Phone + password sign-in (server rate-limited; generic error on any failure).
+    func loginWithPassword(phone: String, password: String, remember: Bool) async throws -> OtpVerifyResponse {
+        let result: OtpVerifyResponse = try await Self.callFunction(
+            "auth-otp",
+            body: OtpVerify(action: "login", phone: phone, password: password)
+        )
+        if result.ok, let access = result.accessToken, let refresh = result.refreshToken {
+            session.saveSession(access: access, refresh: refresh, remember: remember)
+        }
+        return result
+    }
+
+    // MARK: Social sign-in (Supabase Auth)
+
+    /// Native Sign in with Apple: exchanges Apple's identity token (and the raw nonce) for a session.
+    func signInWithApple(idToken: String, nonce: String) async throws -> Bool {
+        try await exchangeForSession(
+            path: "/auth/v1/token?grant_type=id_token",
+            body: ["provider": "apple", "id_token": idToken, "nonce": nonce]
+        )
+    }
+
+    /// Google (PKCE): exchanges the `code` from the OAuth redirect for a session.
+    func completeOAuth(authCode: String, verifier: String) async throws -> Bool {
+        try await exchangeForSession(
+            path: "/auth/v1/token?grant_type=pkce",
+            body: ["auth_code": authCode, "code_verifier": verifier]
+        )
+    }
+
+    private func exchangeForSession(path: String, body: [String: String]) async throws -> Bool {
+        var request = URLRequest(url: URL(string: "\(Config.EXPO_PUBLIC_SUPABASE_URL)\(path)")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(Config.EXPO_PUBLIC_SUPABASE_ANON_KEY, forHTTPHeaderField: "apikey")
+        request.httpBody = try JSONEncoder().encode(body)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200,
+              let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let access = obj["access_token"] as? String,
+              let refresh = obj["refresh_token"] as? String else { return false }
+        session.saveSession(access: access, refresh: refresh)
+        return true
     }
 
     static func callFunction<B: Encodable, R: Decodable>(_ name: String, body: B) async throws -> R {

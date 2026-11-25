@@ -544,16 +544,24 @@ struct OtpVerifyView: View {
         errorMessage = nil
         Task {
             do {
+                let flow = PhoneFlowManager.shared
                 let res = try await SupabaseService.shared.verifyOtp(
-                    phone: PhoneFlowManager.shared.phoneNumber,
-                    code: code
+                    phone: flow.phoneNumber,
+                    code: code,
+                    purpose: flow.purpose,
+                    password: flow.password,
+                    email: flow.email
                 )
                 if res.ok, let userIdString = res.userId, let userId = UUID(uuidString: userIdString) {
                     SessionManager.shared.userId = userId
+                    flow.clearCredentials()
                     await store.bootstrap()
-                    PhoneFlowManager.shared.stage = .done
-                } else {
+                    flow.stage = .done
+                } else if flow.purpose == nil {
+                    // Legacy passwordless flow keeps its original behaviour.
                     errorMessage = res.error ?? store.l("wrong_code")
+                } else {
+                    errorMessage = store.l(AuthRules.errorKey(res.error))
                 }
             } catch {
                 errorMessage = store.l("error_generic")
@@ -577,6 +585,13 @@ final class PhoneFlowManager: ObservableObject {
     @Published var phoneNumber = ""
     @Published var devCode: String?
 
+    // Context for the SMS-code step. All nil/empty = the original passwordless OTP login.
+    // Kept in memory only (never persisted or logged) and wiped by `reset()` / after success.
+    var purpose: String?          // "register" | "reset" | nil
+    var password: String?
+    var email: String?
+    var pendingName: String?      // prefilled in the profile step
+
     var displayPhone: String {
         let digits = phoneNumber
         guard digits.count == 10 else { return phoneNumber }
@@ -592,6 +607,13 @@ final class PhoneFlowManager: ObservableObject {
         stage = .phone
         phoneNumber = ""
         devCode = nil
+        clearCredentials()
+    }
+
+    func clearCredentials() {
+        purpose = nil
+        password = nil
+        email = nil
     }
 }
 

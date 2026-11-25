@@ -319,6 +319,16 @@ nonisolated struct OtpRequestResponse: Codable, Sendable {
         case ok, phone, error, dev
         case devCode = "dev_code"
     }
+
+    /// Error responses from the function carry only `{ "error": ... }`, so `ok` defaults to false.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ok = try c.decodeIfPresent(Bool.self, forKey: .ok) ?? false
+        phone = try c.decodeIfPresent(String.self, forKey: .phone)
+        devCode = try c.decodeIfPresent(String.self, forKey: .devCode)
+        dev = try c.decodeIfPresent(Bool.self, forKey: .dev)
+        error = try c.decodeIfPresent(String.self, forKey: .error)
+    }
 }
 
 nonisolated struct OtpVerifyResponse: Codable, Sendable {
@@ -337,5 +347,17 @@ nonisolated struct OtpVerifyResponse: Codable, Sendable {
         case expiresIn = "expires_in"
         case userId = "user_id"
         case isNew = "is_new"
+    }
+
+    /// Error responses from the function carry only `{ "error": ... }`, so `ok` defaults to false.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ok = try c.decodeIfPresent(Bool.self, forKey: .ok) ?? false
+        accessToken = try c.decodeIfPresent(String.self, forKey: .accessToken)
+        refreshToken = try c.decodeIfPresent(String.self, forKey: .refreshToken)
+        expiresIn = try c.decodeIfPresent(Int.self, forKey: .expiresIn)
+        userId = try c.decodeIfPresent(String.self, forKey: .userId)
+        isNew = try c.decodeIfPresent(Bool.self, forKey: .isNew)
+        error = try c.decodeIfPresent(String.self, forKey: .error)
     }
 }
