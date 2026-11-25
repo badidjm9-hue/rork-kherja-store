@@ -51,28 +51,39 @@ function toTokens(session: Record<string, unknown>, userId: string | null): Sess
 }
 
 const store: Store = {
-  async countAttempts(phone, kind, sinceIso, onlyFailures) {
-    let q = admin
-      .from("auth_login_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("phone", phone)
-      .eq("kind", kind)
-      .gte("attempted_at", sinceIso);
-    if (onlyFailures) q = q.eq("success", false);
-    const { count } = await q;
-    return count ?? 0;
+  async reserveAttempt(phone, kind, windowSeconds, phoneLimit, failuresOnly, ipHash, ipLimit) {
+    const { data, error } = await admin.rpc("reserve_auth_attempt", {
+      p_phone: phone,
+      p_kind: kind,
+      p_window_seconds: windowSeconds,
+      p_phone_limit: phoneLimit,
+      p_failures_only: failuresOnly,
+      p_ip_hash: ipHash,
+      p_ip_limit: ipLimit,
+    });
+    if (error) throw new Error("auth rate-limit reservation failed");
+    return data === null ? null : Number(data);
   },
 
-  async recordAttempt(phone, kind, success) {
-    await admin.from("auth_login_attempts").insert({ phone, kind, success });
+  async finishAttempt(attemptId, success) {
+    const { error } = await admin.rpc("finish_auth_attempt", {
+      p_attempt_id: attemptId,
+      p_success: success,
+    });
+    if (error) throw new Error("auth attempt finalization failed");
   },
 
-  async saveOtp(phone, code, expiresAtIso, createdAtIso) {
-    await admin.from("otp_codes").upsert({ phone, code, expires_at: expiresAtIso, created_at: createdAtIso });
+  async saveOtp(phone, codeHash, expiresAtIso, createdAtIso) {
+    const { error } = await admin.from("otp_codes").upsert({
+      phone, code_hash: codeHash, expires_at: expiresAtIso, created_at: createdAtIso,
+    });
+    if (error) throw new Error("OTP persistence failed");
   },
 
   async getOtp(phone) {
-    const { data } = await admin.from("otp_codes").select("code, expires_at").eq("phone", phone).single();
+    const { data, error } = await admin.from("otp_codes")
+      .select("code_hash, expires_at").eq("phone", phone).single();
+    if (error && error.code !== "PGRST116") throw new Error("OTP lookup failed");
     return data ?? null;
   },
 
