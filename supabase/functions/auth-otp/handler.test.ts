@@ -231,6 +231,13 @@ describe("verify: legacy OTP login stays compatible", () => {
     await t.call({ action: "verify", phone: PHONE, code: "111222" });
     expect((await t.call({ action: "verify", phone: PHONE, code: "111222" })).status).toBe(400);
   });
+  test("malformed OTP strings are rejected before hashing and do not consume the code", async () => {
+    const t = setup({}, true, "111222");
+    await t.call({ action: "request", phone: PHONE });
+    expect((await t.call({ action: "verify", phone: PHONE, code: "12345" })).status).toBe(400);
+    expect(t.otps.has(E164)).toBe(true);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "111222" })).status).toBe(200);
+  });
   test("non-string code is rejected without crashing", async () => {
     const t = setup({}, true, "111222");
     await t.call({ action: "request", phone: PHONE });
