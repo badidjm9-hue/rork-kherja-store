@@ -88,6 +88,15 @@ const store: Store = {
     return data ?? null;
   },
 
+  async consumeOtp(phone, codeHash) {
+    const { data, error } = await admin.rpc("consume_auth_otp", {
+      p_phone: phone,
+      p_code_hash: codeHash,
+    });
+    if (error) throw new Error("OTP consumption failed");
+    return data === true;
+  },
+
   async deleteOtp(phone) {
     const { error } = await admin.from("otp_codes").delete().eq("phone", phone);
     if (error) throw new Error("OTP deletion failed");
