@@ -108,13 +108,9 @@ const store: Store = {
   },
 
   async findUserIdByEmail(email) {
-    for (let page = 1; page <= 10; page++) {
-      const { data } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-      const match = data.users.find((u) => u.email === email);
-      if (match) return match.id;
-      if (data.users.length < 1000) break;
-    }
-    return null;
+    const { data, error } = await admin.rpc("find_auth_user_id_by_email", { p_email: email });
+    if (error) throw new Error("Auth identity lookup failed");
+    return typeof data === "string" ? data : null;
   },
 
   async createUser(email, metadata) {
