@@ -8,6 +8,7 @@ Nothing in this document has been applied to a live Supabase project. Every step
 |---|---|---|
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE` | **required** | optional |
 | `KHERJA_ENV` | leave **unset** (anything but the exact string `development` is production) | `development` |
+| `OTP_HASH_SECRET` | **required**, random server-only value of at least 32 characters | same requirement |
 | `ALLOW_DEV_OTP` | leave **unset** | `true` |
 
 - `dev_code` is returned only when `KHERJA_ENV=development` AND `ALLOW_DEV_OTP=true` AND the SMS was not delivered. Both are server secrets; no request field or header can enable it.
@@ -19,9 +20,9 @@ supabase secrets set KHERJA_ENV=development ALLOW_DEV_OTP=true   # dev project o
 supabase secrets unset KHERJA_ENV ALLOW_DEV_OTP                  # production
 ```
 
-## 2. Database migration
+## 2. Database migrations
 
-`supabase/migrations/0005_password_auth.sql` is additive: it creates `public.auth_login_attempts` (rate-limit log; RLS on, no policies, no grants to anon/authenticated). It was verified only on a throwaway local Postgres 16. Review it, then apply it with your normal migration process (`supabase db push`). I did not run it against any project.
+`0005_password_auth.sql` creates the attempt log. `0006_auth_security_hardening.sql` adds hashed IP identifiers, atomic rate-limit reservation/finalization RPCs, one-time OTP consumption, and replaces the plaintext `otp_codes.code` column with `code_hash`. Applying 0006 intentionally deletes any outstanding OTP rows because their old plaintext values cannot be converted into keyed hashes. Review both migrations and apply them in order using your normal migration process. Neither migration has been applied to a live project.
 
 Passwords are never stored by KHERJA code. They are passed to Supabase Auth (GoTrue), which stores a bcrypt hash in `auth.users`. The function never logs bodies, passwords or codes.
 
@@ -57,10 +58,10 @@ The original passwordless SMS login (`verify` with only phone and code) is uncha
 
 ## 5. Verification status
 
-**Run and passing here (Bun, 62 tests / 232 assertions, `supabase/functions/auth-otp`):**
+**Previously recorded test status:** the earlier auth implementation had 62 Bun tests / 232 assertions passing. The new hardening changes add tests for concurrent reservation, IP-wide caps, missing trusted IP/secret, and one-time OTP use, but this updated branch has NOT been executed in this environment. Do not treat the new tests as passing until Bun runs them.
 - production never returns a verification code: 8 environment combinations, hostile body fields and headers, code absent from logs;
 - dev flag matrix, secure 503 in production without Twilio;
-- OTP request limit (3 per 5 min) and verify lockout (5 failures per 15 min), password lockout;
+- OTP request limit (3 per 5 min per phone; 20 per 5 min per IP), verify/password lockout (5 failures per 15 min per phone; 30 per 15 min per IP);
 - legacy OTP compatibility, register, reset, password login without account enumeration;
 - password rules, and passwords absent from responses and logs;
 - mutation checks: deliberately breaking the policy makes the tests fail.
@@ -77,5 +78,5 @@ First real check: build both apps on Codemagic/Xcode, then run the flows on a de
 
 1. **Phone linking for social accounts.** Google/Apple users have no phone number, which matters for driver payouts, Flexy lookup and support. Accounts are never auto-linked by e-mail (unsafe). A "add your phone" step after social sign-in is the proposed fix.
 2. **Terms and privacy.** The register screen shows the consent text but there are no legal pages to link yet.
-3. **Hashing stored OTP codes** in `otp_codes` (currently plaintext for 10 minutes).
+3. **Trusted IP header:** the function currently requires `cf-connecting-ip`. Confirm this is present and set by the Supabase-hosted edge proxy in the target project before deployment; the handler intentionally does not trust a client-supplied `x-forwarded-for` fallback.
 4. **Splash variant** A/B/C is still waiting for your choice.
