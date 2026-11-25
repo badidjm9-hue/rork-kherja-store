@@ -3,11 +3,14 @@
 //
 // Server-side environment (Supabase function secrets):
 //   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE   SMS provider (required in production)
+//   OTP_HASH_SECRET                                        key for hashing stored codes (falls back to the service-role key)
 //   KHERJA_ENV=development + ALLOW_DEV_OTP=true            development ONLY: return the code in the response
 // Anything else is treated as production and never exposes a verification code.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createHandler, type SessionTokens, type Store } from "./handler.ts";
+import { hashOtp } from "./otp.ts";
+import { emailForPhone } from "./phone.ts";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -139,6 +142,31 @@ const store: Store = {
     const session = await res.json();
     return toTokens(session, session?.user?.id ?? null);
   },
+
+  async getAuthUser(accessToken) {
+    const { data, error } = await admin.auth.getUser(accessToken);
+    if (error || !data?.user) return null;
+    return { id: data.user.id, email: data.user.email ?? null };
+  },
+
+  async findPhoneOwner(phone) {
+    const { data } = await admin.from("verified_phones").select("user_id").eq("phone", phone).maybeSingle();
+    if (data?.user_id) return data.user_id as string;
+    return await store.findUserIdByEmail(emailForPhone(phone));
+  },
+
+  async getVerifiedPhone(userId, email) {
+    // Phone-identity accounts (created by the SMS flow) are verified by construction.
+    if (email && /^u213[5-7][0-9]{8}@phone\.kherja\.app$/.test(email)) return "identity";
+    const { data } = await admin.from("verified_phones").select("phone").eq("user_id", userId).maybeSingle();
+    return (data?.phone as string | undefined) ?? null;
+  },
+
+  async linkVerifiedPhone(userId, phone) {
+    const { error } = await admin.from("verified_phones").insert({ user_id: userId, phone });
+    if (!error) return "ok";
+    return error.code === "23505" ? "conflict" : "error";
+  },
 };
 
 Deno.serve(
@@ -147,6 +175,8 @@ Deno.serve(
     now: () => Date.now(),
     generateCode: () => String(100000 + crypto.getRandomValues(new Uint32Array(1))[0] % 900000),
     sendSms,
+    hashOtp: (phone, code) =>
+      hashOtp(Deno.env.get("OTP_HASH_SECRET") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, phone, code),
     store,
   }),
 );

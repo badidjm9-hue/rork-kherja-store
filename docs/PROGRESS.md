@@ -1,6 +1,6 @@
 # KHERJA continuation: progress
 
-Branch `feature/kherja-continue` (local only, not pushed). Base: 00454e4.
+Branch `feature/kherja-continue` (pushed to GitHub). Base: 00454e4.
 
 | Phase | Status |
 |---|---|
@@ -16,3 +16,5 @@ Branch `feature/kherja-continue` (local only, not pushed). Base: 00454e4.
 
 ## Owner decisions in force
 Commission 15%/12% unapproved placeholders (admin-configurable); passenger payments cash only; Flexy/BaridiMob/Chargily for driver commission only; per-role navigation; illustrative screenshot prices; delivery 90/60 DZD/km with 350 DZD motorcycle minimum; splash variant undecided.
+
+- Stabilization pass: OTP codes hashed, phone-link actions, migration 0006 (DB gate for social accounts), 70 tests, Codemagic trigger for this branch

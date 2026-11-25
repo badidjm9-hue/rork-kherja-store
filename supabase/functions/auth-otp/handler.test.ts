@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { hashOtp } from "./otp.ts";
 import { createHandler, type AttemptKind, type Deps, type SessionTokens, type Store } from "./handler.ts";
 
 const PHONE = "0555123456";
@@ -10,6 +11,7 @@ function fakeStore() {
   const attempts: { phone: string; kind: AttemptKind; success: boolean; at: number }[] = [];
   const otps = new Map<string, { code: string; expires_at: string }>();
   const users = new Map<string, { id: string; password?: string; meta: Record<string, unknown> }>();
+  const linked = new Map<string, string>();
   let clock = 1_700_000_000_000;
   const calls: { updateUser: { password?: string; contactEmail?: string }[] } = { updateUser: [] };
 
@@ -41,12 +43,28 @@ function fakeStore() {
       return true;
     },
     async mintSession(_email, userId) { return session(userId); },
+    async getAuthUser(token) {
+      const m = /^social\.(.+)$/.exec(token);
+      return m ? { id: m[1], email: m[1] + "@gmail.test" } : null;
+    },
+    async findPhoneOwner(phone) {
+      return linked.get(phone) ?? users.get("u" + phone.replace(/[^0-9]/g, "") + "@phone.kherja.app")?.id ?? null;
+    },
+    async getVerifiedPhone(userId) {
+      for (const [ph, uid] of linked) if (uid === userId) return ph;
+      return null;
+    },
+    async linkVerifiedPhone(userId, phone) {
+      if (linked.has(phone)) return "conflict";
+      linked.set(phone, userId);
+      return "ok";
+    },
     async passwordSession(email, password) {
       const u = users.get(email);
       return u && u.password === password ? session(u.id) : null;
     },
   };
-  return { store, attempts, otps, users, calls, advance: (ms: number) => { clock += ms; }, now: () => clock };
+  return { store, attempts, otps, users, linked, calls, advance: (ms: number) => { clock += ms; }, now: () => clock };
 }
 
 function setup(env: Record<string, string> = {}, smsResult = true, code = "123456") {
@@ -56,6 +74,7 @@ function setup(env: Record<string, string> = {}, smsResult = true, code = "12345
     env: (k) => env[k],
     now: f.now,
     generateCode: () => code,
+    hashOtp: (phone, c) => hashOtp("test-secret", phone, c),
     sendSms: async (phone, c) => { sent.push({ phone, code: c }); return smsResult; },
     store: f.store,
   };
@@ -400,5 +419,81 @@ describe("CORS", () => {
       env: () => undefined, now: () => 0, generateCode: () => "000000", sendSms: async () => false, store: t.store,
     })(new Request("https://x.test", { method: "OPTIONS" }));
     expect(res.status).toBe(200);
+  });
+});
+
+describe("stored OTP codes are hashed", () => {
+  test("the database row never contains the code; the SMS and dev response still do", async () => {
+    const t = setup({ KHERJA_ENV: "development", ALLOW_DEV_OTP: "true" }, true, "135790");
+    await t.call({ action: "request", phone: PHONE });
+    const row = t.otps.get(E164)!;
+    expect(row.code.startsWith("h1:")).toBe(true);
+    expect(row.code).not.toContain("135790");
+    expect(JSON.stringify([...t.otps])).not.toContain("135790");
+    expect(t.sent[0].code).toBe("135790");
+  });
+  test("hash is bound to the phone number and the secret", async () => {
+    const a = await hashOtp("s", "+213555123456", "111111");
+    expect(a).not.toBe(await hashOtp("s", "+213666123456", "111111"));
+    expect(a).not.toBe(await hashOtp("other", "+213555123456", "111111"));
+  });
+  test("correct code verifies against the hash; a legacy plaintext row is refused", async () => {
+    const t = setup({}, true, "246802");
+    await t.call({ action: "request", phone: PHONE });
+    expect((await t.call({ action: "verify", phone: PHONE, code: "246802" })).status).toBe(200);
+    t.otps.set(E164, { code: "246802", expires_at: new Date(t.now() + 60000).toISOString() });
+    expect((await t.call({ action: "verify", phone: PHONE, code: "246802" })).status).toBe(400);
+  });
+  test("expiry: valid just before 10 minutes, rejected and deleted after", async () => {
+    const t = setup({}, true, "246802");
+    await t.call({ action: "request", phone: PHONE });
+    t.advance(10 * 60 * 1000 - 1000);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "000000" })).json.error).toBe("Code incorrect");
+    t.advance(2000);
+    const r = await t.call({ action: "verify", phone: PHONE, code: "246802" });
+    expect(r.status).toBe(400);
+    expect(r.json.error).toContain("expiré");
+    expect(t.otps.has(E164)).toBe(false);
+  });
+});
+
+describe("social accounts must add and verify a phone", () => {
+  const H = { Authorization: "Bearer social.g1" };
+  test("link actions need a valid user session", async () => {
+    const t = setup({}, true, "112233");
+    expect((await t.call({ action: "link_request", phone: PHONE })).status).toBe(401);
+    expect((await t.call({ action: "link_request", phone: PHONE }, { Authorization: "Bearer anon-key" })).status).toBe(401);
+    expect(t.sent.length).toBe(0);
+  });
+  test("request then verify links the phone; wrong code does not", async () => {
+    const t = setup({}, true, "112233");
+    expect((await t.call({ action: "link_request", phone: PHONE }, H)).status).toBe(200);
+    expect((await t.call({ action: "link_verify", phone: PHONE, code: "000000" }, H)).status).toBe(400);
+    expect(t.linked.size).toBe(0);
+    const ok = await t.call({ action: "link_verify", phone: PHONE, code: "112233" }, H);
+    expect(ok.status).toBe(200);
+    expect(t.linked.get(E164)).toBe("g1");
+  });
+  test("a number owned by another account (phone identity or linked) is refused, no SMS sent", async () => {
+    const t = setup({}, true, "112233");
+    t.users.set(EMAIL, { id: "phone-user", meta: {} });
+    const r = await t.call({ action: "link_request", phone: PHONE }, H);
+    expect(r.status).toBe(409);
+    expect(t.sent.length).toBe(0);
+    const t2 = setup({}, true, "112233");
+    t2.linked.set(E164, "someone-else");
+    expect((await t2.call({ action: "link_request", phone: PHONE }, H)).status).toBe(409);
+  });
+  test("verify lockout and per-account SMS cap apply", async () => {
+    const t = setup({}, true, "112233");
+    await t.call({ action: "link_request", phone: PHONE }, H);
+    for (let i = 0; i < 5; i++) await t.call({ action: "link_verify", phone: PHONE, code: "999999" }, H);
+    expect((await t.call({ action: "link_verify", phone: PHONE, code: "112233" }, H)).status).toBe(429);
+    const t3 = setup({}, true, "112233");
+    const phones = ["0555111111", "0555222222", "0555333333", "0555444444", "0555555555", "0555666666"];
+    const statuses: number[] = [];
+    for (const p of phones) statuses.push((await t3.call({ action: "link_request", phone: p }, H)).status);
+    expect(statuses.slice(0, 5)).toEqual([200, 200, 200, 200, 200]);
+    expect(statuses[5]).toBe(429);
   });
 });

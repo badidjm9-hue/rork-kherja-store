@@ -7,6 +7,7 @@ Nothing in this document has been applied to a live Supabase project. Every step
 | Secret | Production | Development |
 |---|---|---|
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE` | **required** | optional |
+| `OTP_HASH_SECRET` | recommended: long random string (falls back to the service-role key if unset). Changing it invalidates in-flight codes only | same |
 | `KHERJA_ENV` | leave **unset** (anything but the exact string `development` is production) | `development` |
 | `ALLOW_DEV_OTP` | leave **unset** | `true` |
 
@@ -24,6 +25,13 @@ supabase secrets unset KHERJA_ENV ALLOW_DEV_OTP                  # production
 `supabase/migrations/0005_password_auth.sql` is additive: it creates `public.auth_login_attempts` (rate-limit log; RLS on, no policies, no grants to anon/authenticated). It was verified only on a throwaway local Postgres 16. Review it, then apply it with your normal migration process (`supabase db push`). I did not run it against any project.
 
 Passwords are never stored by KHERJA code. They are passed to Supabase Auth (GoTrue), which stores a bcrypt hash in `auth.users`. The function never logs bodies, passwords or codes.
+
+### Migration 0006 (social phone gate)
+`supabase/migrations/0006_social_phone_gate.sql` is additive: `verified_phones` table (service role only), `is_phone_verified()`, and BEFORE triggers that refuse driver role, going online, offers and driver documents for any account without a verified phone (error `PHONE_NOT_VERIFIED`). Verified on a throwaway local Postgres 16 with a stand-in `auth` schema (8 checks, idempotent re-run). Not applied to any project. Keep Supabase Auth "Confirm email" enabled.
+
+Edge function actions `link_request` / `link_verify` (user JWT in `Authorization`) let a Google/Apple account add and verify a phone. A phone belongs to one account; accounts are never merged; per-account SMS cap 5 per 15 min.
+
+**Client screen still missing:** no Android/iOS "add your phone" screen exists yet, because there is no approved design for it. Until it is designed, a social user who tries a driver feature gets the server error `PHONE_NOT_VERIFIED`.
 
 ## 3. Supabase dashboard
 
@@ -57,7 +65,7 @@ The original passwordless SMS login (`verify` with only phone and code) is uncha
 
 ## 5. Verification status
 
-**Run and passing here (Bun, 62 tests / 232 assertions, `supabase/functions/auth-otp`):**
+**Run and passing here (Bun, 70 tests / 258 assertions, `supabase/functions/auth-otp`):**
 - production never returns a verification code: 8 environment combinations, hostile body fields and headers, code absent from logs;
 - dev flag matrix, secure 503 in production without Twilio;
 - OTP request limit (3 per 5 min) and verify lockout (5 failures per 15 min), password lockout;
@@ -77,5 +85,5 @@ First real check: build both apps on Codemagic/Xcode, then run the flows on a de
 
 1. **Phone linking for social accounts.** Google/Apple users have no phone number, which matters for driver payouts, Flexy lookup and support. Accounts are never auto-linked by e-mail (unsafe). A "add your phone" step after social sign-in is the proposed fix.
 2. **Terms and privacy.** The register screen shows the consent text but there are no legal pages to link yet.
-3. **Hashing stored OTP codes** in `otp_codes` (currently plaintext for 10 minutes).
+3. ~~Hashing stored OTP codes~~ done: HMAC-SHA256 bound to the phone (`h1:` prefix), 70 tests.
 4. **Splash variant** A/B/C is still waiting for your choice.
