@@ -289,6 +289,12 @@ describe("registration (purpose=register)", () => {
     expect(t.otps.has(E164)).toBe(true);
     expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: "Kherja2026" })).status).toBe(200);
   });
+  test("bcrypt UTF-8 byte boundary is enforced", async () => {
+    const t = await requested();
+    const tooManyUtf8Bytes = (String.fromCharCode(0x0623) + "1").repeat(36);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: tooManyUtf8Bytes })).status).toBe(400);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: "a1".repeat(36) })).status).toBe(200);
+  });
   test("invalid e-mail is rejected without burning the code", async () => {
     const t = await requested();
     const r = await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: "Kherja2026", email: "nope" });
