@@ -1,7 +1,7 @@
 // Pure helpers for password-based sign-in. No Deno or network APIs here so they can be unit-tested.
 
 export const MIN_PASSWORD_LENGTH = 8;
-export const MAX_PASSWORD_LENGTH = 72; // bcrypt limit used by Supabase Auth
+export const MAX_PASSWORD_LENGTH = 72; // bcrypt's maximum input is 72 UTF-8 bytes
 
 /** Returns an error message (French, shown to the user) or null when the password is acceptable. */
 export function validatePassword(password: unknown): string | null {
