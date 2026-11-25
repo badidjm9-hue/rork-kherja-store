@@ -40,3 +40,24 @@ export function safeEqual(a: string, b: string): boolean {
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
+/** HMAC-SHA-256 with a server-only pepper; use distinct prefixes for each value type. */
+export async function hmacHex(secret: string, value: string): Promise<string> {
+  if (secret.length < 32) throw new Error("OTP_HASH_SECRET must be at least 32 characters");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function hashOtpInput(secret: string, phone: string, code: string): Promise<string> {
+  return hmacHex(secret, `otp:${phone}:${code}`);
+}
+
+export function hashClientIp(secret: string, ip: string): Promise<string> {
+  return hmacHex(secret, `ip:${ip}`);
+}
