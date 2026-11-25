@@ -1,6 +1,12 @@
 -- KHERJA auth hardening: atomic phone + IP attempt reservation and finalization.
 -- Apply only after reviewing this migration; it is not deployed by this commit.
 
+-- OTP rows are short-lived; discard any pre-migration plaintext codes before removing the column.
+DELETE FROM public.otp_codes;
+ALTER TABLE public.otp_codes ADD COLUMN IF NOT EXISTS code_hash text;
+ALTER TABLE public.otp_codes DROP COLUMN IF EXISTS code;
+ALTER TABLE public.otp_codes ALTER COLUMN code_hash SET NOT NULL;
+
 ALTER TABLE public.auth_login_attempts
   ADD COLUMN IF NOT EXISTS ip_hash text;
 
