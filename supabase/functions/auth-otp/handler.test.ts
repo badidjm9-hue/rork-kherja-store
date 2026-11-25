@@ -7,8 +7,9 @@ const EMAIL = "u213555123456@phone.kherja.app";
 const SECRET_PW = "Sup3rSecretPw-do-not-leak";
 
 function fakeStore() {
-  const attempts: { phone: string; kind: AttemptKind; success: boolean; at: number }[] = [];
-  const otps = new Map<string, { code: string; expires_at: string }>();
+  const attempts: { id: number; phone: string; kind: AttemptKind; success: boolean; at: number; ipHash: string }[] = [];
+  let nextAttemptId = 1;
+  const otps = new Map<string, { code_hash: string; expires_at: string }>();
   const users = new Map<string, { id: string; password?: string; meta: Record<string, unknown> }>();
   let clock = 1_700_000_000_000;
   const calls: { updateUser: { password?: string; contactEmail?: string }[] } = { updateUser: [] };
@@ -18,13 +19,30 @@ function fakeStore() {
   });
 
   const store: Store = {
-    async countAttempts(phone, kind, sinceIso, onlyFailures) {
-      const since = new Date(sinceIso).getTime();
-      return attempts.filter((a) => a.phone === phone && a.kind === kind && a.at >= since && (!onlyFailures || !a.success)).length;
+    async reserveAttempt(phone, kind, windowSeconds, phoneLimit, failuresOnly, ipHash, ipLimit) {
+      const since = clock - windowSeconds * 1000;
+      const phoneCount = attempts.filter((a) =>
+        a.phone === phone && a.kind === kind && a.at >= since && (!failuresOnly || !a.success)
+      ).length;
+      const ipCount = attempts.filter((a) => a.ipHash === ipHash && a.kind === kind && a.at >= since).length;
+      if (phoneCount >= phoneLimit || ipCount >= ipLimit) return null;
+      const id = nextAttemptId++;
+      attempts.push({ id, phone, kind, success: false, at: clock, ipHash });
+      return id;
     },
-    async recordAttempt(phone, kind, success) { attempts.push({ phone, kind, success, at: clock }); },
-    async saveOtp(phone, code, expires_at) { otps.set(phone, { code, expires_at }); },
+    async finishAttempt(id, success) {
+      const attempt = attempts.find((a) => a.id === id);
+      if (!attempt) throw new Error("attempt not found");
+      attempt.success = success;
+    },
+    async saveOtp(phone, code_hash, expires_at) { otps.set(phone, { code_hash, expires_at }); },
     async getOtp(phone) { return otps.get(phone) ?? null; },
+    async consumeOtp(phone, codeHash) {
+      const row = otps.get(phone);
+      if (!row || row.code_hash !== codeHash || new Date(row.expires_at).getTime() <= clock) return false;
+      otps.delete(phone);
+      return true;
+    },
     async deleteOtp(phone) { otps.delete(phone); },
     async findUserIdByEmail(email) { return users.get(email)?.id ?? null; },
     async createUser(email, meta) {
@@ -52,8 +70,12 @@ function fakeStore() {
 function setup(env: Record<string, string> = {}, smsResult = true, code = "123456") {
   const f = fakeStore();
   const sent: { phone: string; code: string }[] = [];
+  const runtimeEnv: Record<string, string> = {
+    OTP_HASH_SECRET: "test-only-secret-with-at-least-32-characters",
+    ...env,
+  };
   const deps: Deps = {
-    env: (k) => env[k],
+    env: (k) => runtimeEnv[k],
     now: f.now,
     generateCode: () => code,
     sendSms: async (phone, c) => { sent.push({ phone, code: c }); return smsResult; },
@@ -62,7 +84,7 @@ function setup(env: Record<string, string> = {}, smsResult = true, code = "12345
   const handle = createHandler(deps);
   const call = async (body: unknown, headers: Record<string, string> = {}) => {
     const res = await handle(new Request("https://x.test/auth-otp", {
-      method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body),
+      method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.10", ...headers }, body: JSON.stringify(body),
     }));
     const text = await res.text();
     return { status: res.status, text, json: JSON.parse(text) };
@@ -150,6 +172,19 @@ describe("development bypass works only with both server flags", () => {
   });
 });
 
+describe("OTP hash-at-rest", () => {
+  test("stores only a keyed digest, never the six-digit OTP", async () => {
+    const t = setup({}, true, "111222");
+    const response = await t.call({ action: "request", phone: PHONE });
+    expect(response.status).toBe(200);
+    const row = t.otps.get(E164);
+    expect(row).toBeDefined();
+    expect(row?.code_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(row?.code_hash).not.toBe("111222");
+    expect(JSON.stringify(row)).not.toContain("111222");
+  });
+});
+
 describe("OTP request rate limit", () => {
   test("fourth request within five minutes is blocked (limit now actually triggers)", async () => {
     const t = setup({}, true);
@@ -195,6 +230,13 @@ describe("verify: legacy OTP login stays compatible", () => {
     await t.call({ action: "request", phone: PHONE });
     await t.call({ action: "verify", phone: PHONE, code: "111222" });
     expect((await t.call({ action: "verify", phone: PHONE, code: "111222" })).status).toBe(400);
+  });
+  test("malformed OTP strings are rejected before hashing and do not consume the code", async () => {
+    const t = setup({}, true, "111222");
+    await t.call({ action: "request", phone: PHONE });
+    expect((await t.call({ action: "verify", phone: PHONE, code: "12345" })).status).toBe(400);
+    expect(t.otps.has(E164)).toBe(true);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "111222" })).status).toBe(200);
   });
   test("non-string code is rejected without crashing", async () => {
     const t = setup({}, true, "111222");
@@ -248,11 +290,17 @@ describe("registration (purpose=register)", () => {
   });
   test("weak password is rejected WITHOUT burning the code", async () => {
     const t = await requested();
-    for (const pw of ["short1", "onlyletters", "12345678", "a1".repeat(40)]) {
+    for (const pw of ["short1", "onlyletters", "12345678", "a1".repeat(40), (String.fromCharCode(0x0623) + "1").repeat(36)]) {
       expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: pw })).status).toBe(400);
     }
     expect(t.otps.has(E164)).toBe(true);
     expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: "Kherja2026" })).status).toBe(200);
+  });
+  test("bcrypt UTF-8 byte boundary is enforced", async () => {
+    const t = await requested();
+    const tooManyUtf8Bytes = (String.fromCharCode(0x0623) + "1").repeat(36);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: tooManyUtf8Bytes })).status).toBe(400);
+    expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: "a1".repeat(36) })).status).toBe(200);
   });
   test("invalid e-mail is rejected without burning the code", async () => {
     const t = await requested();
@@ -356,6 +404,55 @@ describe("password login and rate limiting", () => {
     const t = await withAccount();
     for (let i = 0; i < 5; i++) await t.call({ action: "login", phone: PHONE, password: "wrong-pass1" });
     expect((await t.call({ action: "login", phone: "0661000000", password: "x" })).status).toBe(401); // not 429
+  });
+});
+
+
+describe("atomic phone and IP rate limits", () => {
+  test("concurrent OTP requests cannot exceed the per-phone limit", async () => {
+    const t = setup({}, true);
+    const results = await Promise.all(
+      Array.from({ length: 12 }, () => t.call({ action: "request", phone: PHONE })),
+    );
+    expect(results.filter((r) => r.status === 200)).toHaveLength(3);
+    expect(results.filter((r) => r.status === 429)).toHaveLength(9);
+  });
+
+  test("concurrent verification consumes a code only once", async () => {
+    const t = setup({}, true, "111222");
+    await t.call({ action: "request", phone: PHONE });
+    const results = await Promise.all([
+      t.call({ action: "verify", phone: PHONE, code: "111222" }),
+      t.call({ action: "verify", phone: PHONE, code: "111222" }),
+    ]);
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 400)).toHaveLength(1);
+  });
+
+  test("IP limit applies across different phone numbers", async () => {
+    const t = setup({}, true);
+    const results = [];
+    for (let i = 0; i < 21; i++) {
+      const phone = "0555123" + String(i).padStart(3, "0");
+      results.push(await t.call({ action: "request", phone }));
+    }
+    expect(results.filter((r) => r.status === 200)).toHaveLength(20);
+    expect(results[20].status).toBe(429);
+  });
+
+  test("missing trusted IP fails closed", async () => {
+    const t = setup({}, true);
+    const r = await t.call({ action: "request", phone: PHONE }, { "cf-connecting-ip": "" });
+    expect(r.status).toBe(500);
+    expect(t.sent).toHaveLength(0);
+  });
+
+  test("missing OTP hash secret fails closed", async () => {
+    const t = setup({ OTP_HASH_SECRET: "" }, true);
+    const r = await t.call({ action: "request", phone: PHONE });
+    expect(r.status).toBe(500);
+    expect(t.sent).toHaveLength(0);
+    expect(t.otps.size).toBe(0);
   });
 });
 

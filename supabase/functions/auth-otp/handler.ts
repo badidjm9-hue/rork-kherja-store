@@ -5,8 +5,9 @@
 import { displayPhone, emailForPhone, normalizePhone } from "./phone.ts";
 import {
   FAILURE_WINDOW_MINUTES,
-  isBlocked,
   normalizeEmail,
+  hashClientIp,
+  hashOtpInput,
   safeEqual,
   validatePassword,
 } from "./password.ts";
@@ -22,11 +23,15 @@ export interface SessionTokens {
 export type AttemptKind = "password" | "otp_verify" | "otp_request";
 
 export interface Store {
-  /** `onlyFailures` counts rows with success=false; otherwise all rows. */
-  countAttempts(phone: string, kind: AttemptKind, sinceIso: string, onlyFailures: boolean): Promise<number>;
-  recordAttempt(phone: string, kind: AttemptKind, success: boolean): Promise<void>;
-  saveOtp(phone: string, code: string, expiresAtIso: string, createdAtIso: string): Promise<void>;
-  getOtp(phone: string): Promise<{ code: string; expires_at: string } | null>;
+  /** Atomically checks phone/IP windows and reserves one attempt; null means rate limited. */
+  reserveAttempt(
+    phone: string, kind: AttemptKind, windowSeconds: number, phoneLimit: number,
+    failuresOnly: boolean, ipHash: string, ipLimit: number,
+  ): Promise<number | null>;
+  finishAttempt(attemptId: number, success: boolean): Promise<void>;
+  saveOtp(phone: string, codeHash: string, expiresAtIso: string, createdAtIso: string): Promise<void>;
+  getOtp(phone: string): Promise<{ code_hash: string; expires_at: string } | null>;
+  consumeOtp(phone: string, codeHash: string): Promise<boolean>;
   deleteOtp(phone: string): Promise<void>;
   findUserIdByEmail(email: string): Promise<string | null>;
   createUser(email: string, metadata: Record<string, unknown>): Promise<string | null>;
@@ -62,10 +67,34 @@ function json(body: unknown, status = 200) {
 
 const REQUEST_LIMIT = 3;
 const REQUEST_WINDOW_MS = 5 * 60 * 1000;
+const PASSWORD_WINDOW_MS = FAILURE_WINDOW_MINUTES * 60 * 1000;
+const IP_REQUEST_LIMIT = 20;
+const IP_AUTH_LIMIT = 30;
+
+async function reserveForRequest(
+  req: Request,
+  deps: Deps,
+  phone: string,
+  kind: AttemptKind,
+  windowMs: number,
+  phoneLimit: number,
+  failuresOnly: boolean,
+  ipLimit: number,
+): Promise<number | null> {
+  const pepper = deps.env("OTP_HASH_SECRET");
+  if (!pepper || pepper.length < 32) throw new Error("OTP_HASH_SECRET is not configured");
+  // Supabase's Cloudflare edge supplies this header. Do not fall back to a client-controlled
+  // X-Forwarded-For value: missing trusted network identity fails closed.
+  const ip = req.headers.get("cf-connecting-ip")?.trim();
+  if (!ip || ip.length > 64) throw new Error("Trusted client IP header is unavailable");
+  const ipHash = await hashClientIp(pepper, ip);
+  return deps.store.reserveAttempt(
+    phone, kind, Math.ceil(windowMs / 1000), phoneLimit, failuresOnly, ipHash, ipLimit,
+  );
+}
 
 export function createHandler(deps: Deps) {
   const { store } = deps;
-  const sinceFailures = () => new Date(deps.now() - FAILURE_WINDOW_MINUTES * 60 * 1000).toISOString();
 
   return async (req: Request): Promise<Response> => {
     if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -81,12 +110,17 @@ export function createHandler(deps: Deps) {
       // ---------- phone + password sign-in ----------
       if (action === "login") {
         const bad = () => json({ error: "Numéro ou mot de passe incorrect" }, 401);
-        if (typeof password !== "string" || password.length === 0) return bad();
-        const failures = await store.countAttempts(phone, "password", sinceFailures(), true);
-        if (isBlocked(failures)) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
+        const attemptId = await reserveForRequest(
+          req, deps, phone, "password", PASSWORD_WINDOW_MS, 5, true, IP_AUTH_LIMIT,
+        );
+        if (attemptId === null) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
+        if (typeof password !== "string" || password.length === 0) {
+          await store.finishAttempt(attemptId, false);
+          return bad();
+        }
 
         const session = await store.passwordSession(emailForPhone(phone), password);
-        await store.recordAttempt(phone, "password", !!session);
+        await store.finishAttempt(attemptId, !!session);
         // Same message for unknown number, wrong password or no password set (no account enumeration).
         if (!session) return bad();
         return json({ ok: true, ...session, is_new: false });
@@ -94,24 +128,23 @@ export function createHandler(deps: Deps) {
 
       // ---------- request an SMS code ----------
       if (action === "request") {
-        const recent = await store.countAttempts(
-          phone,
-          "otp_request",
-          new Date(deps.now() - REQUEST_WINDOW_MS).toISOString(),
-          false,
+        const attemptId = await reserveForRequest(
+          req, deps, phone, "otp_request", REQUEST_WINDOW_MS, REQUEST_LIMIT, false, IP_REQUEST_LIMIT,
         );
-        if (recent >= REQUEST_LIMIT) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
-        await store.recordAttempt(phone, "otp_request", true);
+        if (attemptId === null) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
 
         const otp = deps.generateCode();
+        const pepper = deps.env("OTP_HASH_SECRET")!;
+        const codeHash = await hashOtpInput(pepper, phone, otp);
         await store.saveOtp(
           phone,
-          otp,
+          codeHash,
           new Date(deps.now() + 10 * 60 * 1000).toISOString(),
           new Date(deps.now()).toISOString(),
         );
 
         const smsSent = await deps.sendSms(phone, otp);
+        await store.finishAttempt(attemptId, smsSent);
         const delivery = decideOtpDelivery({ smsSent, devAllowed: devOtpAllowed(deps.env) });
 
         if (delivery.kind === "sent") return json({ ok: true, phone: displayPhone(phone), dev_code: null });
@@ -125,8 +158,10 @@ export function createHandler(deps: Deps) {
 
       // ---------- verify the SMS code (login / register / reset) ----------
       if (action === "verify") {
-        const failures = await store.countAttempts(phone, "otp_verify", sinceFailures(), true);
-        if (isBlocked(failures)) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
+        const attemptId = await reserveForRequest(
+          req, deps, phone, "otp_verify", PASSWORD_WINDOW_MS, 5, true, IP_AUTH_LIMIT,
+        );
+        if (attemptId === null) return json({ error: "Trop de tentatives, réessayez plus tard" }, 429);
 
         const row = await store.getOtp(phone);
         if (!row) return json({ error: "Code introuvable, demandez un nouveau code" }, 400);
@@ -134,31 +169,50 @@ export function createHandler(deps: Deps) {
           await store.deleteOtp(phone);
           return json({ error: "Code expiré, demandez un nouveau code" }, 400);
         }
-        if (typeof code !== "string" || !safeEqual(row.code, code)) {
-          await store.recordAttempt(phone, "otp_verify", false);
+        const pepper = deps.env("OTP_HASH_SECRET")!;
+        const validCode = typeof code === "string" && /^[0-9]{6}$/.test(code);
+        const suppliedHash = validCode ? await hashOtpInput(pepper, phone, code) : "";
+        if (!validCode || !safeEqual(suppliedHash, row.code_hash)) {
+          await store.finishAttempt(attemptId, false);
           return json({ error: "Code incorrect" }, 400);
         }
 
         const purpose = parsePurpose(body.purpose);
-        if (!purpose) return json({ error: "Action inconnue" }, 400);
+        if (!purpose) {
+          await store.finishAttempt(attemptId, true);
+          return json({ error: "Action inconnue" }, 400);
+        }
 
         // Validate everything BEFORE consuming the code, so a weak password or a wrong purpose
         // does not burn a valid code.
         const hasPassword = password !== undefined && password !== null && password !== "";
         if (hasPassword && purpose !== "login") {
           const pwError = validatePassword(password);
-          if (pwError) return json({ error: pwError }, 400);
+          if (pwError) {
+            await store.finishAttempt(attemptId, true);
+            return json({ error: pwError }, 400);
+          }
         }
         const contactEmail = normalizeEmail(rawEmail);
-        if (contactEmail === null) return json({ error: "Adresse e-mail invalide" }, 400);
+        if (contactEmail === null) {
+          await store.finishAttempt(attemptId, true);
+          return json({ error: "Adresse e-mail invalide" }, 400);
+        }
 
         const email = emailForPhone(phone);
         let userId = await store.findUserIdByEmail(email);
         const decision = decidePurpose({ purpose, userExists: !!userId, hasPassword });
-        if (!decision.ok) return json({ error: decision.message }, decision.status);
+        if (!decision.ok) {
+          await store.finishAttempt(attemptId, true);
+          return json({ error: decision.message }, decision.status);
+        }
 
-        await store.deleteOtp(phone);
-        await store.recordAttempt(phone, "otp_verify", true);
+        const consumed = await store.consumeOtp(phone, row.code_hash);
+        if (!consumed) {
+          await store.finishAttempt(attemptId, false);
+          return json({ error: "Code déjà utilisé ou expiré, demandez un nouveau code" }, 400);
+        }
+        await store.finishAttempt(attemptId, true);
 
         let isNew = false;
         if (!userId) {

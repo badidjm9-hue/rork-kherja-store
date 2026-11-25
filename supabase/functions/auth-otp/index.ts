@@ -4,6 +4,7 @@
 // Server-side environment (Supabase function secrets):
 //   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE   SMS provider (required in production)
 //   KHERJA_ENV=development + ALLOW_DEV_OTP=true            development ONLY: return the code in the response
+//   OTP_HASH_SECRET                                          random server-only secret, minimum 32 characters
 // Anything else is treated as production and never exposes a verification code.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -51,43 +52,71 @@ function toTokens(session: Record<string, unknown>, userId: string | null): Sess
 }
 
 const store: Store = {
-  async countAttempts(phone, kind, sinceIso, onlyFailures) {
-    let q = admin
-      .from("auth_login_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("phone", phone)
-      .eq("kind", kind)
-      .gte("attempted_at", sinceIso);
-    if (onlyFailures) q = q.eq("success", false);
-    const { count } = await q;
-    return count ?? 0;
+  async reserveAttempt(phone, kind, windowSeconds, phoneLimit, failuresOnly, ipHash, ipLimit) {
+    const { data, error } = await admin.rpc("reserve_auth_attempt", {
+      p_phone: phone,
+      p_kind: kind,
+      p_window_seconds: windowSeconds,
+      p_phone_limit: phoneLimit,
+      p_failures_only: failuresOnly,
+      p_ip_hash: ipHash,
+      p_ip_limit: ipLimit,
+    });
+    if (error) throw new Error("auth rate-limit reservation failed");
+    if (data === null) return null;
+    const attemptId = Number(data);
+    if (!Number.isSafeInteger(attemptId) || attemptId < 1) {
+      throw new Error("auth rate-limit reservation returned an invalid id");
+    }
+    return attemptId;
   },
 
-  async recordAttempt(phone, kind, success) {
-    await admin.from("auth_login_attempts").insert({ phone, kind, success });
+  async finishAttempt(attemptId, success) {
+    const { error } = await admin.rpc("finish_auth_attempt", {
+      p_attempt_id: attemptId,
+      p_success: success,
+    });
+    if (error) throw new Error("auth attempt finalization failed");
   },
 
-  async saveOtp(phone, code, expiresAtIso, createdAtIso) {
-    await admin.from("otp_codes").upsert({ phone, code, expires_at: expiresAtIso, created_at: createdAtIso });
+  async saveOtp(phone, codeHash, expiresAtIso, createdAtIso) {
+    const { error } = await admin.from("otp_codes").upsert({
+      phone, code_hash: codeHash, expires_at: expiresAtIso, created_at: createdAtIso,
+    });
+    if (error) throw new Error("OTP persistence failed");
   },
 
   async getOtp(phone) {
-    const { data } = await admin.from("otp_codes").select("code, expires_at").eq("phone", phone).single();
+    const { data, error } = await admin.from("otp_codes")
+      .select("code_hash, expires_at").eq("phone", phone).single();
+    if (error && error.code !== "PGRST116") throw new Error("OTP lookup failed");
     return data ?? null;
   },
 
+  async consumeOtp(phone, codeHash) {
+    const { data, error } = await admin.rpc("consume_auth_otp", {
+      p_phone: phone,
+      p_code_hash: codeHash,
+    });
+    if (error) throw new Error("OTP consumption failed");
+    return data === true;
+  },
+
   async deleteOtp(phone) {
-    await admin.from("otp_codes").delete().eq("phone", phone);
+    const { error } = await admin.from("otp_codes").delete().eq("phone", phone);
+    if (error) throw new Error("OTP deletion failed");
   },
 
   async findUserIdByEmail(email) {
-    for (let page = 1; page <= 10; page++) {
-      const { data } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-      const match = data.users.find((u) => u.email === email);
+    // The Auth Admin API exposes paginated user listing, not a direct email lookup.
+    // Check every page rather than silently treating accounts after page 10 as new users.
+    for (let page = 1; ; page++) {
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) throw new Error("Auth user lookup failed");
+      const match = data.users.find((user) => user.email === email);
       if (match) return match.id;
-      if (data.users.length < 1000) break;
+      if (data.users.length < 1000) return null;
     }
-    return null;
   },
 
   async createUser(email, metadata) {
