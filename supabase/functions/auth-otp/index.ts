@@ -63,7 +63,12 @@ const store: Store = {
       p_ip_limit: ipLimit,
     });
     if (error) throw new Error("auth rate-limit reservation failed");
-    return data === null ? null : Number(data);
+    if (data === null) return null;
+    const attemptId = Number(data);
+    if (!Number.isSafeInteger(attemptId) || attemptId < 1) {
+      throw new Error("auth rate-limit reservation returned an invalid id");
+    }
+    return attemptId;
   },
 
   async finishAttempt(attemptId, success) {
