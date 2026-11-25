@@ -4,6 +4,7 @@
 // Server-side environment (Supabase function secrets):
 //   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE   SMS provider (required in production)
 //   KHERJA_ENV=development + ALLOW_DEV_OTP=true            development ONLY: return the code in the response
+//   OTP_HASH_SECRET                                          random server-only secret, minimum 32 characters
 // Anything else is treated as production and never exposes a verification code.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -88,7 +89,8 @@ const store: Store = {
   },
 
   async deleteOtp(phone) {
-    await admin.from("otp_codes").delete().eq("phone", phone);
+    const { error } = await admin.from("otp_codes").delete().eq("phone", phone);
+    if (error) throw new Error("OTP deletion failed");
   },
 
   async findUserIdByEmail(email) {
