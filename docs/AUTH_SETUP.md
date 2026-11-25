@@ -9,13 +9,15 @@ Nothing in this document has been applied to a live Supabase project. Every step
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE` | **required** | optional |
 | `KHERJA_ENV` | leave **unset** (anything but the exact string `development` is production) | `development` |
 | `OTP_HASH_SECRET` | **required**, random server-only value of at least 32 characters | same requirement |
+| `ALLOW_DEV_OTP` | leave **unset** | `true` |
 
 Generate a value locally and set it only in the intended Supabase project (never commit it):
 
 ```sh
 supabase secrets set OTP_HASH_SECRET="$(openssl rand -hex 32)"
 ```
-| `ALLOW_DEV_OTP` | leave **unset** | `true` |
+
+Rotating `OTP_HASH_SECRET` invalidates outstanding OTP codes and changes IP-hash values, resetting existing IP-specific rate-limit history; phone-specific failure history remains.
 
 - `dev_code` is returned only when `KHERJA_ENV=development` AND `ALLOW_DEV_OTP=true` AND the SMS was not delivered. Both are server secrets; no request field or header can enable it.
 - Production without a working Twilio configuration answers `503 Service SMS indisponible`, discards the code, and returns no code.
