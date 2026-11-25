@@ -74,7 +74,7 @@ The original passwordless SMS login (`verify` with only phone and code) is uncha
 - password rules, and passwords absent from responses and logs;
 - mutation checks: deliberately breaking the policy makes the tests fail.
 
-**Important test boundary:** the handler concurrency tests use an in-memory fake store and do not prove PostgreSQL advisory-lock behavior. The SQL integration checks in `supabase/tests/auth_security_hardening.test.sql` verify service-role-only grants, invoker rights, per-phone/per-IP limits, and one-time OTP consumption; run them with `supabase test db` after starting a local Supabase stack and applying migrations. They still do not simulate concurrent PostgreSQL sessions. Before production, run concurrent calls to `reserve_auth_attempt` for one phone and one IP and verify that no more than the configured limit is reserved.
+**Important test boundary:** the handler concurrency tests use an in-memory fake store and do not prove PostgreSQL advisory-lock behavior. The SQL integration checks in `supabase/tests/auth_security_hardening.test.sql` verify service-role-only grants, invoker rights, per-phone/per-IP limits, failure-only password counting, and one-time OTP consumption; run them with `supabase test db` after starting a local Supabase stack and applying migrations. They still do not simulate concurrent PostgreSQL sessions. Before production, run concurrent calls to `reserve_auth_attempt` for one phone and one IP and verify that no more than the configured limit is reserved.
 
 **Written but NOT verified (no Android SDK, Swift toolchain, device or live Supabase in this environment):**
 - all Android Kotlin and iOS Swift code (compilation, layout, RTL, visual fidelity to the reference);
