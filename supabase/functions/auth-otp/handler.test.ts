@@ -388,6 +388,17 @@ describe("atomic phone and IP rate limits", () => {
     expect(results.filter((r) => r.status === 429)).toHaveLength(9);
   });
 
+  test("concurrent verification consumes a code only once", async () => {
+    const t = setup({}, true, "111222");
+    await t.call({ action: "request", phone: PHONE });
+    const results = await Promise.all([
+      t.call({ action: "verify", phone: PHONE, code: "111222" }),
+      t.call({ action: "verify", phone: PHONE, code: "111222" }),
+    ]);
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 400)).toHaveLength(1);
+  });
+
   test("IP limit applies across different phone numbers", async () => {
     const t = setup({}, true);
     const results = [];
