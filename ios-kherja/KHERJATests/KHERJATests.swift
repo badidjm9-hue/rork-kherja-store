@@ -42,6 +42,7 @@ struct KHERJATests {
         #expect(AuthRules.passwordValid(String(repeating: "a", count: 71) + "1")) // 72 UTF-8 bytes
         #expect(AuthRules.passwordValid(String(repeating: "أ", count: 35) + "a1")) // 72 UTF-8 bytes
         #expect(AuthRules.passwordValid("مرحبا12345"))
+        #expect(!AuthRules.passwordValid(String(repeating: "،", count: 7) + "1")) // Arabic punctuation is not a letter
     }
 
     @Test func rejectsPasswordsOutsideLengthAndUtf8ByteBoundaries() {
