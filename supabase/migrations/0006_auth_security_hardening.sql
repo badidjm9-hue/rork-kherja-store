@@ -34,7 +34,15 @@ DECLARE
   v_count bigint;
   v_attempt_id bigint;
 BEGIN
-  IF p_phone IS NULL OR p_phone !~ '^\\+213[5-7][0-9]{8}
+  IF p_phone IS NULL OR p_phone !~ '^\+213[5-7][0-9]{8}$'
+     OR p_ip_hash IS NULL OR p_ip_hash !~ '^[0-9a-f]{64}$'
+     OR p_kind IS NULL OR p_kind NOT IN ('password', 'otp_verify', 'otp_request')
+     OR p_window_seconds IS NULL OR p_window_seconds < 1
+     OR p_phone_limit IS NULL OR p_phone_limit < 1
+     OR p_ip_limit IS NULL OR p_ip_limit < 1
+     OR p_failures_only IS NULL THEN
+    RAISE EXCEPTION 'invalid auth rate-limit arguments';
+  END IF;
 
   v_phone_lock := hashtextextended('phone:' || p_phone || ':' || p_kind, 0);
   v_ip_lock := hashtextextended('ip:' || p_ip_hash || ':' || p_kind, 0);
