@@ -74,7 +74,7 @@ internal object AuthRules {
     private val emailRe = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
 
     fun passwordValid(pw: String): Boolean =
-        pw.length in 8..72 && letter.containsMatchIn(pw) && pw.any { it in '0'..'9' }
+        pw.length >= 8 && pw.toByteArray(Charsets.UTF_8).size <= 72 && letter.containsMatchIn(pw) && pw.any { it in '0'..'9' }
 
     /** Empty is valid: the contact e-mail is optional. */
     fun emailValid(e: String): Boolean = e.isBlank() || (e.trim().length <= 254 && emailRe.matches(e.trim()))
