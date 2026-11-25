@@ -371,6 +371,44 @@ describe("password login and rate limiting", () => {
   });
 });
 
+
+describe("atomic phone and IP rate limits", () => {
+  test("concurrent OTP requests cannot exceed the per-phone limit", async () => {
+    const t = setup({}, true);
+    const results = await Promise.all(
+      Array.from({ length: 12 }, () => t.call({ action: "request", phone: PHONE })),
+    );
+    expect(results.filter((r) => r.status === 200)).toHaveLength(3);
+    expect(results.filter((r) => r.status === 429)).toHaveLength(9);
+  });
+
+  test("IP limit applies across different phone numbers", async () => {
+    const t = setup({}, true);
+    const results = [];
+    for (let i = 0; i < 21; i++) {
+      const phone = "0555123" + String(i).padStart(3, "0");
+      results.push(await t.call({ action: "request", phone }));
+    }
+    expect(results.filter((r) => r.status === 200)).toHaveLength(20);
+    expect(results[20].status).toBe(429);
+  });
+
+  test("missing trusted IP fails closed", async () => {
+    const t = setup({}, true);
+    const r = await t.call({ action: "request", phone: PHONE }, { "cf-connecting-ip": "" });
+    expect(r.status).toBe(500);
+    expect(t.sent).toHaveLength(0);
+  });
+
+  test("missing OTP hash secret fails closed", async () => {
+    const t = setup({ OTP_HASH_SECRET: "" }, true);
+    const r = await t.call({ action: "request", phone: PHONE });
+    expect(r.status).toBe(500);
+    expect(t.sent).toHaveLength(0);
+    expect(t.otps.size).toBe(0);
+  });
+});
+
 describe("passwords and codes never leak", () => {
   test("no password appears in any response body or log line across all flows", async () => {
     const t = setup({}, true, "111222");
