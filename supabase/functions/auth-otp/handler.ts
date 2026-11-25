@@ -170,8 +170,9 @@ export function createHandler(deps: Deps) {
           return json({ error: "Code expiré, demandez un nouveau code" }, 400);
         }
         const pepper = deps.env("OTP_HASH_SECRET")!;
-        const suppliedHash = typeof code === "string" ? await hashOtpInput(pepper, phone, code) : "";
-        if (typeof code !== "string" || !safeEqual(suppliedHash, row.code_hash)) {
+        const validCode = typeof code === "string" && /^[0-9]{6}$/.test(code);
+        const suppliedHash = validCode ? await hashOtpInput(pepper, phone, code) : "";
+        if (!validCode || !safeEqual(suppliedHash, row.code_hash)) {
           await store.finishAttempt(attemptId, false);
           return json({ error: "Code incorrect" }, 400);
         }
