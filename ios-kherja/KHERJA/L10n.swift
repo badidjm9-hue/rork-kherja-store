@@ -254,6 +254,14 @@ struct L10n {
         "err_email": "Adresse e-mail invalide",
         "err_name": "Entrez votre nom complet",
         "err_enter_password": "Entrez votre mot de passe",
+        "link_title": "Vérifiez votre numéro",
+        "link_hint": "Un numéro de téléphone vérifié est obligatoire pour utiliser les services chauffeur.",
+        "link_send": "Envoyer le code",
+        "link_code": "Code de vérification",
+        "link_confirm": "Vérifier",
+        "link_continue_passenger": "Continuer comme passager",
+        "err_phone_used": "Ce numéro est déjà lié à un autre compte",
+        "err_session": "Session expirée, reconnectez-vous",
     ]
 
     static let ar: [String: String] = [
@@ -481,6 +489,14 @@ struct L10n {
         "err_email": "البريد الإلكتروني غير صالح",
         "err_name": "أدخل اسمك الكامل",
         "err_enter_password": "أدخل كلمة المرور",
+        "link_title": "تأكيد رقم هاتفك",
+        "link_hint": "رقم هاتف مؤكَّد إلزامي لاستخدام خدمات السائق.",
+        "link_send": "إرسال الرمز",
+        "link_code": "رمز التحقق",
+        "link_confirm": "تأكيد",
+        "link_continue_passenger": "المتابعة كراكب",
+        "err_phone_used": "هذا الرقم مرتبط بحساب آخر",
+        "err_session": "انتهت الجلسة، سجّل الدخول مجدداً",
     ]
 
     /// Maps server exception messages to localized, user-facing text.

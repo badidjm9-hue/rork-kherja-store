@@ -43,6 +43,9 @@ class AppState(app: Application) : AndroidViewModel(app) {
 
     /** Set when a Google/Apple browser sign-in comes back with an error; shown by the login screen. */
     var oauthError by mutableStateOf<String?>(null)
+    /** null = unknown (not loaded, or migration 0007 not deployed); the database enforces the rule regardless. */
+    var phoneVerified by mutableStateOf<Boolean?>(null)
+
     var oauthBusy by mutableStateOf(false)
         private set
 
@@ -53,7 +56,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
     val userId: String? get() = session.userId
 
     init {
-        api.onSessionExpired = { signedIn = false; profile = null }
+        api.onSessionExpired = { signedIn = false; profile = null; phoneVerified = null }
         viewModelScope.launch {
             val started = System.currentTimeMillis()
             bootstrap()
@@ -132,6 +135,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
         try {
             val p = api.profile(id)
             profile = p
+            phoneVerified = runCatching { api.phoneVerified() }.getOrNull()
             if (p != null) {
                 // Keep the role chosen during onboarding until the profile is completed.
                 if (p.name.isNotBlank()) setRole(p.role)
@@ -167,6 +171,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
     suspend fun refreshProfile() {
         val id = userId ?: return
         runCatching { api.profile(id) }.getOrNull()?.let { profile = it }
+        phoneVerified = runCatching { api.phoneVerified() }.getOrNull()
     }
 
     fun signOut() {
@@ -179,6 +184,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
             }
             session.clear()
             profile = null
+            phoneVerified = null
             activeRequestId = null
             activeRideId = null
             signedIn = false

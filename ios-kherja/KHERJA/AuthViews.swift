@@ -45,6 +45,8 @@ nonisolated enum AuthRules {
         if m.contains("mot de passe") && m.contains("incorrect") { return "err_login_failed" }
         if m.contains("tentatives") { return "err_too_many" }
         if m.contains("existe déjà") { return "err_account_exists" }
+        if m.contains("déjà associé") || m.contains("déjà lié") { return "err_phone_used" }
+        if m.contains("session requise") { return "err_session" }
         if m.contains("aucun compte") { return "err_no_account" }
         if m.contains("sms indisponible") { return "err_sms_unavailable" }
         if m.contains("code") { return "wrong_code" }
@@ -609,6 +611,92 @@ struct ForgotPasswordView: View {
                 } else {
                     errorMessage = store.l(AuthRules.errorKey(res.error))
                 }
+            } catch {
+                errorMessage = store.l("error_generic")
+            }
+            loading = false
+        }
+    }
+}
+
+// MARK: - Link a verified phone (social accounts)
+
+/// Shown to a driver account (for example created with Google/Apple) that has no verified phone yet.
+struct LinkPhoneView: View {
+    @EnvironmentObject var store: AppState
+    @State private var phone = ""
+    @State private var code = ""
+    @State private var sentTo: String?
+    @State private var devCode: String?
+    @State private var loading = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                KJLogo(height: 72).padding(.top, 32)
+                let t = biLabels(store, "link_title")
+                Text(t.primary).font(.system(size: 26, weight: .heavy)).foregroundStyle(KJ.ink).padding(.top, 14)
+                Text(t.secondary).font(.system(size: 16)).foregroundStyle(KJ.inkSoft)
+                Text(biLabels(store, "link_hint").primary)
+                    .font(.system(size: 14)).foregroundStyle(KJ.muted)
+                    .multilineTextAlignment(.center).padding(.top, 8)
+
+                Group {
+                    if sentTo == nil {
+                        GlassField(labelKey: "auth_phone", icon: "phone.fill", text: $phone, keyboard: .phonePad,
+                                   contentType: .telephoneNumber, trailing: AnyView(CountryChip()))
+                    } else {
+                        GlassField(labelKey: "link_code", icon: "lock.fill", text: $code, keyboard: .numberPad, contentType: .oneTimeCode)
+                        if let devCode { Text("DEV: \(devCode)").font(.system(size: 12)).foregroundStyle(KJ.muted) }
+                    }
+                }
+                .padding(.top, 20)
+
+                if let message = errorMessage {
+                    Text(message).font(.system(size: 14, weight: .semibold)).foregroundStyle(KJ.danger).padding(.top, 12)
+                }
+                BiButton(labelKey: sentTo == nil ? "link_send" : "link_confirm", loading: loading) {
+                    sentTo == nil ? send() : confirm()
+                }
+                .padding(.top, 20)
+
+                Button(biLabels(store, "link_continue_passenger").primary) { store.setRole("passenger") }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(KJ.blue)
+                    .padding(.top, 14)
+            }
+            .padding(.horizontal, 22)
+            .padding(.bottom, 28)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(KJ.canvasGradient.ignoresSafeArea())
+    }
+
+    private func send() {
+        guard let p = AuthRules.normalizePhone(phone) else { errorMessage = store.l("invalid_phone"); return }
+        loading = true
+        errorMessage = nil
+        Task {
+            do {
+                let res = try await SupabaseService.shared.linkRequest(phone: p)
+                if res.ok { sentTo = p; devCode = res.devCode } else { errorMessage = store.l(AuthRules.errorKey(res.error)) }
+            } catch {
+                errorMessage = store.l("error_generic")
+            }
+            loading = false
+        }
+    }
+
+    private func confirm() {
+        guard let p = sentTo else { return }
+        guard code.count == 6 else { errorMessage = store.l("wrong_code"); return }
+        loading = true
+        errorMessage = nil
+        Task {
+            do {
+                let res = try await SupabaseService.shared.linkVerify(phone: p, code: code)
+                if res.ok { await store.refreshProfile() } else { errorMessage = store.l(AuthRules.errorKey(res.error)) }
             } catch {
                 errorMessage = store.l("error_generic")
             }

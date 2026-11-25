@@ -269,6 +269,14 @@ object L10n {
         "err_email" to "Adresse e-mail invalide",
         "err_name" to "Entrez votre nom complet",
         "err_enter_password" to "Entrez votre mot de passe",
+        "link_title" to "Vérifiez votre numéro",
+        "link_hint" to "Un numéro de téléphone vérifié est obligatoire pour utiliser les services chauffeur.",
+        "link_send" to "Envoyer le code",
+        "link_code" to "Code de vérification",
+        "link_confirm" to "Vérifier",
+        "link_continue_passenger" to "Continuer comme passager",
+        "err_phone_used" to "Ce numéro est déjà lié à un autre compte",
+        "err_session" to "Session expirée, reconnectez-vous",
     )
 
     val ar: Map<String, String> = mapOf(
@@ -536,6 +544,14 @@ object L10n {
         "err_email" to "البريد الإلكتروني غير صالح",
         "err_name" to "أدخل اسمك الكامل",
         "err_enter_password" to "أدخل كلمة المرور",
+        "link_title" to "تأكيد رقم هاتفك",
+        "link_hint" to "رقم هاتف مؤكَّد إلزامي لاستخدام خدمات السائق.",
+        "link_send" to "إرسال الرمز",
+        "link_code" to "رمز التحقق",
+        "link_confirm" to "تأكيد",
+        "link_continue_passenger" to "المتابعة كراكب",
+        "err_phone_used" to "هذا الرقم مرتبط بحساب آخر",
+        "err_session" to "انتهت الجلسة، سجّل الدخول مجدداً",
     )
 
     fun string(key: String, lang: String): String =

@@ -42,6 +42,11 @@ struct RootView: View {
                     }
                 }
                 .environmentObject(PhoneFlowManager.shared)
+            } else if store.profile == nil {
+                CompleteProfileView()
+            } else if store.role == "driver" && store.phoneVerified == false {
+                // Driver services need a verified phone (also enforced by the database).
+                LinkPhoneView()
             } else if (store.profile?.name ?? "").isEmpty {
                 CompleteProfileView()
             } else if store.role == "driver" {

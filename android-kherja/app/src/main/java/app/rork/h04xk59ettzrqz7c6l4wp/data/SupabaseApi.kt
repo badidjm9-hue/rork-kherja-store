@@ -209,11 +209,26 @@ class SupabaseApi(private val session: SessionStore) {
 
     private suspend fun otp(body: JsonObject): OtpRequestResponse = KJson.decodeFromString(otpRaw(body))
 
-    private suspend fun otpRaw(body: JsonObject): String {
+    /** Social accounts, step 1: sends an SMS code to [phone] (needs the signed-in user's token). */
+    suspend fun linkRequest(phone: String): OtpRequestResponse {
+        val token = validToken() ?: return OtpRequestResponse(ok = false, error = "Session requise")
+        return KJson.decodeFromString(otpRaw(jsonOf("action" to "link_request", "phone" to phone), token))
+    }
+
+    /** Social accounts, step 2: proves ownership with the code; the server records the verified phone. */
+    suspend fun linkVerify(phone: String, code: String): OtpRequestResponse {
+        val token = validToken() ?: return OtpRequestResponse(ok = false, error = "Session requise")
+        return KJson.decodeFromString(otpRaw(jsonOf("action" to "link_verify", "phone" to phone, "code" to code), token))
+    }
+
+    /** Whether the signed-in account has a verified phone (RPC my_phone_verified, migration 0007). */
+    suspend fun phoneVerified(): Boolean = rpc("my_phone_verified")
+
+    private suspend fun otpRaw(body: JsonObject, bearer: String = anon): String {
         val res = http.request("$base/functions/v1/auth-otp") {
             method = HttpMethod.Post
             header("apikey", anon)
-            header("Authorization", "Bearer $anon")
+            header("Authorization", "Bearer $bearer")
             contentType(ContentType.Application.Json)
             setBody(body.toString())
         }

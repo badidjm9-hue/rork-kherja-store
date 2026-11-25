@@ -39,6 +39,7 @@ import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.CompleteProfileScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.DriverGate
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.DriverHomeScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.HistoryScreen
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.LinkPhoneScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.OnboardingFlow
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.PassengerHomeScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.SettingsScreen
@@ -49,7 +50,7 @@ import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJButton
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJOutlineButton
 import androidx.compose.ui.unit.dp
 
-private enum class RootScreen { Splash, Onboarding, Profile, Driver, Passenger }
+private enum class RootScreen { Splash, Onboarding, Profile, LinkPhone, Driver, Passenger }
 
 @Composable
 fun AppNavigation() {
@@ -58,7 +59,10 @@ fun AppNavigation() {
     val root = when {
         !state.bootstrapDone -> RootScreen.Splash
         !state.signedIn -> RootScreen.Onboarding
-        state.profile == null || state.profile?.name.isNullOrBlank() -> RootScreen.Profile
+        state.profile == null -> RootScreen.Profile
+        // Driver services need a verified phone (also enforced by the database).
+        state.role == "driver" && state.phoneVerified == false -> RootScreen.LinkPhone
+        state.profile?.name.isNullOrBlank() -> RootScreen.Profile
         state.role == "driver" -> RootScreen.Driver
         else -> RootScreen.Passenger
     }
@@ -68,6 +72,7 @@ fun AppNavigation() {
                 RootScreen.Splash -> SplashScreen(state)
                 RootScreen.Onboarding -> OnboardingFlow(state)
                 RootScreen.Profile -> if (state.profile == null && state.signedIn) ProfileLoading(state) else CompleteProfileScreen(state)
+                RootScreen.LinkPhone -> LinkPhoneScreen(state)
                 RootScreen.Driver -> DriverGate(state) { DriverTabs(state) }
                 RootScreen.Passenger -> PassengerTabs(state)
             }

@@ -31,7 +31,9 @@ Passwords are never stored by KHERJA code. They are passed to Supabase Auth (GoT
 
 Edge function actions `link_request` / `link_verify` (user JWT in `Authorization`) let a Google/Apple account add and verify a phone. A phone belongs to one account; accounts are never merged; per-account SMS cap 5 per 15 min.
 
-**Client screen still missing:** no Android/iOS "add your phone" screen exists yet, because there is no approved design for it. Until it is designed, a social user who tries a driver feature gets the server error `PHONE_NOT_VERIFIED`.
+**Client screen (uncompiled, untested):** Android `LinkPhoneScreen` and iOS `LinkPhoneView` call `link_request` / `link_verify`. A driver whose `my_phone_verified()` RPC (migration 0007, new, additive) returns false is routed there. If the RPC is missing or fails the client does not gate; the database triggers still raise `PHONE_NOT_VERIFIED`. Apply 0007 after 0006. This screen has no approved design reference: it reuses the auth glass components and needs your visual review.
+
+**Verification status:** nothing in the Android/iOS clients has been compiled or run. Codemagic results are not observable from the authoring environment, there is no Xcode here, and no design-fidelity or RTL/LTR rendering check was done.
 
 ## 3. Supabase dashboard
 

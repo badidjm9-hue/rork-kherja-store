@@ -19,6 +19,8 @@ final class AppState: ObservableObject {
     @Published private(set) var language: AppLanguage
     @Published private(set) var role: String   // "passenger" | "driver"
     @Published var profile: Profile?
+    /// nil = unknown (not loaded, or migration 0007 not deployed); the database enforces the rule regardless.
+    @Published var phoneVerified: Bool?
     @Published var activeRequestId: UUID?
     @Published var activeRideId: UUID?
     @Published var bootstrapDone = false
@@ -97,6 +99,7 @@ final class AppState: ObservableObject {
         }
         do {
             profile = try await supabase.profile(id: id)
+            phoneVerified = try? await supabase.phoneVerified()
             if let p = profile {
                 role = p.role
                 if let lang = AppLanguage(rawValue: p.language) {
@@ -132,11 +135,13 @@ final class AppState: ObservableObject {
         if let p = try? await supabase.profile(id: id) {
             profile = p
         }
+        phoneVerified = try? await supabase.phoneVerified()
     }
 
     func signOut() {
         session.signOut()
         profile = nil
+        phoneVerified = nil
         setActiveRequest(nil)
         setActiveRide(nil)
     }

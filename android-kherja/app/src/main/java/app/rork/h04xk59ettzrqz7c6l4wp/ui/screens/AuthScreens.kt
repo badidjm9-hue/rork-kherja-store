@@ -1,6 +1,12 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -86,6 +92,8 @@ internal object AuthRules {
             "mot de passe" in m && "incorrect" in m -> "err_login_failed"
             "tentatives" in m -> "err_too_many"
             "existe déjà" in m -> "err_account_exists"
+            "déjà associé" in m || "déjà lié" in m -> "err_phone_used"
+            "session requise" in m -> "err_session"
             "aucun compte" in m -> "err_no_account"
             "sms indisponible" in m -> "err_sms_unavailable"
             "code" in m -> "wrong_code"
@@ -549,5 +557,94 @@ fun ForgotStep(state: AppState, onOtp: (phone: String, ctx: OtpContext, devCode:
         Spacer(Modifier.height(20.dp))
         BiButton(state, "auth_reset_btn", loading) { submit() }
         Spacer(Modifier.height(28.dp))
+    }
+}
+
+/**
+ * Shown to a driver account (e.g. created with Google/Apple) that has no verified phone yet.
+ * Step 1: phone number -> SMS code. Step 2: code -> server links the phone (action link_phone).
+ */
+@Composable
+fun LinkPhoneScreen(state: AppState) {
+    val scope = rememberCoroutineScope()
+    var phone by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
+    var sentTo by remember { mutableStateOf<String?>(null) }
+    var devCode by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    fun send() {
+        val p = normalizePhone(phone) ?: run { error = state.l("invalid_phone"); return }
+        loading = true
+        error = null
+        scope.launch {
+            try {
+                val res = state.api.linkRequest(p)
+                if (res.ok) { sentTo = p; devCode = res.devCode } else error = state.l(AuthRules.errorKey(res.error))
+            } catch (e: Exception) {
+                error = state.l("error_generic")
+            }
+            loading = false
+        }
+    }
+
+    fun confirm() {
+        val p = sentTo ?: return
+        if (code.length != 6) { error = state.l("wrong_code"); return }
+        loading = true
+        error = null
+        scope.launch {
+            try {
+                val res = state.api.linkVerify(p, code)
+                if (res.ok) state.refreshProfile() else error = state.l(AuthRules.errorKey(res.error))
+            } catch (e: Exception) {
+                error = state.l("error_generic")
+            }
+            loading = false
+        }
+    }
+
+    CompositionLocalProvider(LocalLayoutDirection provides if (state.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+        Column(
+            Modifier.fillMaxSize().background(KJ.canvas).verticalScroll(rememberScrollState()).padding(horizontal = 22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(32.dp))
+            KJLogo(72.dp)
+            Spacer(Modifier.height(14.dp))
+            val (t1, t2) = bi(state, "link_title")
+            Text(t1, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink, textAlign = TextAlign.Center)
+            Text(t2, fontSize = 16.sp, color = KJ.inkSoft, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(bi(state, "link_hint").first, fontSize = 14.sp, color = KJ.muted, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
+            if (sentTo == null) {
+                GlassField(
+                    state, "auth_phone", Icons.Filled.Phone, phone,
+                    { v -> phone = v.filter { it.isDigit() || it == ' ' }.take(14); error = null },
+                    keyboard = KeyboardType.Phone, numeric = true, trailing = { CountryChip() },
+                )
+            } else {
+                GlassField(
+                    state, "link_code", Icons.Filled.Lock, code,
+                    { v -> code = v.filter { it.isDigit() }.take(6); error = null },
+                    keyboard = KeyboardType.NumberPassword, numeric = true,
+                )
+                if (devCode != null) Text("DEV: $devCode", color = KJ.muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            }
+            if (error != null) {
+                Spacer(Modifier.height(12.dp))
+                ErrorBanner(error!!)
+            }
+            Spacer(Modifier.height(20.dp))
+            BiButton(state, if (sentTo == null) "link_send" else "link_confirm", loading) { if (sentTo == null) send() else confirm() }
+            Spacer(Modifier.height(14.dp))
+            Text(
+                bi(state, "link_continue_passenger").first, color = KJ.blue, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { state.setRole("passenger") }.padding(8.dp),
+            )
+            Spacer(Modifier.height(28.dp))
+        }
     }
 }

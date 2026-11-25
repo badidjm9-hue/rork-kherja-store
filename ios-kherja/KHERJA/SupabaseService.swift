@@ -289,6 +289,25 @@ final class SupabaseService: ObservableObject {
         return result
     }
 
+    /// Social accounts, step 1: sends an SMS code to `phone` (needs the signed-in user's token).
+    func linkRequest(phone: String) async throws -> OtpRequestResponse {
+        guard let token = await session.validAccessToken() else { throw SocialError.failed }
+        return try await Self.callFunction("auth-otp", body: OtpRequest(action: "link_request", phone: phone), bearer: token)
+    }
+
+    /// Social accounts, step 2: proves ownership with the code; the server records the verified phone.
+    func linkVerify(phone: String, code: String) async throws -> OtpVerifyResponse {
+        guard let token = await session.validAccessToken() else { throw SocialError.failed }
+        return try await Self.callFunction("auth-otp", body: OtpVerify(action: "link_verify", phone: phone, code: code), bearer: token)
+    }
+
+    nonisolated struct NoParams: Encodable, Sendable {}
+
+    /// Whether the signed-in account has a verified phone (RPC my_phone_verified, migration 0007).
+    func phoneVerified() async throws -> Bool {
+        try await rpc("my_phone_verified", params: NoParams())
+    }
+
     // MARK: Social sign-in (Supabase Auth)
 
     /// Native Sign in with Apple: exchanges Apple's identity token (and the raw nonce) for a session.
@@ -322,11 +341,12 @@ final class SupabaseService: ObservableObject {
         return true
     }
 
-    static func callFunction<B: Encodable, R: Decodable>(_ name: String, body: B) async throws -> R {
+    static func callFunction<B: Encodable, R: Decodable>(_ name: String, body: B, bearer: String? = nil) async throws -> R {
         var request = URLRequest(url: URL(string: "\(Config.EXPO_PUBLIC_SUPABASE_URL)/functions/v1/\(name)")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(Config.EXPO_PUBLIC_SUPABASE_ANON_KEY, forHTTPHeaderField: "apikey")
+        if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
         request.httpBody = try JSONEncoder().encode(body)
         let (data, _) = try await URLSession.shared.data(for: request)
         return try decoder().decode(R.self, from: data)
