@@ -8,6 +8,7 @@ import {
   normalizeEmail,
   hashClientIp,
   hashOtpInput,
+  safeEqual,
   validatePassword,
 } from "./password.ts";
 import { decideOtpDelivery, decidePurpose, devOtpAllowed, parsePurpose } from "./policy.ts";
@@ -166,7 +167,7 @@ export function createHandler(deps: Deps) {
         }
         const pepper = deps.env("OTP_HASH_SECRET")!;
         const suppliedHash = typeof code === "string" ? await hashOtpInput(pepper, phone, code) : "";
-        if (typeof code !== "string" || suppliedHash !== row.code_hash) {
+        if (typeof code !== "string" || !safeEqual(suppliedHash, row.code_hash)) {
           await store.finishAttempt(attemptId, false);
           return json({ error: "Code incorrect" }, 400);
         }
