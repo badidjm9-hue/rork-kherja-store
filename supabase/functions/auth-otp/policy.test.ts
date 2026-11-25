@@ -9,12 +9,15 @@ describe("validatePassword", () => {
   test("accepts letters + digits of valid length", () => {
     expect(validatePassword("kherja2026")).toBeNull();
     expect(validatePassword("مرحبا12345")).toBeNull();
+    expect(validatePassword("أ".repeat(35) + "a1")).toBeNull(); // 72 UTF-8 bytes
   });
-  test("rejects short, letters-only, digits-only, too long, non-string", () => {
+  test("rejects short, letters-only, digits-only, too long, non-string and Arabic punctuation", () => {
     expect(validatePassword("ab1")).not.toBeNull();
     expect(validatePassword("onlyletters")).not.toBeNull();
     expect(validatePassword("12345678")).not.toBeNull();
     expect(validatePassword("a1".repeat(40))).not.toBeNull();
+    expect(validatePassword("أ".repeat(36) + "1")).not.toBeNull(); // 73 UTF-8 bytes
+    expect(validatePassword("،".repeat(7) + "1")).not.toBeNull(); // punctuation is not a letter
     expect(validatePassword(undefined)).not.toBeNull();
     expect(validatePassword(12345678)).not.toBeNull();
   });
