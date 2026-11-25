@@ -30,7 +30,7 @@ supabase secrets unset KHERJA_ENV ALLOW_DEV_OTP                  # production
 
 `0005_password_auth.sql` creates the attempt log. `0006_auth_security_hardening.sql` adds hashed IP identifiers, atomic rate-limit reservation/finalization RPCs, one-time OTP consumption, and replaces the plaintext `otp_codes.code` column with `code_hash`. The RPCs execute with invoker rights and are granted only to `service_role`. Applying 0006 intentionally deletes any outstanding OTP rows because their old plaintext values cannot be converted into keyed hashes. Review both migrations and apply them in order using your normal migration process. Neither migration has been applied to a live project.
 
-Passwords are never stored by KHERJA code. They are passed to Supabase Auth (GoTrue), which stores a bcrypt hash in `auth.users`. The function never logs bodies, passwords or codes.
+Passwords are never stored by KHERJA code. They are passed to Supabase Auth (GoTrue), which stores a bcrypt hash in `auth.users`. New passwords require at least 8 characters and are capped at 72 UTF-8 bytes to respect bcrypt's input limit; Android and iOS apply the same client-side check. The function never logs bodies, passwords or codes.
 
 ## 3. Supabase dashboard
 
