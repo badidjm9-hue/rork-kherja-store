@@ -114,44 +114,18 @@ GRANT EXECUTE ON FUNCTION public.reserve_auth_attempt(text, text, integer, integ
 GRANT EXECUTE ON FUNCTION public.finish_auth_attempt(bigint, boolean)
   TO service_role;
 
--- Resolve KHERJA's synthetic phone identity without paging through up to 10,000 Auth users.
--- This function exposes only a UUID and is executable by service_role only.
+-- Resolve KHERJA's synthetic phone identity without paging through Auth users.
+-- Exposes only a UUID and is executable by service_role only.
 CREATE OR REPLACE FUNCTION public.find_auth_user_id_by_email(p_email text)
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp
-AS $
+AS $find$
 DECLARE
   v_user_id uuid;
 BEGIN
-  IF p_email IS NULL OR p_email !~ '^u213[5-7][0-9]{8}@phone\\.kherja\\.app
-  p_phone text,
-  p_code_hash text
-)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-DECLARE
-  v_deleted integer;
-BEGIN
-  DELETE FROM public.otp_codes
-  WHERE phone = p_phone
-    AND code_hash = p_code_hash
-    AND expires_at > now();
-
-  GET DIAGNOSTICS v_deleted = ROW_COUNT;
-  RETURN v_deleted = 1;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.consume_auth_otp(text, text)
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.consume_auth_otp(text, text)
-  TO service_role;
- THEN
+  IF p_email IS NULL OR p_email !~ '^u213[5-7][0-9]{8}@phone[.]kherja[.]app$' THEN
     RAISE EXCEPTION 'invalid KHERJA phone identity';
   END IF;
 
@@ -162,7 +136,7 @@ GRANT EXECUTE ON FUNCTION public.consume_auth_otp(text, text)
 
   RETURN v_user_id;
 END;
-$;
+$find$;
 
 REVOKE ALL ON FUNCTION public.find_auth_user_id_by_email(text)
   FROM PUBLIC, anon, authenticated;
