@@ -31,6 +31,7 @@ export interface Store {
   finishAttempt(attemptId: number, success: boolean): Promise<void>;
   saveOtp(phone: string, codeHash: string, expiresAtIso: string, createdAtIso: string): Promise<void>;
   getOtp(phone: string): Promise<{ code_hash: string; expires_at: string } | null>;
+  consumeOtp(phone: string, codeHash: string): Promise<boolean>;
   deleteOtp(phone: string): Promise<void>;
   findUserIdByEmail(email: string): Promise<string | null>;
   createUser(email: string, metadata: Record<string, unknown>): Promise<string | null>;
@@ -202,8 +203,12 @@ export function createHandler(deps: Deps) {
           return json({ error: decision.message }, decision.status);
         }
 
+        const consumed = await store.consumeOtp(phone, row.code_hash);
+        if (!consumed) {
+          await store.finishAttempt(attemptId, false);
+          return json({ error: "Code déjà utilisé ou expiré, demandez un nouveau code" }, 400);
+        }
         await store.finishAttempt(attemptId, true);
-        await store.deleteOtp(phone);
 
         let isNew = false;
         if (!userId) {
