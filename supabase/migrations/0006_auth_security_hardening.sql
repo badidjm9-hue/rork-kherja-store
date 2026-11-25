@@ -110,3 +110,31 @@ GRANT EXECUTE ON FUNCTION public.reserve_auth_attempt(text, text, integer, integ
   TO service_role;
 GRANT EXECUTE ON FUNCTION public.finish_auth_attempt(bigint, boolean)
   TO service_role;
+
+CREATE OR REPLACE FUNCTION public.consume_auth_otp(
+  p_phone text,
+  p_code_hash text
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_deleted integer;
+BEGIN
+  DELETE FROM public.otp_codes
+  WHERE phone = p_phone
+    AND code_hash = p_code_hash
+    AND expires_at > now();
+
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted = 1;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.consume_auth_otp(text, text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.consume_auth_otp(text, text)
+  TO service_role;
+
