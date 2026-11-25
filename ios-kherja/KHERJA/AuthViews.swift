@@ -22,7 +22,8 @@ nonisolated enum AuthRules {
     }
 
     static func passwordValid(_ pw: String) -> Bool {
-        guard (8...72).contains(pw.utf16.count) else { return false }
+        // Match bcrypt's 72-byte UTF-8 limit while keeping the minimum at 8 characters.
+        guard pw.utf16.count >= 8, pw.utf8.count <= 72 else { return false }
         let scalars = pw.unicodeScalars
         let hasLetter = scalars.contains {
             ($0.value >= 0x41 && $0.value <= 0x5A) || ($0.value >= 0x61 && $0.value <= 0x7A)
