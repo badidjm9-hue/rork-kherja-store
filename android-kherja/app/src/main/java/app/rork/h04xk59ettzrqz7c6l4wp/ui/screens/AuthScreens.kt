@@ -562,7 +562,7 @@ fun ForgotStep(state: AppState, onOtp: (phone: String, ctx: OtpContext, devCode:
 
 /**
  * Shown to a driver account (e.g. created with Google/Apple) that has no verified phone yet.
- * Step 1: phone number -> SMS code. Step 2: code -> server links the phone (action link_phone).
+ * Step 1: phone number -> SMS code via link_request. Step 2: link_verify proves ownership and links the phone.
  */
 @Composable
 fun LinkPhoneScreen(state: AppState) {
