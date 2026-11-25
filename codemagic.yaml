@@ -17,3 +17,29 @@ workflows:
     artifacts:
       - app/build/outputs/apk/**/*.apk
       - app/build/outputs/mapping/**/mapping.txt
+
+  kherja-ios-simulator:
+    name: KHERJA iOS Simulator Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+    scripts:
+      - name: Resolve Swift package dependencies
+        script: |
+          xcodebuild -resolvePackageDependencies \
+            -project ios-kherja/KHERJA.xcodeproj \
+            -scheme KHERJA
+      - name: Build iOS app for Simulator
+        script: |
+          xcodebuild \
+            -project ios-kherja/KHERJA.xcodeproj \
+            -scheme KHERJA \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios-derived \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+    artifacts:
+      - build/ios-derived/Build/Products/Debug-iphonesimulator/*.app
+      - /tmp/xcodebuild_logs/*.log
