@@ -108,9 +108,15 @@ const store: Store = {
   },
 
   async findUserIdByEmail(email) {
-    const { data, error } = await admin.rpc("find_auth_user_id_by_email", { p_email: email });
-    if (error) throw new Error("Auth identity lookup failed");
-    return typeof data === "string" ? data : null;
+    // The Auth Admin API exposes paginated user listing, not a direct email lookup.
+    // Check every page rather than silently treating accounts after page 10 as new users.
+    for (let page = 1; ; page++) {
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) throw new Error("Auth user lookup failed");
+      const match = data.users.find((user) => user.email === email);
+      if (match) return match.id;
+      if (data.users.length < 1000) return null;
+    }
   },
 
   async createUser(email, metadata) {
