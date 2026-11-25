@@ -283,7 +283,7 @@ describe("registration (purpose=register)", () => {
   });
   test("weak password is rejected WITHOUT burning the code", async () => {
     const t = await requested();
-    for (const pw of ["short1", "onlyletters", "12345678", "a1".repeat(40)]) {
+    for (const pw of ["short1", "onlyletters", "12345678", "a1".repeat(40), (String.fromCharCode(0x0623) + "1").repeat(36)]) {
       expect((await t.call({ action: "verify", phone: PHONE, code: "111222", purpose: "register", password: pw })).status).toBe(400);
     }
     expect(t.otps.has(E164)).toBe(true);
