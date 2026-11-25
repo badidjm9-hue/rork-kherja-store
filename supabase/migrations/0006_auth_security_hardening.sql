@@ -114,35 +114,6 @@ GRANT EXECUTE ON FUNCTION public.reserve_auth_attempt(text, text, integer, integ
 GRANT EXECUTE ON FUNCTION public.finish_auth_attempt(bigint, boolean)
   TO service_role;
 
--- Resolve KHERJA's synthetic phone identity without paging through Auth users.
--- Exposes only a UUID and is executable by service_role only.
-CREATE OR REPLACE FUNCTION public.find_auth_user_id_by_email(p_email text)
-RETURNS uuid
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, pg_temp
-AS $find$
-DECLARE
-  v_user_id uuid;
-BEGIN
-  IF p_email IS NULL OR p_email !~ '^u213[5-7][0-9]{8}@phone[.]kherja[.]app$' THEN
-    RAISE EXCEPTION 'invalid KHERJA phone identity';
-  END IF;
-
-  SELECT id INTO v_user_id
-  FROM auth.users
-  WHERE email = p_email
-  LIMIT 1;
-
-  RETURN v_user_id;
-END;
-$find$;
-
-REVOKE ALL ON FUNCTION public.find_auth_user_id_by_email(text)
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.find_auth_user_id_by_email(text)
-  TO service_role;
-
 CREATE OR REPLACE FUNCTION public.consume_auth_otp(
   p_phone text,
   p_code_hash text
