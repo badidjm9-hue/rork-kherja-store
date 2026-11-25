@@ -4,6 +4,8 @@
 
 BEGIN;
 
+SELECT plan(1);
+
 DO $permissions$
 BEGIN
   IF has_function_privilege('anon', 'public.reserve_auth_attempt(text, text, integer, integer, boolean, text, integer)', 'EXECUTE')
@@ -81,5 +83,9 @@ BEGIN
   END IF;
 END;
 $behavior$;
+
+RESET ROLE;
+SELECT ok(true, 'auth hardening RPC permissions and behavior checks completed');
+SELECT * FROM finish();
 
 ROLLBACK;
