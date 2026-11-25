@@ -9,7 +9,8 @@ export function validatePassword(password: unknown): string | null {
   if (password.length < MIN_PASSWORD_LENGTH) {
     return `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères`;
   }
-  if (password.length > MAX_PASSWORD_LENGTH) return "Mot de passe trop long";
+  // bcrypt accepts at most 72 UTF-8 bytes, not 72 Unicode characters.
+  if (new TextEncoder().encode(password).length > MAX_PASSWORD_LENGTH) return "Mot de passe trop long";
   if (!/[A-Za-z؀-ۿ]/.test(password) || !/[0-9]/.test(password)) {
     return "Le mot de passe doit contenir des lettres et des chiffres";
   }
