@@ -43,6 +43,8 @@ DECLARE
   v_phone text := '+2135' || lpad((floor(random() * 100000000))::bigint::text, 8, '0');
   v_ip_hash text := md5(random()::text || clock_timestamp()::text) || md5(clock_timestamp()::text || random()::text);
   v_other_ip_hash text := md5(clock_timestamp()::text || random()::text) || md5(random()::text || clock_timestamp()::text);
+  v_password_phone text := '+2137' || lpad((floor(random() * 100000000))::bigint::text, 8, '0');
+  v_password_ip_hash text := md5(random()::text || clock_timestamp()::text) || md5(clock_timestamp()::text || random()::text);
   v_code_hash text := repeat('b', 64);
   v_first bigint;
   v_second bigint;
@@ -69,6 +71,21 @@ BEGIN
   v_third := public.reserve_auth_attempt('+2137' || substr(v_phone, 6), 'password', 900, 10, false, v_other_ip_hash, 2);
   IF v_first IS NULL OR v_second IS NULL OR v_third IS NOT NULL THEN
     RAISE EXCEPTION 'per-IP reservation limit behavior is incorrect';
+  END IF;
+
+  v_first := public.reserve_auth_attempt(v_password_phone, 'password', 900, 1, true, v_password_ip_hash, 10);
+  IF v_first IS NULL THEN
+    RAISE EXCEPTION 'first password attempt was not reserved';
+  END IF;
+  PERFORM public.finish_auth_attempt(v_first, true);
+  v_second := public.reserve_auth_attempt(v_password_phone, 'password', 900, 1, true, v_password_ip_hash, 10);
+  IF v_second IS NULL THEN
+    RAISE EXCEPTION 'successful password attempt incorrectly counted as a failure';
+  END IF;
+  PERFORM public.finish_auth_attempt(v_second, false);
+  v_third := public.reserve_auth_attempt(v_password_phone, 'password', 900, 1, true, v_password_ip_hash, 10);
+  IF v_third IS NOT NULL THEN
+    RAISE EXCEPTION 'failed password attempt was not counted toward the phone limit';
   END IF;
 
   INSERT INTO public.otp_codes (phone, code_hash, expires_at, created_at)
