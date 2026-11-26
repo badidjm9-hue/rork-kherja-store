@@ -307,6 +307,33 @@ class SupabaseApi(private val session: SessionStore) {
     suspend fun transactions(userId: String): List<Transaction> =
         get("/rest/v1/transactions?select=*&user_id=eq.$userId&order=created_at.desc&limit=100")
 
+    // ---------- driver documents ----------
+    suspend fun myDriverDocuments(driverId: String): List<DriverDocument> =
+        get("/rest/v1/driver_documents?select=*&driver_id=eq.$driverId&order=uploaded_at.desc")
+
+    /** Uploads a private file to the driver's own folder, then registers it for admin review. */
+    suspend fun uploadDriverDocument(driverId: String, type: String, bytes: ByteArray, mimeType: String, extension: String) {
+        require(type in setOf("id_card", "license", "registration", "insurance", "vehicle_photo"))
+        require(bytes.isNotEmpty() && bytes.size <= 10 * 1024 * 1024) { "File must be smaller than 10 MB" }
+        require(mimeType in setOf("image/jpeg", "image/png", "image/heic", "application/pdf"))
+        val token = validToken() ?: throw ApiException("Session requise", 401)
+        val path = "$driverId/${type}_${System.currentTimeMillis()}.$extension"
+        val encodedPath = path.split("/").joinToString("/") { q(it) }
+        val response = http.request("$base/storage/v1/object/driver-documents/$encodedPath") {
+            method = HttpMethod.Post
+            header("apikey", anon)
+            header("Authorization", "Bearer $token")
+            header("x-upsert", "false")
+            contentType(ContentType.parse(mimeType))
+            setBody(bytes)
+        }
+        val body = response.bodyAsText()
+        if (response.status.value !in 200..299) throw ApiException(errorMessage(body), response.status.value)
+        rpcVoid("submit_driver_document", jsonOf(
+            "p_type" to type, "p_path" to path, "p_mime" to mimeType,
+        ))
+    }
+
     // ---------- driver ----------
 
     suspend fun expireStale() = runCatching { rpcVoid("expire_stale_requests") }
