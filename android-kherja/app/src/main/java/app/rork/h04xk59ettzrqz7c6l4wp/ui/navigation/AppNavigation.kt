@@ -168,7 +168,7 @@ private fun DriverTabs(state: AppState) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val tabs = listOf(
         Tab(state.l("tab_jobs"), Icons.Filled.DirectionsCar),
-        Tab(state.l("tab_delivery"), Icons.Filled.DirectionsCar),
+        Tab(state.l("tab_delivery"), Icons.Filled.LocalShipping),
         Tab(state.l("tab_history"), Icons.Filled.History),
         Tab(state.l("tab_earnings"), Icons.Filled.AccountBalanceWallet),
         Tab(state.l("tab_profile"), Icons.Filled.Person),
