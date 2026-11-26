@@ -862,7 +862,9 @@ struct DriverProfileView: View {
                 ("insurance", store.language == .ar ? "التأمين" : "Assurance"),
                 ("vehicle_photo", store.language == .ar ? "صورة المركبة" : "Photo du véhicule")
             ]
-            ForEach(required, id: \.0) { type, label in
+            ForEach(required.indices, id: \.self) { index in
+                let type = required[index].0
+                let label = required[index].1
                 let doc = documents.first(where: { $0.docType == type })
                 let status = doc?.status ?? "missing"
                 HStack(spacing: 10) {
