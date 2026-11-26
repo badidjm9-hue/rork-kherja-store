@@ -64,6 +64,6 @@ Audit result: Android/iOS passenger and driver screens contain no empty handlers
 | Admin: Deliveries page (filters, search, pagination, 15s refresh) + `deliveries.read` permission | done, same verification; needs migration 0009 |
 | Admin: driver "phone verified" badge via `admin_driver_phone_status()` | done; needs migration 0009 |
 | Migration 0009 (additive, not applied) | verified on throwaway Postgres 16 with stand-in schema: applies, idempotent, policy checks pass |
-| Mobile: driver document upload screens (Android + iOS) | **not done** (migration 0004 notes uploads are not shipped; approval does not require documents) |
+| Mobile: driver document upload (Android + iOS): pick JPG/PNG/HEIC/PDF (10 MB max, as the bucket enforces), upload to private `driver-documents/<uid>/<type>.<ext>`, register via `submit_driver_document`, show per-document status and rejection reason, FR/AR strings | code written, **not compiled or run** (no Android SDK/Xcode here). Android: shown on the pending/rejected gate screen (via a button) and in the driver profile tab. iOS: driver profile tab. Layout follows existing card/pill components, not an approved reference design. Approval still does not require documents (migration 0004); re-enable only after on-device testing |
 | Design-fidelity comparison against the owner's reference images | **not possible**: no reference images exist in the repository or the session uploads |
 | Android/iOS compile + device tests | **not run** (no SDK/Xcode here, no Codemagic access) |

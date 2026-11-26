@@ -237,6 +237,33 @@ class SupabaseApi(private val session: SessionStore) {
 
     // ---------- profiles ----------
 
+    // ---------- driver documents ----------
+
+    suspend fun driverDocuments(userId: String): List<DriverDocument> =
+        get("/rest/v1/driver_documents?select=id,doc_type,storage_path,status,reason,uploaded_at&driver_id=eq.$userId&order=uploaded_at.desc")
+
+    /** Uploads to the private bucket (folder = user id), then registers the file for admin review. */
+    suspend fun uploadDriverDocument(userId: String, docType: String, bytes: ByteArray, mime: String) {
+        val ext = when (mime) {
+            "image/png" -> "png"
+            "image/heic" -> "heic"
+            "application/pdf" -> "pdf"
+            else -> "jpg"
+        }
+        val path = "$userId/$docType.$ext"
+        val token = validToken()
+        val res = http.request("$base/storage/v1/object/driver-documents/$path") {
+            this.method = HttpMethod.Post
+            header("apikey", anon)
+            header("Authorization", "Bearer ${token ?: anon}")
+            header("x-upsert", "true")
+            contentType(ContentType.parse(mime))
+            setBody(bytes)
+        }
+        if (res.status.value !in 200..299) throw ApiException(errorMessage(res.bodyAsText()), res.status.value)
+        rpcVoid("submit_driver_document", jsonOf("p_type" to docType, "p_path" to path, "p_mime" to mime))
+    }
+
     suspend fun profile(id: String): Profile? = get<List<Profile>>("/rest/v1/profiles?select=*&id=eq.$id&limit=1").firstOrNull()
 
     suspend fun updateProfile(id: String, fields: JsonObject) {

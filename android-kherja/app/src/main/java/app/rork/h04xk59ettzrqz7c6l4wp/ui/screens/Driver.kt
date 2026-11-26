@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Language
@@ -123,6 +124,7 @@ fun DriverGate(state: AppState, content: @Composable () -> Unit) {
     }
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
+    var showDocs by remember { mutableStateOf(false) }
     // Re-check periodically so approval shows up without manual action.
     LaunchedEffect(blocked) {
         while (true) {
@@ -173,6 +175,14 @@ fun DriverGate(state: AppState, content: @Composable () -> Unit) {
                     state.refreshProfile()
                     delay(400)
                     checking = false
+                }
+            }
+            if (blocked != "suspended") {
+                Spacer(Modifier.height(12.dp))
+                KJOutlineButton(state.l("docs_title"), icon = Icons.Filled.Description) { showDocs = !showDocs }
+                if (showDocs) {
+                    Spacer(Modifier.height(12.dp))
+                    DriverDocumentsSection(state)
                 }
             }
             Spacer(Modifier.height(12.dp))

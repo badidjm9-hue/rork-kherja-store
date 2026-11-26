@@ -814,6 +814,11 @@ struct DriverProfileView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(KJ.success)
                 }
+
+                if store.profile?.accountStatus != "suspended" {
+                    DriverDocumentsSection()
+                        .padding(.top, 8)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 30)

@@ -361,6 +361,8 @@ fun SettingsScreen(state: AppState) {
                     Spacer(Modifier.height(8.dp))
                     Field(state.l("color"), color) { color = it.take(30) }
                 }
+                Spacer(Modifier.height(18.dp))
+                DriverDocumentsSection(state)
             }
 
             error?.let {
