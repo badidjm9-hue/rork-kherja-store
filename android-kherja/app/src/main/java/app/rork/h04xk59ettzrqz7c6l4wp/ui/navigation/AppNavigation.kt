@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -146,7 +147,7 @@ private fun PassengerTabs(state: AppState) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val tabs = listOf(
         Tab(state.l("tab_home"), Icons.Filled.Home),
-        Tab(state.l("tab_delivery"), Icons.Filled.DirectionsCar),
+        Tab(state.l("tab_delivery"), Icons.Filled.LocalShipping),
         Tab(state.l("tab_history"), Icons.Filled.History),
         Tab(state.l("tab_wallet"), Icons.Filled.AccountBalanceWallet),
         Tab(state.l("tab_settings"), Icons.Filled.Settings),
