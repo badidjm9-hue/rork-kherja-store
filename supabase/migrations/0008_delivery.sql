@@ -223,14 +223,14 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.expire_delivery_orders() RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $
+AS $$
 DECLARE v_me public.profiles;
 BEGIN
   v_me := public.assert_active_user();
   UPDATE public.delivery_orders SET status = 'expired', updated_at = now()
   WHERE passenger_id = auth.uid() AND status = 'open' AND expires_at <= now();
 END;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.cancel_delivery_order(p_order_id uuid) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
