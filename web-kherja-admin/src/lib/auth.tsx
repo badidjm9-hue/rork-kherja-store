@@ -16,7 +16,8 @@ export type Permission =
   | "pricing.read"
   | "pricing.manage"
   | "admins.manage"
-  | "audit.read";
+  | "audit.read"
+  | "deliveries.read";
 
 export interface AdminMe {
   user_id: string;

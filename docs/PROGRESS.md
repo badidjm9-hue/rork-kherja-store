@@ -86,3 +86,14 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - Applied migrations 0001–0008 in order to a disposable PostgreSQL 16 database with local stand-ins for Supabase Auth and Storage. Verified phone gating, delivery quote minimum, duplicate-order rejection, participant RLS, redacted driver feed, claim, and valid/invalid status transitions.
 - That database test exposed an ambiguous `status` reference in `open_delivery_feed()`, which is fixed by qualifying the expiry-update columns. No production database, secrets, or Edge Functions were changed.
 - Android/iOS builds remain unverified: this environment has no Android SDK/JDK or Xcode. The TypeScript project check exceeded the available command timeout. No screen-reference images were present in the repository for visual comparison.
+
+
+## Admin completion pass — integrated onto `feature/kherja-ui-completion`
+
+| Item | Status |
+|---|---|
+| Admin: driver document review (private-bucket signed links, approve/reject with reason, audit via `admin_review_document`) | done; admin typecheck/build/lint pass; not exercised against a live Supabase |
+| Admin: Deliveries page (status filters, search, pagination, 15 s refresh) + `deliveries.read` permission | done, same verification; requires migration 0009 |
+| Admin: driver "phone verified" badge via `admin_driver_phone_status()` | done; requires migration 0009 |
+| Migration 0009 (additive, **not applied**) | applies and re-applies cleanly on throwaway Postgres 16 with stand-in `auth`/permission schema; RLS and RPC permission checks pass |
+| Codemagic: debug APK + iOS simulator workflows trigger on this branch | configured; first debug build reached `generateConfig` and stopped because `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` are not set in Codemagic |

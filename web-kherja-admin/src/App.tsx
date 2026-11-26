@@ -19,6 +19,7 @@ const Passengers = lazy(() => import("./pages/Passengers"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Admins = lazy(() => import("./pages/Admins"));
 const Audit = lazy(() => import("./pages/Audit"));
+const Deliveries = lazy(() => import("./pages/Deliveries"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -82,6 +83,7 @@ function Shell() {
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/live" element={<Guard perm="rides.read"><LiveMap /></Guard>} />
           <Route path="/rides" element={<Guard perm="rides.read"><Rides /></Guard>} />
+          <Route path="/deliveries" element={<Guard perm="deliveries.read"><Deliveries /></Guard>} />
           <Route path="/drivers" element={<Guard perm="drivers.read"><Drivers /></Guard>} />
           <Route path="/passengers" element={<Guard perm="users.read"><Passengers /></Guard>} />
           <Route path="/pricing" element={<Guard perm="pricing.read"><Pricing /></Guard>} />

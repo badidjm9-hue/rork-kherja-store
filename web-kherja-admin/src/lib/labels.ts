@@ -90,3 +90,41 @@ export function auditAction(t: T, a: string) {
   const v = map[a];
   return v ? t(v[0], v[1]) : a;
 }
+
+export function deliveryStatus(t: T, s: string): { label: string; tone: Tone } {
+  switch (s) {
+    case "open":
+      return { label: t("En attente", "في الانتظار"), tone: "blue" };
+    case "accepted":
+      return { label: t("Acceptée", "مقبول"), tone: "amber" };
+    case "picked_up":
+      return { label: t("Colis récupéré", "تم استلام الطرد"), tone: "bordeaux" };
+    case "delivered":
+      return { label: t("Livrée", "تم التسليم"), tone: "green" };
+    case "cancelled":
+      return { label: t("Annulée", "ملغى"), tone: "red" };
+    case "expired":
+      return { label: t("Expirée", "منتهي"), tone: "gray" };
+    default:
+      return { label: s, tone: "gray" };
+  }
+}
+
+export const DOC_TYPES = ["id_card", "license", "registration", "insurance", "vehicle_photo"] as const;
+
+export function docTypeLabel(t: T, d: string) {
+  switch (d) {
+    case "id_card":
+      return t("Carte d'identité", "بطاقة الهوية");
+    case "license":
+      return t("Permis de conduire", "رخصة السياقة");
+    case "registration":
+      return t("Carte grise", "البطاقة الرمادية");
+    case "insurance":
+      return t("Assurance", "التأمين");
+    case "vehicle_photo":
+      return t("Photo du véhicule", "صورة المركبة");
+    default:
+      return d;
+  }
+}

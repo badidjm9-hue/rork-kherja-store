@@ -161,6 +161,38 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_orders: {
+        Row: {
+          accepted_at: string | null
+          city: string
+          created_at: string
+          delivered_at: string | null
+          delivery_fee: number
+          dest_label: string
+          dest_lat: number
+          dest_lng: number
+          distance_km: number
+          driver_id: string | null
+          expires_at: string
+          id: string
+          package_description: string
+          passenger_id: string
+          payment_method: string
+          picked_up_at: string | null
+          pickup_label: string
+          pickup_lat: number
+          pickup_lng: number
+          recipient_name: string
+          recipient_phone: string
+          sender_note: string | null
+          status: string
+          updated_at: string
+          vehicle: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       driver_documents: {
         Row: {
           doc_type: string
@@ -829,6 +861,10 @@ export type Database = {
       admin_restore_pricing: {
         Args: { p_id: string; p_note?: string }
         Returns: string
+      }
+      admin_driver_phone_status: {
+        Args: { p_ids: string[] }
+        Returns: { user_id: string; phone_verified: boolean }[]
       }
       admin_review_document: {
         Args: { p_id: string; p_reason?: string; p_status: string }
