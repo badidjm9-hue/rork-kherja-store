@@ -526,12 +526,95 @@ final class SupabaseService: ObservableObject {
             .execute()
     }
 
+    // MARK: Parcel delivery
+
+    func quoteDelivery(pickupLat: Double, pickupLng: Double, destLat: Double, destLng: Double, distanceKm: Double, vehicle: String) async throws -> DeliveryQuote {
+        try await rpc("quote_delivery", params: DeliveryQuoteParams(
+            p_pickup_lat: pickupLat, p_pickup_lng: pickupLng,
+            p_dest_lat: destLat, p_dest_lng: destLng,
+            p_distance_km: distanceKm, p_vehicle: vehicle
+        ))
+    }
+
+    func createDeliveryOrder(_ params: CreateDeliveryParams) async throws -> UUID {
+        let id: String = try await rpc("create_delivery_order", params: params)
+        guard let uuid = UUID(uuidString: id.replacingOccurrences(of: "\"", with: "")) else {
+            throw NSError(domain: "KHERJA.Delivery", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid delivery response"])
+        }
+        return uuid
+    }
+
+    func myDeliveryOrders() async throws -> [DeliveryOrder] {
+        try await client.from("delivery_orders").select()
+            .order("created_at", ascending: false).limit(50)
+            .execute().decoded(Self.decoder())
+    }
+
+    func openDeliveryFeed() async throws -> [DeliveryOrder] {
+        try await rpc("open_delivery_feed", params: EmptyDeliveryParams())
+    }
+
+    func claimDeliveryOrder(_ id: UUID) async throws {
+        try await rpcVoid("claim_delivery_order", params: DeliveryOrderIdParams(pOrder: id))
+    }
+
+    func updateDeliveryStatus(_ id: UUID, status: String) async throws {
+        try await rpcVoid("update_delivery_status", params: DeliveryStatusParams(pOrder: id, pStatus: status))
+    }
+
+    func cancelDeliveryOrder(_ id: UUID) async throws {
+        try await rpcVoid("cancel_delivery_order", params: DeliveryOrderIdParams(pOrder: id))
+    }
+
     // MARK: Misc
 
     static func iso(_ date: Date) -> String {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f.string(from: date)
+    }
+}
+
+// MARK: - Delivery RPC parameters
+
+nonisolated struct EmptyDeliveryParams: Encodable, Sendable {}
+
+nonisolated struct DeliveryQuoteParams: Encodable, Sendable {
+    var p_pickup_lat: Double
+    var p_pickup_lng: Double
+    var p_dest_lat: Double
+    var p_dest_lng: Double
+    var p_distance_km: Double
+    var p_vehicle: String
+}
+
+nonisolated struct CreateDeliveryParams: Encodable, Sendable {
+    var p_pickup_label: String
+    var p_pickup_lat: Double
+    var p_pickup_lng: Double
+    var p_dest_label: String
+    var p_dest_lat: Double
+    var p_dest_lng: Double
+    var p_distance_km: Double
+    var p_vehicle: String
+    var p_package_description: String
+    var p_recipient_name: String
+    var p_recipient_phone: String
+    var p_sender_note: String?
+    var p_city: String
+}
+
+nonisolated struct DeliveryOrderIdParams: Encodable, Sendable {
+    var p_order_id: String
+    init(pOrder: UUID) { p_order_id = pOrder.uuidString }
+}
+
+nonisolated struct DeliveryStatusParams: Encodable, Sendable {
+    var p_order_id: String
+    var p_status: String
+    init(pOrder: UUID, pStatus: String) {
+        p_order_id = pOrder.uuidString
+        p_status = pStatus
     }
 }
 
