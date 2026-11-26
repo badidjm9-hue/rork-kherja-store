@@ -1,4 +1,4 @@
--- Behavioural tests over migrations 0001-0009 on a THROWAWAY local Postgres (see local_stack_stub.sql).
+-- Behavioural tests over migrations 0001-0010 on a THROWAWAY local Postgres (see local_stack_stub.sql).
 -- Each check prints "PASS <label>" or aborts with "FAIL <label>". Never run against a real project.
 \set ON_ERROR_STOP on
 SET client_min_messages = notice;
@@ -120,4 +120,145 @@ RESET ROLE;
 SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);
 SELECT t.eq((SELECT status FROM public.delivery_orders LIMIT 1),'delivered','support agent sees final status');
 RESET ROLE;
+
+-- ===== 0010: saved places, notifications, vehicles, settings, reports, receipt =====
+-- saved places
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000003',false);
+SELECT t.works($$INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng) VALUES (auth.uid(),'home','Maison','Hydra, Alger',36.74,3.04)$$,'passenger saves home');
+SELECT t.fails($$INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng) VALUES (auth.uid(),'home','Maison 2','Autre',36.7,3.0)$$,'uq_saved_places_home_work','second home refused');
+SELECT t.works($$INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng) VALUES (auth.uid(),'favorite','Café','Didouche',36.77,3.05)$$,'passenger saves favourite');
+SELECT t.fails($$INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng) VALUES (auth.uid(),'favorite','Bad','x',91,3.0)$$,'saved_places_lat_check','invalid latitude refused');
+SELECT t.fails($$INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng) VALUES ('aaaaaaaa-0000-0000-0000-000000000004','favorite','Spoof','x',36,3)$$,'row-level security','cannot save a place for someone else');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000004',false);
+SELECT t.eq((SELECT count(*) FROM public.saved_places)::text,'0','other passenger cannot read saved places');
+SELECT t.works($$DELETE FROM public.saved_places$$,'delete by other passenger is a no-op');
+RESET ROLE;
+SELECT t.eq((SELECT count(*) FROM public.saved_places WHERE user_id='aaaaaaaa-0000-0000-0000-000000000003')::text,'2','original places survive other passenger delete');
+-- limit of 20
+INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng)
+  SELECT 'aaaaaaaa-0000-0000-0000-000000000004','favorite','F'||g,'addr',36,3 FROM generate_series(1,20) g;
+SELECT t.fails($$INSERT INTO public.saved_places(user_id,kind,label,address,lat,lng) VALUES ('aaaaaaaa-0000-0000-0000-000000000004','favorite','F21','addr',36,3)$$,'Too many saved places','21st place refused');
+DELETE FROM public.saved_places WHERE user_id='aaaaaaaa-0000-0000-0000-000000000004';
+
+-- ride -> notification (+ prefs) and receipt
+INSERT INTO public.ride_requests(id,passenger_id,pickup_label,pickup_lat,pickup_lng,dest_label,dest_lat,dest_lng,distance_km,vehicle,proposed_fare,status)
+ VALUES ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003','Hydra',36.74,3.04,'Bab Ezzouar',36.72,3.18,13,'car',900,'accepted');
+INSERT INTO public.rides(id,request_id,passenger_id,driver_id,vehicle,fare,pickup_label,pickup_lat,pickup_lng,dest_label,dest_lat,dest_lng)
+ VALUES ('cccccccc-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000002','car',900,'Hydra',36.74,3.04,'Bab Ezzouar',36.72,3.18);
+SELECT t.eq((SELECT count(*) FROM public.notifications WHERE user_id='aaaaaaaa-0000-0000-0000-000000000003' AND kind='ride')::text,'1','ride creation notifies passenger');
+SELECT t.fails($$SELECT public.ride_receipt('cccccccc-0000-0000-0000-000000000001')$$,'Receipt','no receipt before completion (as superuser, no participant)');
+UPDATE public.rides SET status='completed', completed_at=now() WHERE id='cccccccc-0000-0000-0000-000000000001';
+SELECT t.eq((SELECT count(*) FROM public.notifications WHERE user_id='aaaaaaaa-0000-0000-0000-000000000003' AND title='Course terminée')::text,'1','completion notifies passenger (fr)');
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000003',false);
+SELECT t.eq((public.ride_receipt('cccccccc-0000-0000-0000-000000000001')->>'fare'),'900','passenger gets receipt fare');
+SELECT t.eq((public.ride_receipt('cccccccc-0000-0000-0000-000000000001')->>'reference'),'CCCCCCCC','receipt reference');
+SELECT t.eq(public.unread_notification_count()::text,'2','unread count is 2');
+SELECT t.works($$SELECT public.mark_notification_read((SELECT id FROM public.notifications ORDER BY created_at LIMIT 1))$$,'mark one read');
+SELECT t.eq(public.unread_notification_count()::text,'1','unread count is 1');
+SELECT t.eq(public.mark_all_notifications_read()::text,'1','mark all read returns 1');
+SELECT t.fails($$UPDATE public.notifications SET title='x'$$,'permission denied','client cannot edit notifications directly');
+SELECT t.fails($$INSERT INTO public.notifications(user_id,kind,title) VALUES (auth.uid(),'system','forged')$$,'permission denied','client cannot forge notifications');
+SELECT t.works($$INSERT INTO public.notification_prefs(user_id,rides,promotions) VALUES (auth.uid(),false,true)$$,'passenger turns ride notifications off');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000004',false);
+SELECT t.fails($$SELECT public.ride_receipt('cccccccc-0000-0000-0000-000000000001')$$,'Receipt not found','non-participant cannot read receipt');
+RESET ROLE;
+UPDATE public.rides SET status='cancelled' WHERE id='cccccccc-0000-0000-0000-000000000001';
+SELECT t.eq((SELECT count(*) FROM public.notifications WHERE user_id='aaaaaaaa-0000-0000-0000-000000000002' AND kind='ride')::text,'1','cancellation notifies driver');
+-- ride notifications now off for passenger: a new ride status must not notify them
+INSERT INTO public.ride_requests(id,passenger_id,pickup_label,pickup_lat,pickup_lng,dest_label,dest_lat,dest_lng,distance_km,vehicle,proposed_fare,status)
+ VALUES ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000003','A',36.74,3.04,'B',36.72,3.18,5,'car',500,'accepted');
+INSERT INTO public.rides(request_id,passenger_id,driver_id,vehicle,fare,pickup_label,pickup_lat,pickup_lng,dest_label,dest_lat,dest_lng)
+ VALUES ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000002','car',500,'A',36.74,3.04,'B',36.72,3.18);
+SELECT t.eq((SELECT count(*) FROM public.notifications WHERE user_id='aaaaaaaa-0000-0000-0000-000000000003' AND kind='ride')::text,'2','prefs: no new ride notification when rides=false');
+
+-- broadcast
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);
+SELECT t.fails($$SELECT public.admin_send_broadcast('all','system','Hello','Body')$$,'Permission denied','support agent cannot broadcast');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000005',false);
+SELECT t.fails($$SELECT public.admin_send_broadcast('everyone','system','Hello','Body')$$,'Invalid audience','invalid audience refused');
+SELECT t.fails($$SELECT public.admin_send_broadcast('all','system','','Body')$$,'Invalid title','empty title refused');
+SELECT t.works($$SELECT public.admin_send_broadcast('passengers','promo','Promo','-20% cette semaine')$$,'admin sends promo to passengers');
+SELECT t.eq((SELECT recipients::text FROM public.notification_broadcasts ORDER BY created_at DESC LIMIT 1),
+            (SELECT (count(*))::text FROM public.profiles p WHERE p.role='passenger' AND NOT EXISTS (SELECT 1 FROM public.notification_prefs n WHERE n.user_id=p.id AND NOT n.promotions)),'promo recipients = passengers who allow promotions');
+SELECT t.eq((SELECT count(*) FROM public.audit_logs WHERE action='notification.broadcast')::text,'1','broadcast is audited');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);
+SELECT t.eq((SELECT count(*) FROM public.notification_broadcasts)::text,'1','support agent can read broadcast history (notifications.read)');
+RESET ROLE;
+
+-- document review notification
+INSERT INTO public.driver_documents(driver_id,doc_type,storage_path,mime_type,status)
+ VALUES ('aaaaaaaa-0000-0000-0000-000000000002','license','aaaaaaaa-0000-0000-0000-000000000002/license.jpg','image/jpeg','pending');
+UPDATE public.driver_documents SET status='rejected', reason='Illisible (0010)' WHERE driver_id='aaaaaaaa-0000-0000-0000-000000000002' AND doc_type='license';
+SELECT t.eq((SELECT count(*) FROM public.notifications WHERE user_id='aaaaaaaa-0000-0000-0000-000000000002' AND kind='document' AND title='Document refusé' AND body='Illisible (0010)')::text,'1','document rejection notifies driver with reason');
+
+-- vehicles
+INSERT INTO auth.users(id,email) VALUES ('aaaaaaaa-0000-0000-0000-000000000007','nophone@gmail.com');
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000007',false);
+SELECT t.fails($$INSERT INTO public.vehicles(driver_id,category,make,model,plate) VALUES (auth.uid(),'car','Renault','Symbol','123456-116-16')$$,'PHONE_NOT_VERIFIED','unverified social account cannot add a vehicle');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000002',false);
+SELECT t.works($$INSERT INTO public.vehicles(driver_id,category,make,model,year,plate,color,seats) VALUES (auth.uid(),'car','Renault','Symbol',2019,'123456-116-16','Blanc',4)$$,'driver adds first vehicle');
+SELECT t.eq((SELECT is_primary::text FROM public.vehicles LIMIT 1),'true','first vehicle becomes primary');
+SELECT t.eq((SELECT vehicle_plate FROM public.profiles WHERE id=auth.uid()),'123456-116-16','profile.vehicle_plate mirrored');
+SELECT t.fails($$INSERT INTO public.vehicles(driver_id,category,make,model,plate) VALUES (auth.uid(),'car','Dacia','Logan','123456 116 16')$$,'uq_vehicles_plate','duplicate plate (normalised) refused');
+SELECT t.fails($$INSERT INTO public.vehicles(driver_id,category,make,model,plate) VALUES (auth.uid(),'truck','X','Y','AAA111')$$,'vehicles_category_check','invalid category refused');
+SELECT t.works($$INSERT INTO public.vehicles(driver_id,category,make,model,plate,status) VALUES (auth.uid(),'moto','Yamaha','NMax','777-777','suspended')$$,'insert with status=suspended is accepted but neutralised');
+SELECT t.eq((SELECT status FROM public.vehicles WHERE plate='777-777'),'active','client cannot pre-set suspended status');
+SELECT t.works($$SELECT public.set_primary_vehicle((SELECT id FROM public.vehicles WHERE plate='777-777'))$$,'switch primary vehicle');
+SELECT t.eq((SELECT vehicle_make FROM public.profiles WHERE id=auth.uid()),'Yamaha','profile mirrors new primary');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000003',false);
+SELECT t.eq((SELECT count(*) FROM public.vehicles)::text,'0','passenger cannot read vehicles');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);
+SELECT t.eq((SELECT count(*) FROM public.vehicles)::text,'2','support agent reads vehicles (vehicles.read)');
+SELECT t.fails($$SELECT public.admin_set_vehicle_status((SELECT id FROM public.vehicles LIMIT 1),'suspended','x')$$,'Permission denied','support agent cannot suspend');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000005',false);
+SELECT t.fails($$SELECT public.admin_set_vehicle_status((SELECT id FROM public.vehicles WHERE plate='777-777'),'suspended','')$$,'Reason required','suspension requires a reason');
+SELECT t.works($$SELECT public.admin_set_vehicle_status((SELECT id FROM public.vehicles WHERE plate='777-777'),'suspended','Documents expirés')$$,'admin suspends vehicle');
+RESET ROLE;
+SELECT t.eq((SELECT is_primary::text FROM public.vehicles WHERE plate='777-777'),'false','suspended vehicle loses primary');
+SELECT t.eq((SELECT vehicle_make FROM public.profiles WHERE id='aaaaaaaa-0000-0000-0000-000000000002'),NULL,'profile vehicle cleared when no primary');
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000002',false);
+SELECT t.works($$UPDATE public.vehicles SET status='active', suspended_reason=NULL WHERE plate='777-777'$$,'driver tries to self-reactivate (neutralised)');
+SELECT t.eq((SELECT status FROM public.vehicles WHERE plate='777-777'),'suspended','driver cannot lift admin suspension');
+SELECT t.fails($$SELECT public.set_primary_vehicle((SELECT id FROM public.vehicles WHERE plate='777-777'))$$,'Vehicle suspended','suspended vehicle cannot be primary');
+SELECT t.works($$SELECT public.set_primary_vehicle((SELECT id FROM public.vehicles WHERE plate='123456-116-16'))$$,'driver sets active vehicle primary');
+SELECT t.works($$UPDATE public.vehicles SET color='Noir' WHERE plate='123456-116-16'$$,'driver edits own vehicle');
+RESET ROLE;
+SELECT t.eq((SELECT vehicle_color FROM public.profiles WHERE id='aaaaaaaa-0000-0000-0000-000000000002'),'Noir','edit is mirrored to profile');
+
+-- settings
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);
+SELECT t.eq((SELECT count(*) FROM public.app_settings)::text,'0','support agent has no settings.read');
+SELECT t.fails($$SELECT public.admin_set_setting('support.phone','"0550000000"')$$,'Permission denied','support agent cannot change settings');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000005',false);
+SELECT t.works($$SELECT public.admin_set_setting('support.phone','"0550000000"')$$,'admin sets support phone');
+SELECT t.fails($$SELECT public.admin_set_setting('evil.key','"x"')$$,'Unknown setting','unknown key refused');
+SELECT t.fails($$SELECT public.admin_set_setting('ride.offer_ttl_minutes','"ten"')$$,'Invalid value','wrong type refused');
+SELECT t.fails($$SELECT public.admin_set_setting('ride.offer_ttl_minutes','500')$$,'Invalid value','out of range refused');
+SELECT t.works($$SELECT public.admin_set_setting('ride.offer_ttl_minutes','15')$$,'valid ttl accepted');
+SELECT t.fails($$INSERT INTO public.app_settings(key,value) VALUES ('x','1')$$,'permission denied','direct settings write refused');
+SELECT t.eq((SELECT value #>> '{}' FROM public.app_settings WHERE key='support.phone'),'0550000000','setting persisted');
+RESET ROLE;
+
+-- reports
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);
+SELECT t.fails($$SELECT public.admin_report_summary(current_date-7,current_date)$$,'Permission denied','support agent has no reports.read');
+RESET ROLE;
+SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000005',false);
+SELECT t.fails($$SELECT public.admin_report_summary(current_date,current_date-1)$$,'Invalid range','inverted range refused');
+SELECT t.fails($$SELECT public.admin_report_summary(current_date-400,current_date)$$,'Range too large','range > 366 days refused');
+SELECT t.eq((public.admin_report_summary(current_date-1,current_date)->'rides_by_status'->>'cancelled'),'1','report counts the cancelled ride');
+SELECT t.eq((public.admin_report_summary(current_date-1,current_date)->>'rides_revenue'),'0','revenue only counts completed rides (one is cancelled now)');
+SELECT t.eq(jsonb_array_length(public.admin_report_summary(current_date-1,current_date)->'daily')::text,'2','daily series has one point per day');
+SELECT t.eq((public.admin_report_summary(current_date-1,current_date)->'deliveries_by_status'->>'delivered'),'1','report counts the delivered delivery');
+RESET ROLE;
+
 SELECT 'ALL CHECKS PASSED' AS result;
