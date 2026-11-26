@@ -157,6 +157,75 @@ nonisolated struct Ride: Codable, Identifiable, Sendable, Equatable {
     }
 }
 
+// MARK: - Parcel delivery
+nonisolated struct DeliveryOrder: Codable, Identifiable, Sendable, Equatable {
+    let id: UUID
+    var passengerId: UUID
+    var driverId: UUID?
+    var pickupLabel: String
+    var pickupLat: Double
+    var pickupLng: Double
+    var destLabel: String
+    var destLat: Double
+    var destLng: Double
+    var city: String
+    var distanceKm: Double
+    var vehicle: String
+    var packageDescription: String
+    var recipientName: String
+    var recipientPhone: String
+    var senderNote: String?
+    var deliveryFee: Int
+    var paymentMethod: String
+    var status: String
+    var createdAt: Date?
+    var acceptedAt: Date?
+    var pickedUpAt: Date?
+    var deliveredAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, city, vehicle, status
+        case passengerId = "passenger_id"
+        case driverId = "driver_id"
+        case pickupLabel = "pickup_label"
+        case pickupLat = "pickup_lat"
+        case pickupLng = "pickup_lng"
+        case destLabel = "dest_label"
+        case destLat = "dest_lat"
+        case destLng = "dest_lng"
+        case distanceKm = "distance_km"
+        case packageDescription = "package_description"
+        case recipientName = "recipient_name"
+        case recipientPhone = "recipient_phone"
+        case senderNote = "sender_note"
+        case deliveryFee = "delivery_fee"
+        case paymentMethod = "payment_method"
+        case createdAt = "created_at"
+        case acceptedAt = "accepted_at"
+        case pickedUpAt = "picked_up_at"
+        case deliveredAt = "delivered_at"
+    }
+}
+
+nonisolated struct DeliveryQuote: Codable, Sendable {
+    var distanceKm: Double
+    var vehicle: String
+    var ratePerKm: Int
+    var minimumFee: Int
+    var deliveryFee: Int
+    var currency: String
+    var paymentMethod: String
+
+    enum CodingKeys: String, CodingKey {
+        case vehicle, currency
+        case distanceKm = "distance_km"
+        case ratePerKm = "rate_per_km"
+        case minimumFee = "minimum_fee"
+        case deliveryFee = "delivery_fee"
+        case paymentMethod = "payment_method"
+    }
+}
+
 nonisolated struct RideMessage: Codable, Identifiable, Sendable, Equatable {
     let id: UUID
     let requestId: UUID
