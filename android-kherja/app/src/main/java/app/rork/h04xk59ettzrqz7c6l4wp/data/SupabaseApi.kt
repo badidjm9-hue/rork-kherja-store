@@ -315,6 +315,40 @@ class SupabaseApi(private val session: SessionStore) {
         return get("/rest/v1/ride_requests?select=*,passenger:profiles!ride_requests_passenger_id_fkey(name,rating_avg,trips_count,vehicle_make,vehicle_model,vehicle_plate)&status=in.(open,negotiating)&expires_at=gt.now&order=created_at.desc&limit=30")
     }
 
+    // ---------- parcel delivery ----------
+    suspend fun quoteDelivery(pickup: GeoPlace, dest: GeoPlace, km: Double, vehicle: String): DeliveryQuote =
+        rpc("quote_delivery", jsonOf(
+            "p_pickup_lat" to pickup.lat, "p_pickup_lng" to pickup.lng,
+            "p_dest_lat" to dest.lat, "p_dest_lng" to dest.lng,
+            "p_distance_km" to km, "p_vehicle" to vehicle,
+        ))
+
+    suspend fun createDeliveryOrder(
+        pickup: GeoPlace, dest: GeoPlace, km: Double, vehicle: String,
+        description: String, recipient: String, phone: String, note: String?, city: String,
+    ): String = rpc("create_delivery_order", jsonOf(
+        "p_pickup_label" to pickup.label, "p_pickup_lat" to pickup.lat, "p_pickup_lng" to pickup.lng,
+        "p_dest_label" to dest.label, "p_dest_lat" to dest.lat, "p_dest_lng" to dest.lng,
+        "p_distance_km" to km, "p_vehicle" to vehicle,
+        "p_package_description" to description, "p_recipient_name" to recipient,
+        "p_recipient_phone" to phone, "p_sender_note" to note, "p_city" to city,
+    ))
+
+    suspend fun myDeliveryOrders(): List<DeliveryOrder> =
+        get("/rest/v1/delivery_orders?select=*&order=created_at.desc&limit=50")
+
+    suspend fun openDeliveryOrders(): List<DeliveryOrder> =
+        get("/rest/v1/delivery_orders?select=*&status=eq.open&order=created_at.desc&limit=50")
+
+    suspend fun claimDeliveryOrder(id: String) =
+        rpcVoid("claim_delivery_order", jsonOf("p_order_id" to id))
+
+    suspend fun updateDeliveryStatus(id: String, status: String) =
+        rpcVoid("update_delivery_status", jsonOf("p_order_id" to id, "p_status" to status))
+
+    suspend fun cancelDeliveryOrder(id: String) =
+        rpcVoid("cancel_delivery_order", jsonOf("p_order_id" to id))
+
     suspend fun myDriverOffers(driverId: String): List<Offer> =
         get("/rest/v1/offers?select=*&driver_id=eq.$driverId&status=eq.pending&order=created_at.desc&limit=50")
 
