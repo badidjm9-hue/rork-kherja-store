@@ -82,13 +82,11 @@ struct DeliveryView: View {
                 await refresh()
             }
         }
-        .onChange(of: location.location) { _, value in
-            guard pickup == nil, let value else { return }
-            Task {
-                let label = await Geo.reverseGeocode(value.coordinate)
-                pickup = DeliveryPlace(label: label, coordinate: value.coordinate)
-                await updateQuote()
-            }
+        .task(id: location.location?.timestamp) {
+            guard pickup == nil, let value = location.location else { return }
+            let label = await Geo.reverseGeocode(value.coordinate)
+            pickup = DeliveryPlace(label: label, coordinate: value.coordinate)
+            await updateQuote()
         }
         .onChange(of: vehicle) { _, _ in Task { await updateQuote() } }
         .onChange(of: destination?.id) { _, _ in Task { await updateQuote() } }
@@ -230,7 +228,7 @@ struct DeliveryView: View {
                     .buttonStyle(KJButtonStyle()).disabled(busy)
             } else if passenger && order.status == "open" {
                 Button(store.l("delivery_cancel"), role: .destructive) { Task { await cancel(order) } }
-                    .buttonStyle(KJOutlineButtonStyle())
+                    .buttonStyle(GhostButtonStyle())
                     .disabled(busy)
             }
         }
