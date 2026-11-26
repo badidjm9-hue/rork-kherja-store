@@ -381,7 +381,7 @@ final class SupabaseService: ObservableObject {
         guard !data.isEmpty, data.count <= 10 * 1024 * 1024 else {
             throw NSError(domain: "KHERJA.Documents", code: 2, userInfo: [NSLocalizedDescriptionKey: "File must be smaller than 10 MB"])
         }
-        let path = "\(driverId.uuidString)/\(type)_\(UUID().uuidString).jpg"
+        let path = "\(driverId.uuidString.lowercased())/\(type)_\(UUID().uuidString.lowercased()).jpg"
         try await client.storage
             .from("driver-documents")
             .upload(path: path, file: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
