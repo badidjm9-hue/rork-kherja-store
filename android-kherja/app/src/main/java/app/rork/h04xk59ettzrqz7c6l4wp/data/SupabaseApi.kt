@@ -317,7 +317,7 @@ class SupabaseApi(private val session: SessionStore) {
         require(bytes.isNotEmpty() && bytes.size <= 10 * 1024 * 1024) { "File must be smaller than 10 MB" }
         require(mimeType in setOf("image/jpeg", "image/png", "image/heic", "application/pdf"))
         val token = validToken() ?: throw ApiException("Session requise", 401)
-        val path = "$driverId/${type}_${System.currentTimeMillis()}.$extension"
+        val path = "${driverId.lowercase()}/${type}_${System.currentTimeMillis()}.$extension"
         val encodedPath = path.split("/").joinToString("/") { q(it) }
         val response = http.request("$base/storage/v1/object/driver-documents/$encodedPath") {
             method = HttpMethod.Post
