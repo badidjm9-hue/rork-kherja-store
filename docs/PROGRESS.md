@@ -53,3 +53,11 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - Android and iOS now have separate delivery tabs for passenger and driver roles, request creation, address search, server quote, driver claim, pickup/delivered transitions, passenger cancellation, and status refresh.
 - The migration is additive and has **not** been applied to Supabase (local or production) in this work. No production data or secrets were changed.
 - Android/iOS builds and device testing have **not** been run. SQL behavior, auth/RLS behavior, geocoding, and end-to-end delivery remain unverified. Review and test migration 0008 in a disposable Supabase project before any production rollout.
+
+
+## UI completion pass — 2026-11-26
+
+- Added a MapKit map preview to the iOS passenger home, showing the current pickup location and selected destination when available; added an Algiers fallback map region before location permission resolves.
+- Android passenger home already renders its interactive map preview; this was confirmed in the current source.
+- Added `docs/UI_COMPLETION_TRACKER.md` to record existing screen coverage, missing passenger/driver/admin interfaces, and build/E2E verification gates.
+- This UI pass is code-only. Xcode/Gradle builds and device tests have not been run. No Supabase migration or production change was made.
