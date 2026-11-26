@@ -293,3 +293,9 @@ data class RideReceipt(
     @SerialName("vehicle_plate") val vehiclePlate: String? = null,
     val payment: String = "cash",
 )
+
+@Serializable
+data class SupportContact(
+    val phone: String = "",
+    val email: String = "",
+)

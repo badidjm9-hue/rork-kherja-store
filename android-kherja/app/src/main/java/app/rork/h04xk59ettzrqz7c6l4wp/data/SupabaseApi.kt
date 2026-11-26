@@ -443,6 +443,20 @@ class SupabaseApi(private val session: SessionStore) {
 
     suspend fun setPrimaryVehicle(id: String) = rpcVoid("set_primary_vehicle", jsonOf("p_id" to id))
 
+    // ---------- support + SOS (migration 0011) ----------
+
+    suspend fun supportContact(): SupportContact = rpc("get_support_contact")
+
+    suspend fun createTicket(userId: String, category: String, message: String, rideId: String?) {
+        send(HttpMethod.Post, "/rest/v1/support_tickets",
+            jsonOf("user_id" to userId, "category" to category, "message" to message, "ride_id" to rideId).toString(),
+            prefer = "return=minimal")
+    }
+
+    suspend fun raiseSos(rideId: String?, lat: Double?, lng: Double?) {
+        rpcVoid("raise_sos", jsonOf("p_ride_id" to rideId, "p_lat" to lat, "p_lng" to lng))
+    }
+
     // ---------- receipts ----------
 
     suspend fun rideReceipt(rideId: String): RideReceipt = rpc("ride_receipt", jsonOf("p_ride" to rideId))

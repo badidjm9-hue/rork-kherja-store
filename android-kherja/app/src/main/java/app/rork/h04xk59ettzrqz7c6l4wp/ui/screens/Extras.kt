@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TwoWheeler
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -157,6 +158,7 @@ fun SettingsScreen(state: AppState) {
         "places" -> SavedPlacesScreen(state) { page = null }
         "notifications" -> NotificationsScreen(state) { page = null }
         "vehicles" -> VehiclesScreen(state) { page = null }
+        "support" -> SupportScreen(state) { page = null }
         else -> SettingsMain(state) { page = it }
     }
 }
@@ -177,6 +179,8 @@ fun MySpaceCard(state: AppState, onOpen: (String) -> Unit) {
             Icons.Filled.Notifications, state.l("notif_title"), state.l("notif_subtitle"),
             badge = if (unread > 0) unread.toString() else null,
         ) { onOpen("notifications") }
+        Spacer(Modifier.height(12.dp))
+        SpaceRow(Icons.Filled.Warning, state.l("support_title"), state.l("support_subtitle")) { onOpen("support") }
     }
 }
 
