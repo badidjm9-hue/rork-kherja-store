@@ -81,6 +81,28 @@ struct PassengerHomeView: View {
         VStack(spacing: 0) {
             header
 
+            RideMapView(points: mapPoints)
+                .frame(height: 210)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(alignment: .bottomTrailing) {
+                    Button {
+                        pickingFor = .pickup
+                        pickSheet = true
+                    } label: {
+                        Image(systemName: "scope")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(KJ.blue)
+                            .frame(width: 44, height: 44)
+                            .background(.white, in: Circle())
+                            .shadow(color: KJ.ink.opacity(0.12), radius: 8, y: 3)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(12)
+                    .accessibilityLabel(store.l("my_position"))
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+
             VStack(spacing: 16) {
                 addressCard
 
@@ -121,6 +143,19 @@ struct PassengerHomeView: View {
             .padding(.horizontal, 20)
             .padding(.top, 18)
         }
+    }
+
+    private var mapPoints: [MapPoint] {
+        var points: [MapPoint] = []
+        if let pickup {
+            points.append(MapPoint(coordinate: pickup.coordinate, kind: .pickup, title: pickup.label))
+        } else if let coordinate = location.location?.coordinate {
+            points.append(MapPoint(coordinate: coordinate, kind: .pickup, title: store.l("my_position")))
+        }
+        if let destination {
+            points.append(MapPoint(coordinate: destination.coordinate, kind: .destination, title: destination.label))
+        }
+        return points
     }
 
     private var header: some View {
