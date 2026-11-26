@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -305,6 +307,7 @@ fun SettingsScreen(state: AppState) {
     var saving by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var infoPage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { state.refreshProfile() }
 
@@ -406,6 +409,61 @@ fun SettingsScreen(state: AppState) {
             }
 
             Spacer(Modifier.height(22.dp))
+            SectionTitle(if (state.isRtl) "المساعدة والمعلومات" else "Aide et informations")
+            Spacer(Modifier.height(8.dp))
+            KJCard(Modifier.fillMaxWidth()) {
+                InfoAction(
+                    title = if (state.isRtl) "مركز المساعدة" else "Centre d’aide",
+                    subtitle = if (state.isRtl) "الرحلات والتوصيل والحساب" else "Courses, livraison et compte",
+                    onClick = { infoPage = "help" },
+                )
+                Spacer(Modifier.height(12.dp))
+                InfoAction(
+                    title = if (state.isRtl) "الخصوصية والبيانات" else "Confidentialité et données",
+                    subtitle = if (state.isRtl) "معلومات حول استخدام بياناتك" else "Utilisation de vos données",
+                    onClick = { infoPage = "privacy" },
+                )
+                Spacer(Modifier.height(12.dp))
+                InfoAction(
+                    title = if (state.isRtl) "حول KHERJA" else "À propos de KHERJA",
+                    subtitle = if (state.isRtl) "معلومات عن التطبيق" else "Informations sur l’application",
+                    onClick = { infoPage = "about" },
+                )
+            }
+            infoPage?.let { page ->
+                val title = when (page) {
+                    "help" -> if (state.isRtl) "مركز المساعدة" else "Centre d’aide"
+                    "privacy" -> if (state.isRtl) "الخصوصية والبيانات" else "Confidentialité et données"
+                    else -> if (state.isRtl) "حول KHERJA" else "À propos de KHERJA"
+                }
+                val body = when (page) {
+                    "help" -> if (state.isRtl)
+                        "لطلب رحلة: حدد نقطة الانطلاق والوجهة، اختر المركبة، راجع السعر ثم أرسل الطلب. لمتابعة الحالة استخدم أقسام الرحلات والتوصيل. إمكانية الإلغاء تعتمد على حالة الطلب."
+                    else
+                        "Pour demander une course : choisissez le départ et la destination, sélectionnez un véhicule, vérifiez le tarif puis envoyez la demande. Suivez son état dans les sections Courses et Livraison. L’annulation dépend de l’état de la demande."
+                    "privacy" -> if (state.isRtl)
+                        "يُستخدم الموقع لتحديد نقطة الانطلاق وعرض معلومات الرحلة عند منح الإذن. تُستخدم بيانات الحساب لتشغيل الخدمات وربط الطلبات بصاحبها. يمكنك إدارة أذونات التطبيق من إعدادات الجهاز. راجع سياسة الخصوصية الرسمية عند نشرها."
+                    else
+                        "La localisation sert à définir le départ et afficher les informations du trajet lorsque l’autorisation est accordée. Les données du compte servent au fonctionnement du service. Gérez les autorisations dans les réglages de l’appareil. Consultez la politique officielle lorsqu’elle sera publiée."
+                    else -> if (state.isRtl)
+                        "KHERJA تطبيق للتنقل وطلب توصيل الطرود، بواجهتين منفصلتين للراكب والسائق."
+                    else
+                        "KHERJA est une application de mobilité et de livraison de colis, avec des espaces distincts pour passagers et chauffeurs."
+                }
+                AlertDialog(
+                    onDismissRequest = { infoPage = null },
+                    title = { Text(title, fontWeight = FontWeight.Bold) },
+                    text = { Text(body, color = KJ.inkSoft) },
+                    confirmButton = {
+                        TextButton(onClick = { infoPage = null }) {
+                            Text(if (state.isRtl) "تم" else "Terminé", color = KJ.blue)
+                        }
+                    },
+                    containerColor = Color.White,
+                )
+            }
+
+            Spacer(Modifier.height(22.dp))
             KJOutlineButton(state.l("logout"), color = KJ.danger, icon = Icons.AutoMirrored.Filled.Logout) { state.signOut() }
             Spacer(Modifier.height(10.dp))
             Text(
@@ -443,3 +501,18 @@ private fun LangChip(modifier: Modifier, label: String, selected: Boolean, onCli
         Text(label, color = if (selected) Color.White else KJ.ink, fontWeight = FontWeight.Bold)
     }
 }
+
+@Composable
+private fun InfoAction(title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = KJ.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(subtitle, color = KJ.muted, fontSize = 12.sp)
+        }
+        Text("›", color = KJ.blue, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
