@@ -81,6 +81,7 @@ data class DeliveryOrder(
     @SerialName("payment_method") val paymentMethod: String = "cash",
     val status: String = "open",
     @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
     @SerialName("accepted_at") val acceptedAt: String? = null,
     @SerialName("picked_up_at") val pickedUpAt: String? = null,
     @SerialName("delivered_at") val deliveredAt: String? = null,
