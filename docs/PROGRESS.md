@@ -46,7 +46,7 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 ## Phase 3 — parcel delivery implementation (not released)
 
 - Added `supabase/migrations/0008_delivery.sql` with a separate `delivery_orders` workflow; ride requests and rides are not repurposed.
-- Server RPCs: `quote_delivery`, `create_delivery_order`, `open_delivery_feed`, `claim_delivery_order`, `update_delivery_status`, and `cancel_delivery_order`.
+- Server RPCs: `quote_delivery`, `create_delivery_order`, `open_delivery_feed`, `claim_delivery_order`, `update_delivery_status`, and `cancel_delivery_order`, and `expire_delivery_orders`.
 - Server-side pricing follows the recorded owner decision: car 90 DZD/km, motorcycle 60 DZD/km, motorcycle minimum 350 DZD; passenger payment is cash on delivery. No commission is charged or inferred in this phase.
 - Driver feed is redacted: recipient name and phone are not returned until the driver claims the order. RLS exposes full rows only to the passenger owner or assigned driver.
 - Orders expire after 15 minutes; a driver must be approved and online to see/claim orders. One active delivery per passenger and per driver is enforced by partial unique indexes.
