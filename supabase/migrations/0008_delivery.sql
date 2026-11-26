@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.delivery_orders (
   payment_method text NOT NULL DEFAULT 'cash' CHECK (payment_method = 'cash'),
   status text NOT NULL DEFAULT 'open'
     CHECK (status IN ('open','accepted','picked_up','delivered','cancelled','expired')),
+  expires_at timestamptz NOT NULL DEFAULT now() + interval '15 minutes',
   accepted_at timestamptz,
   picked_up_at timestamptz,
   delivered_at timestamptz,
@@ -68,7 +69,7 @@ BEGIN
            d.dest_label, d.dest_lat, d.dest_lng, d.city, d.distance_km, d.vehicle,
            d.package_description, d.delivery_fee, d.status, d.created_at
     FROM public.delivery_orders d
-    WHERE d.status = 'open'
+    WHERE d.status = 'open' AND d.expires_at > now()
     ORDER BY d.created_at DESC
     LIMIT 50;
 END;
@@ -136,6 +137,8 @@ BEGIN
      OR char_length(btrim(coalesce(p_recipient_phone,''))) NOT BETWEEN 8 AND 20 THEN
     RAISE EXCEPTION 'Invalid recipient details';
   END IF;
+  UPDATE public.delivery_orders SET status = 'expired', updated_at = now()
+  WHERE passenger_id = auth.uid() AND status = 'open' AND expires_at <= now();
   IF EXISTS (
     SELECT 1 FROM public.delivery_orders
     WHERE passenger_id = auth.uid() AND status IN ('open','accepted','picked_up')
