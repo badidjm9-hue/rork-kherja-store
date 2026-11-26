@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ShieldOff } from "lucide-react";
@@ -10,16 +10,16 @@ import { AuthProvider, useAuth, type Permission } from "@/lib/auth";
 import Layout, { allowedNav } from "@/components/Layout";
 import { EmptyState, Spinner } from "@/components/kj";
 
-import Login from "./pages/Login";
-import Overview from "./pages/Overview";
-import LiveMap from "./pages/LiveMap";
-import Rides from "./pages/Rides";
-import Drivers from "./pages/Drivers";
-import Passengers from "./pages/Passengers";
-import Pricing from "./pages/Pricing";
-import Admins from "./pages/Admins";
-import Audit from "./pages/Audit";
-import NotFound from "./pages/NotFound";
+const Login = lazy(() => import("./pages/Login"));
+const Overview = lazy(() => import("./pages/Overview"));
+const LiveMap = lazy(() => import("./pages/LiveMap"));
+const Rides = lazy(() => import("./pages/Rides"));
+const Drivers = lazy(() => import("./pages/Drivers"));
+const Passengers = lazy(() => import("./pages/Passengers"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Admins = lazy(() => import("./pages/Admins"));
+const Audit = lazy(() => import("./pages/Audit"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -47,6 +47,15 @@ function HomeRedirect() {
   return first ? <Navigate to={first.to} replace /> : <NotFound />;
 }
 
+function RouteLoading() {
+  const { t } = useI18n();
+  return (
+    <div className="grid min-h-[50vh] place-items-center" role="status" aria-label={t("Chargement", "جارٍ التحميل")}>
+      <Spinner className="h-6 w-6" />
+    </div>
+  );
+}
+
 function Shell() {
   const { session, admin, loading } = useAuth();
   if (loading) {
@@ -59,21 +68,29 @@ function Shell() {
       </div>
     );
   }
-  if (!session || !admin) return <Login />;
+  if (!session || !admin) {
+    return (
+      <Suspense fallback={<RouteLoading />}>
+        <Login />
+      </Suspense>
+    );
+  }
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="/live" element={<Guard perm="rides.read"><LiveMap /></Guard>} />
-        <Route path="/rides" element={<Guard perm="rides.read"><Rides /></Guard>} />
-        <Route path="/drivers" element={<Guard perm="drivers.read"><Drivers /></Guard>} />
-        <Route path="/passengers" element={<Guard perm="users.read"><Passengers /></Guard>} />
-        <Route path="/pricing" element={<Guard perm="pricing.read"><Pricing /></Guard>} />
-        <Route path="/admins" element={<Guard perm="admins.manage"><Admins /></Guard>} />
-        <Route path="/audit" element={<Guard perm="audit.read"><Audit /></Guard>} />
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<RouteLoading />}>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomeRedirect />} />
+          <Route path="/live" element={<Guard perm="rides.read"><LiveMap /></Guard>} />
+          <Route path="/rides" element={<Guard perm="rides.read"><Rides /></Guard>} />
+          <Route path="/drivers" element={<Guard perm="drivers.read"><Drivers /></Guard>} />
+          <Route path="/passengers" element={<Guard perm="users.read"><Passengers /></Guard>} />
+          <Route path="/pricing" element={<Guard perm="pricing.read"><Pricing /></Guard>} />
+          <Route path="/admins" element={<Guard perm="admins.manage"><Admins /></Guard>} />
+          <Route path="/audit" element={<Guard perm="audit.read"><Audit /></Guard>} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -83,7 +100,7 @@ const App = () => (
       <AuthProvider>
         <TooltipProvider>
           <Toaster richColors position="top-center" />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <BrowserRouter>
             <Shell />
           </BrowserRouter>
         </TooltipProvider>

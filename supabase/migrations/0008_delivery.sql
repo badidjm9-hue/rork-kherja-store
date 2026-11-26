@@ -70,8 +70,8 @@ BEGIN
   IF v_me.role <> 'driver' OR v_me.driver_status <> 'approved' OR NOT v_me.is_online THEN
     RAISE EXCEPTION 'Approved online driver required';
   END IF;
-  UPDATE public.delivery_orders SET status = 'expired', updated_at = now()
-  WHERE status = 'open' AND expires_at <= now();
+  UPDATE public.delivery_orders AS d SET status = 'expired', updated_at = now()
+  WHERE d.status = 'open' AND d.expires_at <= now();
   RETURN QUERY
     SELECT d.id, d.passenger_id, d.pickup_label, d.pickup_lat, d.pickup_lng,
            d.dest_label, d.dest_lat, d.dest_lng, d.city, d.distance_km, d.vehicle,

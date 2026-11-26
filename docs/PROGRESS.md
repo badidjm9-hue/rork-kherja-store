@@ -77,3 +77,12 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - The existing migration 0003_driver_documents.sql defines the private bucket, Storage policies, table/RLS, upload RPC, and admin review flow. This work did not apply or deploy that migration; verify its presence in the target Supabase project before attempting uploads.
 - Current client pickers accept images only (JPEG output on iOS; JPEG/PNG/HEIC image selection on Android). PDF selection and document preview/download are not included yet.
 - No Xcode or Gradle build, device upload, RLS test, or admin review E2E was run. Treat this implementation as source-complete but not build-verified.
+
+## Feature-branch verification — 2026-11-26
+
+- On `feature/kherja-ui-completion`, admin routes now load on demand; the built entry bundle fell from 1.27 MB to 616 KB (gzip: 361 KB to 183 KB). A Vite warning remains because the shared entry chunk is still over 500 KB. Added three unit tests for pricing-version classification and configuration helpers.
+- Admin verification: production build passed; 3 unit tests passed; ESLint reported 0 errors and 11 existing warnings. The browser-test command found no browser test files.
+- Updated admin dependencies, moved React Router to patched v7, and removed the unused direct Zod dependency. `bun audit` reports no known vulnerabilities.
+- Applied migrations 0001–0008 in order to a disposable PostgreSQL 16 database with local stand-ins for Supabase Auth and Storage. Verified phone gating, delivery quote minimum, duplicate-order rejection, participant RLS, redacted driver feed, claim, and valid/invalid status transitions.
+- That database test exposed an ambiguous `status` reference in `open_delivery_feed()`, which is fixed by qualifying the expiry-update columns. No production database, secrets, or Edge Functions were changed.
+- Android/iOS builds remain unverified: this environment has no Android SDK/JDK or Xcode. The TypeScript project check exceeded the available command timeout. No screen-reference images were present in the repository for visual comparison.
