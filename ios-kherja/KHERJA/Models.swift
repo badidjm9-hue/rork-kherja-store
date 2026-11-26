@@ -172,8 +172,8 @@ nonisolated struct DeliveryOrder: Codable, Identifiable, Sendable, Equatable {
     var distanceKm: Double
     var vehicle: String
     var packageDescription: String
-    var recipientName: String
-    var recipientPhone: String
+    var recipientName: String?
+    var recipientPhone: String?
     var senderNote: String?
     var deliveryFee: Int
     var paymentMethod: String
