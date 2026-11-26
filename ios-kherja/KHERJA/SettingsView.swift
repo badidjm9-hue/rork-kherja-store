@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var savedFlash = false
     @State private var confirmLogout = false
     @State private var settingsPage: SettingsInfoPage?
+    @State private var extrasPage: ExtrasPage?
 
     private let cities = ["Alger", "Oran", "Constantine", "Annaba", "Blida", "Batna", "Sétif", "Tlemcen", "Béjaïa", "Ouargla"]
 
@@ -61,6 +62,11 @@ struct SettingsView: View {
                         languageButton(.fr)
                         languageButton(.ar)
                     }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(store.l("my_space")).font(.system(size: 17, weight: .heavy)).foregroundStyle(KJ.ink)
+                    MySpaceCard { extrasPage = $0 }
                 }
 
                 section(store.language == .ar ? "المساعدة والمعلومات" : "Aide et informations") {
@@ -123,6 +129,9 @@ struct SettingsView: View {
         .alert(store.l("logout"), isPresented: $confirmLogout) {
             Button(store.l("logout"), role: .destructive) { store.signOut() }
             Button(store.l("ok"), role: .cancel) {}
+        }
+        .fullScreenCover(item: $extrasPage) { page in
+            ExtrasHost(page: page)
         }
         .sheet(item: $settingsPage) { page in
             SettingsInfoView(page: page, language: store.language)

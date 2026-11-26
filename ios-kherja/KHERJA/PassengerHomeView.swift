@@ -438,6 +438,27 @@ struct PassengerHomeView: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
+        .sheet(isPresented: $pickSheet) {
+            AddressPickerSheet(
+                title: store.l(pickingFor == .destination ? "destination" : "pickup"),
+                allowCurrentLocation: pickingFor == .pickup
+            ) { label, coordinate in
+                let point = PickPoint(coordinate: coordinate, label: label)
+                if pickingFor == .destination { destination = point } else { pickup = point }
+            }
+            .environmentObject(store)
+            .presentationDragIndicator(.visible)
+        }
+        .task {
+            // Default the pickup to the passenger's current position once it is known.
+            location.requestPermission()
+            location.refreshOnce()
+            for _ in 0..<20 where location.location == nil { try? await Task.sleep(nanoseconds: 300_000_000) }
+            if pickup == nil, let loc = location.location {
+                let label = await Geo.reverseGeocode(loc.coordinate)
+                if pickup == nil { pickup = PickPoint(coordinate: loc.coordinate, label: label.isEmpty ? store.l("my_position") : label) }
+            }
+        }
         .sheet(isPresented: $showNegotiation, onDismiss: { startPolling() }) {
             NegotiationView(request: request, onAccepted: {
                 Task { await onRideAccepted(requestId: request.id) }

@@ -238,6 +238,7 @@ struct RideCard: View {
 struct RideDetailView: View {
     @EnvironmentObject var store: AppState
     let ride: Ride
+    @State private var showReceipt = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -294,6 +295,13 @@ struct RideDetailView: View {
                     }
                     .kjCard()
 
+                    if ride.status == "completed" {
+                        Button { showReceipt = true } label: {
+                            Label(store.l("receipt_view"), systemImage: "doc.text").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(KJButtonStyle())
+                    }
+
                     Button {
                         dismiss()
                     } label: {
@@ -310,6 +318,7 @@ struct RideDetailView: View {
         }
         .background(KJ.canvasGradient.ignoresSafeArea())
         .overlay(alignment: .top) { CornerBlobs().frame(height: 160) }
+        .fullScreenCover(isPresented: $showReceipt) { ReceiptView(rideId: ride.id) }
     }
 
     private func receiptRow(icon: String, label: String, amount: Int, minus: Bool = false) -> some View {

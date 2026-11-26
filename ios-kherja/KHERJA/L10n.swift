@@ -573,11 +573,17 @@ struct L10n {
         if m.contains("suspended") { return "err_suspended" }
         if m.contains("not approved") { return "err_not_approved" }
         if m.contains("distance out of range") { return "err_distance" }
+        if m.contains("sos_rate_limit") { return "sos_rate_limit" }
+        if m.contains("vehicle suspended") { return "err_vehicle_suspended" }
+        if m.contains("too many saved") || m.contains("too many vehicles") { return "err_limit_reached" }
+        if m.contains("duplicate key") || m.contains("uq_") { return "err_duplicate" }
+        if m.contains("phone_not_verified") { return "err_phone_required" }
         return "error_generic"
     }
 
     static func string(_ key: String, _ lang: AppLanguage) -> String {
         let dict = lang == .ar ? ar : fr
-        return dict[key] ?? fr[key] ?? key
+        let extra = lang == .ar ? extraAr : extraFr
+        return dict[key] ?? extra[key] ?? fr[key] ?? extraFr[key] ?? key
     }
 }
