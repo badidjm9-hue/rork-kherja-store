@@ -26,11 +26,11 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 | Passenger active ride | Ride tracking, driver details/actions, completion state | Implemented in code; live GPS freshness and device behavior unverified |
 | Passenger history | Filters and ride details | Implemented in code |
 | Passenger wallet | Transaction history and balance summary | Implemented in code; actual payment/withdrawal flows are not approved |
-| Passenger settings | Profile fields, language, city, logout | Partial: help, privacy, saved places, notifications, and about screens are absent |
+| Passenger settings | Profile fields, language, city, logout; help, privacy, and about information panels now added on Android and iOS | Partial: saved places and notification preferences/screens remain absent |
 | Parcel delivery | Passenger create/quote/status/cancel; driver feed/claim/status | Phase 3 code exists; migration and client builds remain unverified |
 | Driver account gate | Pending/rejected/suspended states | Implemented in code |
 | Driver dashboard | Online state, requests feed, offer sheet, active ride | Implemented in code |
-| Driver vehicle profile | Make/model/plate editing | Partial: vehicle type details and document upload/verification UI are absent |
+| Driver vehicle profile | Make/model/plate editing; help, privacy, and about information panels now available through shared settings | Partial: dedicated vehicle type details and document upload/verification UI are absent |
 | Driver earnings/history | Wallet/transactions and ride history | Implemented in code; payout/withdrawal workflow not approved |
 | Admin | Login, overview, live map, rides, drivers, passengers, pricing, admins, audit | Core admin exists; dedicated vehicle, notification, reports, and admin-settings screens remain absent |
 
@@ -72,3 +72,5 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 ## Change log
 
 - 2026-11-26: Added a native iOS passenger-home map preview using the existing MapKit route component, with pickup/destination pins and a useful Algiers fallback region while location permission resolves. This has not yet been compiled in Xcode.
+- 2026-11-26: Added Arabic/French help, privacy-information, and about panels to Android and iOS settings. These are informational panels only; official legal copy and a support contact still need owner approval.
+- 2026-11-26: Corrected the Android driver delivery-tab icon to use the parcel/shipping symbol.
