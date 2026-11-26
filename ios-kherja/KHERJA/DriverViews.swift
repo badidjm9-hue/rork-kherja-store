@@ -10,6 +10,8 @@ import CoreLocation
 import MapKit
 import Supabase
 import SwiftUI
+import PhotosUI
+import UIKit
 
 struct DriverMainView: View {
     @EnvironmentObject var store: AppState
@@ -780,7 +782,16 @@ struct DriverProfileView: View {
     @State private var make = ""
     @State private var model = ""
     @State private var plate = ""
+    @State private var color = ""
     @State private var savedFlash = false
+    @State private var saveError: String?
+    @State private var documents: [DriverDocument] = []
+    @State private var documentsLoading = false
+    @State private var uploadingType: String?
+    @State private var documentError: String?
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedDocumentType: String?
+    @State private var showPhotoPicker = false
 
     var body: some View {
         ScrollView {
@@ -801,6 +812,8 @@ struct DriverProfileView: View {
                 field(store.l("brand"), $make)
                 field(store.l("model"), $model)
                 field(store.l("plate"), $plate)
+                field(store.language == .ar ? "لون المركبة" : "Couleur du véhicule", $color)
+                documentSection
 
                 Button {
                     save()
@@ -809,6 +822,9 @@ struct DriverProfileView: View {
                 }
                 .buttonStyle(KJButtonStyle())
 
+                if let saveError {
+                    Text(saveError).font(.system(size: 13, weight: .semibold)).foregroundStyle(KJ.danger)
+                }
                 if savedFlash {
                     Label(store.l("saved"), systemImage: "checkmark.circle.fill")
                         .font(.system(size: 14, weight: .bold))
@@ -823,7 +839,113 @@ struct DriverProfileView: View {
             make = store.profile?.vehicleMake ?? ""
             model = store.profile?.vehicleModel ?? ""
             plate = store.profile?.vehiclePlate ?? ""
+            color = store.profile?.vehicleColor ?? ""
+            await loadDocuments()
         }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
+        .onChange(of: selectedPhoto) { item in
+            guard let item, let type = selectedDocumentType else { return }
+            Task { await upload(item, type: type) }
+        }
+    }
+
+    private var documentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(store.language == .ar ? "وثائق السائق" : "Documents du chauffeur")
+                .font(.system(size: 18, weight: .heavy)).foregroundStyle(KJ.ink)
+            Text(store.language == .ar ? "حمّل صوراً واضحة. الحد الأقصى 10 ميغابايت لكل وثيقة." : "Ajoutez des photos lisibles. 10 Mo maximum par document.")
+                .font(.system(size: 12, weight: .medium)).foregroundStyle(KJ.muted)
+            let required: [(String, String)] = [
+                ("id_card", store.language == .ar ? "بطاقة التعريف" : "Carte d’identité"),
+                ("license", store.language == .ar ? "رخصة السياقة" : "Permis de conduire"),
+                ("registration", store.language == .ar ? "البطاقة الرمادية" : "Carte grise"),
+                ("insurance", store.language == .ar ? "التأمين" : "Assurance"),
+                ("vehicle_photo", store.language == .ar ? "صورة المركبة" : "Photo du véhicule")
+            ]
+            ForEach(required, id: \.0) { type, label in
+                let doc = documents.first(where: { $0.docType == type })
+                let status = doc?.status ?? "missing"
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(label).font(.system(size: 14, weight: .bold)).foregroundStyle(KJ.ink)
+                        Text(documentStatus(status))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(status == "approved" ? KJ.success : (status == "rejected" ? KJ.danger : KJ.muted))
+                        if status == "rejected", let reason = doc?.reason, !reason.isEmpty {
+                            Text(reason).font(.system(size: 11)).foregroundStyle(KJ.danger)
+                        }
+                    }
+                    Spacer()
+                    if status == "approved" {
+                        Image(systemName: "checkmark.seal.fill").foregroundStyle(KJ.success)
+                    } else {
+                        Button {
+                            selectedDocumentType = type
+                            selectedPhoto = nil
+                            showPhotoPicker = true
+                        } label: {
+                            if uploadingType == type { ProgressView().tint(KJ.blue) }
+                            else { Label(store.language == .ar ? "إضافة" : "Ajouter", systemImage: "plus") }
+                        }
+                        .font(.system(size: 13, weight: .bold))
+                        .disabled(uploadingType != nil)
+                    }
+                }
+                .padding(.vertical, 5)
+                if type != required.last?.0 { Divider().overlay(KJ.softBlueMid) }
+            }
+            if documentsLoading { ProgressView().tint(KJ.blue) }
+            if let documentError {
+                Text(documentError).font(.system(size: 12, weight: .medium)).foregroundStyle(KJ.danger)
+            }
+            Text(store.language == .ar ? "تتم الموافقة النهائية بعد مراجعة الإدارة لجميع الوثائق." : "L’approbation finale intervient après vérification de tous les documents par l’administration.")
+                .font(.system(size: 11, weight: .medium)).foregroundStyle(KJ.muted)
+        }
+        .kjCard()
+    }
+
+    private func documentStatus(_ status: String) -> String {
+        switch status {
+        case "approved": store.language == .ar ? "مقبولة" : "Approuvée"
+        case "rejected": store.language == .ar ? "مرفوضة" : "Refusée"
+        case "pending": store.language == .ar ? "قيد المراجعة" : "En vérification"
+        default: store.language == .ar ? "لم تُرفع" : "Non envoyée"
+        }
+    }
+
+    @MainActor
+    private func loadDocuments() async {
+        guard let id = store.session.userId else { return }
+        documentsLoading = true
+        do {
+            documents = try await SupabaseService.shared.myDriverDocuments(driverId: id)
+            documentError = nil
+        } catch {
+            documentError = store.serverErrorMessage(error)
+        }
+        documentsLoading = false
+    }
+
+    @MainActor
+    private func upload(_ item: PhotosPickerItem, type: String) async {
+        uploadingType = type
+        documentError = nil
+        do {
+            guard let raw = try await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: raw),
+                  let jpeg = image.jpegData(compressionQuality: 0.82) else {
+                throw NSError(domain: "KHERJA.Documents", code: 3, userInfo: [NSLocalizedDescriptionKey: "Image could not be read"])
+            }
+            guard jpeg.count <= 10 * 1024 * 1024 else {
+                throw NSError(domain: "KHERJA.Documents", code: 4, userInfo: [NSLocalizedDescriptionKey: "Image must be smaller than 10 MB"])
+            }
+            guard let id = store.session.userId else { throw NSError(domain: "KHERJA.Documents", code: 5, userInfo: [NSLocalizedDescriptionKey: "Session required"]) }
+            try await SupabaseService.shared.uploadDriverDocument(driverId: id, type: type, data: jpeg)
+            await loadDocuments()
+        } catch {
+            documentError = store.serverErrorMessage(error)
+        }
+        uploadingType = nil
     }
 
     private func field(_ label: String, _ binding: Binding<String>) -> some View {
@@ -845,13 +967,16 @@ struct DriverProfileView: View {
 
     private func save() {
         guard let id = store.session.userId else { return }
-        let update = ProfileUpdate(vehicleMake: make, vehicleModel: model, vehiclePlate: plate)
+        let update = ProfileUpdate(vehicleMake: make, vehicleModel: model, vehiclePlate: plate, vehicleColor: color)
         Task {
-            try? await SupabaseService.shared.updateProfile(id: id, update: update)
-            await store.refreshProfile()
-            await MainActor.run {
+            do {
+                try await SupabaseService.shared.updateProfile(id: id, update: update)
+                await store.refreshProfile()
                 savedFlash = true
+                saveError = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { savedFlash = false }
+            } catch {
+                saveError = store.serverErrorMessage(error)
             }
         }
     }
