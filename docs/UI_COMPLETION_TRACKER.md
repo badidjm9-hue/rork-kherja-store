@@ -30,7 +30,7 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 | Parcel delivery | Passenger create/quote/status/cancel; driver feed/claim/status | Phase 3 code exists; migration and client builds remain unverified |
 | Driver account gate | Pending/rejected/suspended states | Implemented in code |
 | Driver dashboard | Online state, requests feed, offer sheet, active ride | Implemented in code |
-| Driver vehicle profile | Make/model/plate editing; help, privacy, and about information panels now available through shared settings | Partial: dedicated vehicle type details and document upload/verification UI are absent |
+| Driver vehicle profile | Make/model/plate/color editing; driver document list with private image upload and live pending/approved/rejected states on Android and iOS | Partial: vehicle category/type is not persisted yet; native build and end-to-end Storage/RPC verification remain pending |
 | Driver earnings/history | Wallet/transactions and ride history | Implemented in code; payout/withdrawal workflow not approved |
 | Admin | Login, overview, live map, rides, drivers, passengers, pricing, admins, audit | Core admin exists; dedicated vehicle, notification, reports, and admin-settings screens remain absent |
 
@@ -45,8 +45,8 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 - Explicit location permission and location-search empty/error states.
 
 ### Driver
-- Driver personal details and vehicle type selection.
-- Document upload/review states (requires private Storage bucket and owner-approved retention policy before upload can be functional).
+- Driver personal details and vehicle category/type selection (requires a separately approved persisted field).
+- Driver document review workflow is wired to the existing private driver-documents bucket, driver_documents table, and submit_driver_document RPC defined in migration 0003; verify that migration is applied to the target Supabase project before testing uploads. The client picker currently accepts images only.
 - Driver verification details and resubmission state.
 - Dedicated notification, help, and settings screens.
 - Earnings breakdown and withdrawal request only after commission/payout rules are approved.
