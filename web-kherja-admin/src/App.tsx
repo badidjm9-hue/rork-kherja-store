@@ -20,6 +20,10 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const Admins = lazy(() => import("./pages/Admins"));
 const Audit = lazy(() => import("./pages/Audit"));
 const Deliveries = lazy(() => import("./pages/Deliveries"));
+const Vehicles = lazy(() => import("./pages/Vehicles"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -84,6 +88,10 @@ function Shell() {
           <Route path="/live" element={<Guard perm="rides.read"><LiveMap /></Guard>} />
           <Route path="/rides" element={<Guard perm="rides.read"><Rides /></Guard>} />
           <Route path="/deliveries" element={<Guard perm="deliveries.read"><Deliveries /></Guard>} />
+          <Route path="/vehicles" element={<Guard perm="vehicles.read"><Vehicles /></Guard>} />
+          <Route path="/reports" element={<Guard perm="reports.read"><Reports /></Guard>} />
+          <Route path="/notifications" element={<Guard perm="notifications.read"><Notifications /></Guard>} />
+          <Route path="/settings" element={<Guard perm="settings.read"><SettingsPage /></Guard>} />
           <Route path="/drivers" element={<Guard perm="drivers.read"><Drivers /></Guard>} />
           <Route path="/passengers" element={<Guard perm="users.read"><Passengers /></Guard>} />
           <Route path="/pricing" element={<Guard perm="pricing.read"><Pricing /></Guard>} />

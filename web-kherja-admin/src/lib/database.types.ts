@@ -161,6 +161,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicles: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          driver_id: string
+          id: string
+          is_primary: boolean
+          make: string
+          model: string
+          plate: string
+          seats: number
+          status: string
+          suspended_reason: string | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      notification_broadcasts: {
+        Row: {
+          audience: string
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          recipients: number
+          title: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      app_settings: {
+        Row: { key: string; updated_at: string; updated_by: string | null; value: Json }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       delivery_orders: {
         Row: {
           accepted_at: string | null
@@ -862,6 +904,16 @@ export type Database = {
         Args: { p_id: string; p_note?: string }
         Returns: string
       }
+      admin_set_vehicle_status: {
+        Args: { p_id: string; p_reason?: string; p_status: string }
+        Returns: undefined
+      }
+      admin_send_broadcast: {
+        Args: { p_audience: string; p_body: string; p_kind: string; p_title: string }
+        Returns: number
+      }
+      admin_set_setting: { Args: { p_key: string; p_value: Json }; Returns: undefined }
+      admin_report_summary: { Args: { p_from: string; p_to: string }; Returns: Json }
       admin_driver_phone_status: {
         Args: { p_ids: string[] }
         Returns: { user_id: string; phone_verified: boolean }[]
