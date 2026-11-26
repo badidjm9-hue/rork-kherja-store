@@ -77,7 +77,7 @@ struct SettingsView: View {
                         icon: "hand.raised",
                         page: .privacy
                     )
-                    Divider().overlay(KJ.border)
+                    Divider().overlay(Color(hex: 0xE8EAF1))
                     settingsInfoRow(
                         title: store.language == .ar ? "حول KHERJA" : "À propos de KHERJA",
                         subtitle: store.language == .ar ? "معلومات عن التطبيق" : "Informations sur l’application",
