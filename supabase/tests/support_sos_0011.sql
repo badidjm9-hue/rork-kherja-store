@@ -79,7 +79,9 @@ SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','bbbbbbbb-0000-0000-0000-000000000004',false);
 SELECT t.eq(
   (SELECT count(*)::text FROM public.notifications
-   WHERE user_id=auth.uid() AND data->>'entity_type'='sos_alert' AND data->>'event'='created'),
+   WHERE user_id=auth.uid() AND data->>'entity_type'='sos_alert'
+     AND data->>'entity_id'=(SELECT id::text FROM public.sos_alerts WHERE user_id='bbbbbbbb-0000-0000-0000-000000000001' ORDER BY created_at DESC LIMIT 1)
+     AND data->>'event'='created'),
   '1','support staff receive SOS notification');
 SELECT public.admin_set_sos_status(
   (SELECT id FROM public.sos_alerts WHERE user_id='bbbbbbbb-0000-0000-0000-000000000001' ORDER BY created_at DESC LIMIT 1),
