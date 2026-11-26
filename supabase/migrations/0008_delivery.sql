@@ -44,18 +44,35 @@ ALTER TABLE public.delivery_orders ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Delivery participants read orders" ON public.delivery_orders;
 CREATE POLICY "Delivery participants read orders"
   ON public.delivery_orders FOR SELECT
-  USING (
-    passenger_id = auth.uid()
-    OR driver_id = auth.uid()
-    OR (
-      status = 'open'
-      AND EXISTS (
-        SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND p.role = 'driver'
-          AND p.driver_status = 'approved' AND p.account_status = 'active' AND p.is_online
-      )
-    )
-  );
+  USING (passenger_id = auth.uid() OR driver_id = auth.uid());
+
+-- Drivers receive a deliberately redacted feed. Recipient contact details are
+-- visible only after the order has been atomically claimed and assigned.
+CREATE OR REPLACE FUNCTION public.open_delivery_feed()
+RETURNS TABLE (
+  id uuid, passenger_id uuid, pickup_label text, pickup_lat double precision,
+  pickup_lng double precision, dest_label text, dest_lat double precision,
+  dest_lng double precision, city text, distance_km numeric, vehicle text,
+  package_description text, delivery_fee integer, status text, created_at timestamptz
+)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
+AS $
+DECLARE v_me public.profiles;
+BEGIN
+  v_me := public.assert_active_user();
+  IF v_me.role <> 'driver' OR v_me.driver_status <> 'approved' OR NOT v_me.is_online THEN
+    RAISE EXCEPTION 'Approved online driver required';
+  END IF;
+  RETURN QUERY
+    SELECT d.id, d.passenger_id, d.pickup_label, d.pickup_lat, d.pickup_lng,
+           d.dest_label, d.dest_lat, d.dest_lng, d.city, d.distance_km, d.vehicle,
+           d.package_description, d.delivery_fee, d.status, d.created_at
+    FROM public.delivery_orders d
+    WHERE d.status = 'open'
+    ORDER BY d.created_at DESC
+    LIMIT 50;
+END;
+$;
 
 CREATE OR REPLACE FUNCTION public.quote_delivery(
   p_pickup_lat double precision, p_pickup_lng double precision,
@@ -207,11 +224,13 @@ $$;
 
 REVOKE ALL ON public.delivery_orders FROM anon, authenticated;
 GRANT SELECT ON public.delivery_orders TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.open_delivery_feed() FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.quote_delivery(double precision,double precision,double precision,double precision,numeric,text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.create_delivery_order(text,double precision,double precision,text,double precision,double precision,numeric,text,text,text,text,text,text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.claim_delivery_order(uuid) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.update_delivery_status(uuid,text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.cancel_delivery_order(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.open_delivery_feed() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.quote_delivery(double precision,double precision,double precision,double precision,numeric,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_delivery_order(text,double precision,double precision,text,double precision,double precision,numeric,text,text,text,text,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_delivery_order(uuid) TO authenticated;
