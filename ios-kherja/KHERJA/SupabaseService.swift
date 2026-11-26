@@ -545,7 +545,8 @@ final class SupabaseService: ObservableObject {
     }
 
     func myDeliveryOrders() async throws -> [DeliveryOrder] {
-        try await client.from("delivery_orders").select()
+        try await rpcVoid("expire_delivery_orders", params: EmptyDeliveryParams())
+        return try await client.from("delivery_orders").select()
             .order("created_at", ascending: false).limit(50)
             .execute().decoded(Self.decoder())
     }
