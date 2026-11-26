@@ -60,6 +60,44 @@ data class RideRequest(
 )
 
 @Serializable
+data class DeliveryOrder(
+    val id: String,
+    @SerialName("passenger_id") val passengerId: String,
+    @SerialName("driver_id") val driverId: String? = null,
+    @SerialName("pickup_label") val pickupLabel: String,
+    @SerialName("pickup_lat") val pickupLat: Double,
+    @SerialName("pickup_lng") val pickupLng: Double,
+    @SerialName("dest_label") val destLabel: String,
+    @SerialName("dest_lat") val destLat: Double,
+    @SerialName("dest_lng") val destLng: Double,
+    val city: String = "Alger",
+    @SerialName("distance_km") val distanceKm: Double = 0.0,
+    val vehicle: String = "moto",
+    @SerialName("package_description") val packageDescription: String,
+    @SerialName("recipient_name") val recipientName: String,
+    @SerialName("recipient_phone") val recipientPhone: String,
+    @SerialName("sender_note") val senderNote: String? = null,
+    @SerialName("delivery_fee") val deliveryFee: Int = 0,
+    @SerialName("payment_method") val paymentMethod: String = "cash",
+    val status: String = "open",
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("accepted_at") val acceptedAt: String? = null,
+    @SerialName("picked_up_at") val pickedUpAt: String? = null,
+    @SerialName("delivered_at") val deliveredAt: String? = null,
+)
+
+@Serializable
+data class DeliveryQuote(
+    @SerialName("distance_km") val distanceKm: Double,
+    val vehicle: String,
+    @SerialName("rate_per_km") val ratePerKm: Int,
+    @SerialName("minimum_fee") val minimumFee: Int,
+    @SerialName("delivery_fee") val deliveryFee: Int,
+    val currency: String = "DZD",
+    @SerialName("payment_method") val paymentMethod: String = "cash",
+)
+
+@Serializable
 data class Offer(
     val id: String,
     @SerialName("request_id") val requestId: String,
