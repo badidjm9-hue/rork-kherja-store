@@ -38,6 +38,7 @@ import app.rork.h04xk59ettzrqz7c6l4wp.AppState
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.CompleteProfileScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.DriverGate
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.DriverHomeScreen
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.DeliveryScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.HistoryScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.LinkPhoneScreen
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.screens.OnboardingFlow
@@ -145,6 +146,7 @@ private fun PassengerTabs(state: AppState) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val tabs = listOf(
         Tab(state.l("tab_home"), Icons.Filled.Home),
+        Tab(state.l("tab_delivery"), Icons.Filled.DirectionsCar),
         Tab(state.l("tab_history"), Icons.Filled.History),
         Tab(state.l("tab_wallet"), Icons.Filled.AccountBalanceWallet),
         Tab(state.l("tab_settings"), Icons.Filled.Settings),
@@ -152,8 +154,9 @@ private fun PassengerTabs(state: AppState) {
     TabScaffold(tabs, tab, { tab = it }) { i ->
         when (i) {
             0 -> PassengerHomeScreen(state)
-            1 -> HistoryScreen(state, driver = false)
-            2 -> WalletScreen(state, driver = false)
+            1 -> DeliveryScreen(state, driver = false)
+            2 -> HistoryScreen(state, driver = false)
+            3 -> WalletScreen(state, driver = false)
             else -> SettingsScreen(state)
         }
     }
@@ -164,6 +167,7 @@ private fun DriverTabs(state: AppState) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val tabs = listOf(
         Tab(state.l("tab_jobs"), Icons.Filled.DirectionsCar),
+        Tab(state.l("tab_delivery"), Icons.Filled.DirectionsCar),
         Tab(state.l("tab_history"), Icons.Filled.History),
         Tab(state.l("tab_earnings"), Icons.Filled.AccountBalanceWallet),
         Tab(state.l("tab_profile"), Icons.Filled.Person),
@@ -171,8 +175,9 @@ private fun DriverTabs(state: AppState) {
     TabScaffold(tabs, tab, { tab = it }) { i ->
         when (i) {
             0 -> DriverHomeScreen(state)
-            1 -> HistoryScreen(state, driver = true)
-            2 -> WalletScreen(state, driver = true)
+            1 -> DeliveryScreen(state, driver = true)
+            2 -> HistoryScreen(state, driver = true)
+            3 -> WalletScreen(state, driver = true)
             else -> SettingsScreen(state)
         }
     }
