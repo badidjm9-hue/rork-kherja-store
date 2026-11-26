@@ -42,6 +42,7 @@ RPCs:
 - `claim_delivery_order`
 - `update_delivery_status`
 - `cancel_delivery_order`
+- `expire_delivery_orders`
 
 Open orders expire after 15 minutes. The driver feed marks stale open orders expired before returning current requests.
 
