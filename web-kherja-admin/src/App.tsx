@@ -19,6 +19,7 @@ import Passengers from "./pages/Passengers";
 import Pricing from "./pages/Pricing";
 import Admins from "./pages/Admins";
 import Audit from "./pages/Audit";
+import Deliveries from "./pages/Deliveries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -66,6 +67,7 @@ function Shell() {
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/live" element={<Guard perm="rides.read"><LiveMap /></Guard>} />
         <Route path="/rides" element={<Guard perm="rides.read"><Rides /></Guard>} />
+        <Route path="/deliveries" element={<Guard perm="deliveries.read"><Deliveries /></Guard>} />
         <Route path="/drivers" element={<Guard perm="drivers.read"><Drivers /></Guard>} />
         <Route path="/passengers" element={<Guard perm="users.read"><Passengers /></Guard>} />
         <Route path="/pricing" element={<Guard perm="pricing.read"><Pricing /></Guard>} />

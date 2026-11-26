@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { driverStatus, rideStatus, vehicleLabel } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { Avatar, EmptyState, ErrorBlock, LoadingBlock, Pill, ReasonDialog } from "@/components/kj";
+import DriverDocuments from "@/components/DriverDocuments";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -309,6 +310,12 @@ function PersonDetail({
       ) as Ride[],
   });
 
+  const phoneStatus = useQuery({
+    queryKey: ["driver-phone-status", p.id],
+    enabled: role === "driver" && can("drivers.read"),
+    queryFn: async () => must(await supabase.rpc("admin_driver_phone_status", { p_ids: [p.id] }))[0]?.phone_verified ?? false,
+  });
+
   const ds = driverStatus(t, p.driver_status);
   return (
     <div className="space-y-6">
@@ -331,6 +338,11 @@ function PersonDetail({
           {p.account_status === "suspended" ? t("Suspendu", "معلق") : t("Actif", "نشط")}
         </Pill>
         {role === "driver" && <Pill tone={p.is_online ? "blue" : "gray"}>{p.is_online ? t("En ligne", "متصل") : t("Hors ligne", "غير متصل")}</Pill>}
+        {role === "driver" && phoneStatus.data !== undefined && (
+          <Pill tone={phoneStatus.data ? "green" : "amber"}>
+            {phoneStatus.data ? t("Téléphone vérifié", "الهاتف موثّق") : t("Téléphone non vérifié", "الهاتف غير موثّق")}
+          </Pill>
+        )}
       </div>
 
       {p.status_reason && (
@@ -363,6 +375,8 @@ function PersonDetail({
       </dl>
 
       {actions}
+
+      {role === "driver" && can("drivers.read") && <DriverDocuments driverId={p.id} />}
 
       {can("rides.read") && (
         <div>

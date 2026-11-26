@@ -53,3 +53,17 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - Android and iOS now have separate delivery tabs for passenger and driver roles, request creation, address search, server quote, driver claim, pickup/delivered transitions, passenger cancellation, and status refresh.
 - The migration is additive and has **not** been applied to Supabase (local or production) in this work. No production data or secrets were changed.
 - Android/iOS builds and device testing have **not** been run. SQL behavior, auth/RLS behavior, geocoding, and end-to-end delivery remain unverified. Review and test migration 0008 in a disposable Supabase project before any production rollout.
+
+## UI completion pass (branch `feature/kherja-ui-complete`, based on `0b2077d`)
+
+Audit result: Android/iOS passenger and driver screens contain no empty handlers or sample data. The gaps found were:
+
+| Item | Status |
+|---|---|
+| Admin: driver document review (signed links, approve/reject with reason, audit) | done, web build + typecheck pass; not exercised against a live Supabase |
+| Admin: Deliveries page (filters, search, pagination, 15s refresh) + `deliveries.read` permission | done, same verification; needs migration 0009 |
+| Admin: driver "phone verified" badge via `admin_driver_phone_status()` | done; needs migration 0009 |
+| Migration 0009 (additive, not applied) | verified on throwaway Postgres 16 with stand-in schema: applies, idempotent, policy checks pass |
+| Mobile: driver document upload screens (Android + iOS) | **not done** (migration 0004 notes uploads are not shipped; approval does not require documents) |
+| Design-fidelity comparison against the owner's reference images | **not possible**: no reference images exist in the repository or the session uploads |
+| Android/iOS compile + device tests | **not run** (no SDK/Xcode here, no Codemagic access) |

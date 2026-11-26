@@ -18,6 +18,8 @@ export type PricingVersion = Tables<"pricing_versions">;
 export type AuditLog = Tables<"audit_logs">;
 export type AdminUser = Tables<"admin_users">;
 export type AdminRole = Tables<"admin_roles">;
+export type DeliveryOrder = Tables<"delivery_orders">;
+export type DriverDocument = Tables<"driver_documents">;
 export type Transaction = Tables<"transactions">;
 export type RideStatus = Tables<"ride_status_history">;
 
