@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var city = "Alger"
     @State private var savedFlash = false
     @State private var confirmLogout = false
+    @State private var settingsPage: SettingsInfoPage?
 
     private let cities = ["Alger", "Oran", "Constantine", "Annaba", "Blida", "Batna", "Sétif", "Tlemcen", "Béjaïa", "Ouargla"]
 
@@ -62,6 +63,29 @@ struct SettingsView: View {
                     }
                 }
 
+                section(store.language == .ar ? "المساعدة والمعلومات" : "Aide et informations") {
+                    settingsInfoRow(
+                        title: store.language == .ar ? "مركز المساعدة" : "Centre d’aide",
+                        subtitle: store.language == .ar ? "إجابات عن الرحلات والتوصيل والحساب" : "Trajets, livraison et compte",
+                        icon: "questionmark.circle",
+                        page: .help
+                    )
+                    Divider().overlay(KJ.border)
+                    settingsInfoRow(
+                        title: store.language == .ar ? "الخصوصية والبيانات" : "Confidentialité et données",
+                        subtitle: store.language == .ar ? "كيف تُستخدم بياناتك داخل التطبيق" : "Comprendre l’utilisation de vos données",
+                        icon: "hand.raised",
+                        page: .privacy
+                    )
+                    Divider().overlay(KJ.border)
+                    settingsInfoRow(
+                        title: store.language == .ar ? "حول KHERJA" : "À propos de KHERJA",
+                        subtitle: store.language == .ar ? "معلومات عن التطبيق" : "Informations sur l’application",
+                        icon: "info.circle",
+                        page: .about
+                    )
+                }
+
                 section(store.l("role")) {
                     HStack(spacing: 12) {
                         Image(systemName: store.role == "driver" ? "motorcycle.fill" : "person.fill")
@@ -99,6 +123,11 @@ struct SettingsView: View {
         .alert(store.l("logout"), isPresented: $confirmLogout) {
             Button(store.l("logout"), role: .destructive) { store.signOut() }
             Button(store.l("ok"), role: .cancel) {}
+        }
+        .sheet(item: $settingsPage) { page in
+            SettingsInfoView(page: page, language: store.language)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -173,6 +202,34 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
+    private func settingsInfoRow(title: String, subtitle: String, icon: String, page: SettingsInfoPage) -> some View {
+        Button {
+            settingsPage = page
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(KJ.blue)
+                    .frame(width: 38, height: 38)
+                    .background(KJ.softBlue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(KJ.ink)
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(KJ.muted)
+                }
+                Spacer()
+                Image(systemName: "chevron.forward")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(KJ.muted)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func save() {
         guard let id = store.session.userId else { return }
         let update = ProfileUpdate(name: name.trimmingCharacters(in: .whitespaces), city: city)
@@ -186,5 +243,93 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+}
+
+
+private enum SettingsInfoPage: String, Identifiable {
+    case help, privacy, about
+    var id: String { rawValue }
+}
+
+private struct SettingsInfoView: View {
+    let page: SettingsInfoPage
+    let language: AppLanguage
+
+    private var isArabic: Bool { language == .ar }
+    private var title: String {
+        switch page {
+        case .help: isArabic ? "مركز المساعدة" : "Centre d’aide"
+        case .privacy: isArabic ? "الخصوصية والبيانات" : "Confidentialité et données"
+        case .about: isArabic ? "حول KHERJA" : "À propos de KHERJA"
+        }
+    }
+
+    private var items: [(String, String)] {
+        switch page {
+        case .help:
+            return isArabic ? [
+                ("كيف أطلب رحلة؟", "حدد نقطة الانطلاق والوجهة، اختر نوع المركبة، ثم راجع السعر وأرسل طلبك."),
+                ("كيف أتابع طلبي؟", "ستجد حالة الرحلة أو التوصيل في القسم المخصص داخل التطبيق."),
+                ("هل يمكنني إلغاء الطلب؟", "تختلف إمكانية الإلغاء حسب حالة الطلب. استخدم زر الإلغاء الظاهر في تفاصيل الطلب عندما يكون متاحاً.")
+            ] : [
+                ("Comment demander une course ?", "Choisissez le départ et la destination, sélectionnez un véhicule, vérifiez le tarif puis envoyez la demande."),
+                ("Comment suivre ma demande ?", "Consultez son état dans la section dédiée aux courses ou aux livraisons."),
+                ("Puis-je annuler ?", "L’annulation dépend de l’état de la demande. Utilisez l’action affichée lorsqu’elle est disponible.")
+            ]
+        case .privacy:
+            return isArabic ? [
+                ("الموقع", "يُستخدم الموقع لتحديد الانطلاق وعرض معلومات الرحلة عند منح التطبيق الإذن."),
+                ("معلومات الحساب", "تُستخدم بيانات الحساب لتشغيل الخدمات وربط الطلبات بصاحبها."),
+                ("التحكم", "يمكنك إدارة إذن الموقع من إعدادات iPhone. هذه الصفحة توضيحية وليست بديلاً عن سياسة الخصوصية القانونية المعتمدة.")
+            ] : [
+                ("Localisation", "La localisation sert à définir le départ et afficher les informations du trajet lorsque vous accordez l’autorisation."),
+                ("Compte", "Les informations du compte servent au fonctionnement du service et au rattachement des demandes."),
+                ("Contrôle", "Vous pouvez gérer l’autorisation de localisation dans les réglages de l’iPhone. Cette page informative ne remplace pas la politique de confidentialité officielle.")
+            ]
+        case .about:
+            return isArabic ? [
+                ("KHERJA", "تطبيق للتنقل وطلب توصيل الطرود."),
+                ("الخدمات", "تجربة منفصلة للراكب والسائق، مع خدمات الرحلات والتوصيل."),
+                ("الإصدار", "رقم الإصدار وتفاصيل الدعم الرسمية ستُعرض هنا بعد اعتماد إعدادات الإصدار.")
+            ] : [
+                ("KHERJA", "Une application de mobilité et de livraison de colis."),
+                ("Services", "Des espaces distincts pour les passagers et les chauffeurs, avec courses et livraisons."),
+                ("Version", "Le numéro de version et les coordonnées officielles seront ajoutés après validation de la configuration de publication.")
+            ]
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(item.0)
+                                .font(.system(size: 16, weight: .heavy))
+                                .foregroundStyle(KJ.ink)
+                            Text(item.1)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(KJ.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .kjCard()
+                    }
+                }
+                .padding(20)
+            }
+            .background(KJ.canvasGradient.ignoresSafeArea())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(isArabic ? "تم" : "Terminé") { }
+                        .foregroundStyle(KJ.blue)
+                }
+            }
+        }
+        .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
     }
 }
