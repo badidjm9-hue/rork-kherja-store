@@ -1,5 +1,7 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -51,12 +53,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.rork.h04xk59ettzrqz7c6l4wp.AppState
 import app.rork.h04xk59ettzrqz7c6l4wp.data.Ride
+import app.rork.h04xk59ettzrqz7c6l4wp.data.DriverDocument
 import app.rork.h04xk59ettzrqz7c6l4wp.data.Transaction
 import app.rork.h04xk59ettzrqz7c6l4wp.data.jsonOf
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.Avatar
@@ -248,7 +252,53 @@ fun WalletScreen(state: AppState, driver: Boolean) {
                 Column(Modifier.padding(horizontal = 20.dp)) {
                     Spacer(Modifier.height(6.dp))
                     SectionTitle(state.l("transactions"))
-                    error?.let {
+                    if (driver) {
+                Spacer(Modifier.height(18.dp))
+                SectionTitle(if (state.isRtl) "وثائق السائق" else "Documents du chauffeur")
+                Spacer(Modifier.height(6.dp))
+                Text(if (state.isRtl) "ارفع صوراً واضحة للوثائق المطلوبة. الحد الأقصى 10 ميغابايت للصورة." else "Ajoutez des photos lisibles des pièces requises. 10 Mo maximum par fichier.", color = KJ.muted, fontSize = 12.sp)
+                Spacer(Modifier.height(8.dp))
+                KJCard(Modifier.fillMaxWidth()) {
+                    val requiredDocs = listOf(
+                        "id_card" to (if (state.isRtl) "بطاقة التعريف" else "Carte d’identité"),
+                        "license" to (if (state.isRtl) "رخصة السياقة" else "Permis de conduire"),
+                        "registration" to (if (state.isRtl) "البطاقة الرمادية" else "Carte grise"),
+                        "insurance" to (if (state.isRtl) "التأمين" else "Assurance"),
+                        "vehicle_photo" to (if (state.isRtl) "صورة المركبة" else "Photo du véhicule"),
+                    )
+                    requiredDocs.forEachIndexed { index, pair ->
+                        val type = pair.first
+                        val label = pair.second
+                        val doc = documents.firstOrNull { it.docType == type }
+                        val status = doc?.status ?: "missing"
+                        val statusLabel = when (status) {
+                            "approved" -> if (state.isRtl) "مقبولة" else "Approuvée"
+                            "rejected" -> if (state.isRtl) "مرفوضة" else "Refusée"
+                            "pending" -> if (state.isRtl) "قيد المراجعة" else "En vérification"
+                            else -> if (state.isRtl) "لم تُرفع" else "Non envoyée"
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(label, color = KJ.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(statusLabel, color = when (status) { "approved" -> KJ.success; "rejected" -> KJ.danger; else -> KJ.muted }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                if (status == "rejected" && !doc?.reason.isNullOrBlank()) Text(doc?.reason.orEmpty(), color = KJ.danger, fontSize = 11.sp)
+                            }
+                            if (status != "approved") {
+                                KJOutlineButton(if (uploadingDoc == type) (if (state.isRtl) "جارٍ..." else "Envoi…") else if (state.isRtl) "إضافة" else "Ajouter", enabled = uploadingDoc == null) {
+                                    pendingDocType = type
+                                    documentPicker.launch("image/*")
+                                }
+                            } else Pill(statusLabel, KJ.success, KJ.successBg, icon = Icons.Filled.CheckCircle)
+                        }
+                        if (index != requiredDocs.lastIndex) { Spacer(Modifier.height(12.dp)); androidx.compose.material3.HorizontalDivider(color = KJ.softBlueMid); Spacer(Modifier.height(12.dp)) }
+                    }
+                    if (documentsLoading) { Spacer(Modifier.height(8.dp)); PulsingDots() }
+                    documentError?.let { Spacer(Modifier.height(8.dp)); ErrorBanner(it) }
+                    Spacer(Modifier.height(8.dp))
+                    Text(if (state.isRtl) "تبقى الموافقة النهائية من الإدارة بعد مراجعة جميع الوثائق." else "L’approbation finale reste soumise à la vérification de tous les documents par l’administration.", color = KJ.muted, fontSize = 11.sp)
+                }
+            }
+            error?.let {
                         Spacer(Modifier.height(8.dp))
                         ErrorBanner(it)
                     }
@@ -308,8 +358,42 @@ fun SettingsScreen(state: AppState) {
     var saved by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var infoPage by remember { mutableStateOf<String?>(null) }
+    var documents by remember { mutableStateOf<List<DriverDocument>>(emptyList()) }
+    var documentsLoading by remember { mutableStateOf(false) }
+    var uploadingDoc by remember { mutableStateOf<String?>(null) }
+    var documentError by remember { mutableStateOf<String?>(null) }
+    var pendingDocType by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
-    LaunchedEffect(Unit) { state.refreshProfile() }
+    suspend fun loadDocuments() {
+        val id = state.userId ?: return
+        documentsLoading = true
+        runCatching { state.api.myDriverDocuments(id) }
+            .onSuccess { documents = it; documentError = null }
+            .onFailure { documentError = state.serverError(it) }
+        documentsLoading = false
+    }
+
+    val documentPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val type = pendingDocType
+        pendingDocType = null
+        if (uri != null && type != null) {
+            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val extension = when (mime) { "image/png" -> "png"; "image/heic" -> "heic"; else -> "jpg" }
+            scope.launch {
+                uploadingDoc = type
+                documentError = null
+                try {
+                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Cannot read file")
+                    state.api.uploadDriverDocument(state.userId ?: error("Session required"), type, bytes, mime, extension)
+                    loadDocuments()
+                } catch (e: Exception) { documentError = state.serverError(e) }
+                uploadingDoc = null
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) { state.refreshProfile(); if (driver) loadDocuments() }
 
     val dirty = p != null && (name.trim() != p.name || city != p.city ||
         (driver && (make.trim() != (p.vehicleMake ?: "") || model.trim() != (p.vehicleModel ?: "") ||
