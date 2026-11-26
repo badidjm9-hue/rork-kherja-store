@@ -362,6 +362,32 @@ final class SupabaseService: ObservableObject {
             .execute()
     }
 
+    // MARK: Driver documents
+
+    func myDriverDocuments(driverId: UUID) async throws -> [DriverDocument] {
+        try await client
+            .from("driver_documents")
+            .select()
+            .eq("driver_id", value: driverId.uuidString)
+            .order("uploaded_at", ascending: false)
+            .execute()
+            .decoded(Self.decoder())
+    }
+
+    func uploadDriverDocument(driverId: UUID, type: String, data: Data) async throws {
+        guard ["id_card", "license", "registration", "insurance", "vehicle_photo"].contains(type) else {
+            throw NSError(domain: "KHERJA.Documents", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid document type"])
+        }
+        guard !data.isEmpty, data.count <= 10 * 1024 * 1024 else {
+            throw NSError(domain: "KHERJA.Documents", code: 2, userInfo: [NSLocalizedDescriptionKey: "File must be smaller than 10 MB"])
+        }
+        let path = "\(driverId.uuidString)/\(type)_\(UUID().uuidString).jpg"
+        try await client.storage
+            .from("driver-documents")
+            .upload(path: path, file: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+        try await rpcVoid("submit_driver_document", params: SubmitDriverDocumentParams(type: type, path: path, mime: "image/jpeg"))
+    }
+
     // MARK: Passenger flow
 
     func createRequest(_ params: CreateRequestParams) async throws -> UUID {
@@ -616,6 +642,17 @@ nonisolated struct DeliveryStatusParams: Encodable, Sendable {
     init(pOrder: UUID, pStatus: String) {
         p_order_id = pOrder.uuidString
         p_status = pStatus
+    }
+}
+
+nonisolated struct SubmitDriverDocumentParams: Encodable, Sendable {
+    var p_type: String
+    var p_path: String
+    var p_mime: String
+    init(type: String, path: String, mime: String) {
+        p_type = type
+        p_path = path
+        p_mime = mime
     }
 }
 
