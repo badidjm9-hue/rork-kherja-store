@@ -338,7 +338,7 @@ class SupabaseApi(private val session: SessionStore) {
         get("/rest/v1/delivery_orders?select=*&order=created_at.desc&limit=50")
 
     suspend fun openDeliveryOrders(): List<DeliveryOrder> =
-        get("/rest/v1/delivery_orders?select=*&status=eq.open&order=created_at.desc&limit=50")
+        rpc("open_delivery_feed", jsonOf())
 
     suspend fun claimDeliveryOrder(id: String) =
         rpcVoid("claim_delivery_order", jsonOf("p_order_id" to id))
