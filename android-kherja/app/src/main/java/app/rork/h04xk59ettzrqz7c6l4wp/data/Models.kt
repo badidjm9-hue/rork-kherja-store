@@ -216,3 +216,17 @@ data class GeoPlace(val label: String, val lat: Double, val lng: Double)
 data class RouteInfo(val distanceKm: Double, val durationMin: Int?, val points: List<Pair<Double, Double>>)
 
 val CITIES = listOf("Alger", "Oran", "Constantine", "Annaba", "Blida", "Batna", "Sétif", "Tlemcen", "Béjaïa", "Ouargla")
+
+
+@Serializable
+data class DriverDocument(
+    val id: String,
+    @SerialName("driver_id") val driverId: String,
+    @SerialName("doc_type") val docType: String,
+    @SerialName("storage_path") val storagePath: String,
+    @SerialName("mime_type") val mimeType: String = "image/jpeg",
+    val status: String = "pending",
+    val reason: String? = null,
+    @SerialName("uploaded_at") val uploadedAt: String? = null,
+    @SerialName("reviewed_at") val reviewedAt: String? = null,
+)
