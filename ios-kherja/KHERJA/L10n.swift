@@ -463,6 +463,7 @@ struct L10n {
         "accept_making": "اقترح هذا السعر",
         "new_ride_request": "رحلة جديدة",
         "km": "كم",
+        "km_away": "على بعد %@ كم",
         "min": "د",
         "start_ride": "بدء الرحلة",
         "mark_arrived": "وصلت",

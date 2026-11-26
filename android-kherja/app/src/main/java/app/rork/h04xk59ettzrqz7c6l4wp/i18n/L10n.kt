@@ -480,6 +480,7 @@ object L10n {
         "accept_making" to "اقترح هذا السعر",
         "new_ride_request" to "رحلة جديدة",
         "km" to "كم",
+        "km_away" to "على بعد %s كم",
         "min" to "د",
         "start_ride" to "بدء الرحلة",
         "mark_arrived" to "وصلت",

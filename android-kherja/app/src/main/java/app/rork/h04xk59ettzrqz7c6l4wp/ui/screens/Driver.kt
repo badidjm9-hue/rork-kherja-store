@@ -419,7 +419,7 @@ private fun RequestCard(state: AppState, req: RideRequest, myOffer: Offer?, me: 
             )
             if (me != null) {
                 val away = haversineKm(me, req.pickupLat, req.pickupLng)
-                Text(String.format(Locale.US, "%.1f %s", away, state.l("km_away")), color = KJ.muted, fontSize = 12.sp)
+                Text(String.format(Locale.US, state.l("km_away"), String.format(Locale.US, "%.1f", away)), color = KJ.muted, fontSize = 12.sp)
             }
         }
         if (myOffer != null) {
