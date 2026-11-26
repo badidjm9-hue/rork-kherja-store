@@ -23,12 +23,15 @@ struct DriverMainView: View {
             DriverRidesView()
                 .tabItem { Label(store.l("tab_jobs"), systemImage: "clock.fill") }
                 .tag(1)
+            DeliveryView()
+                .tabItem { Label(store.l("tab_delivery"), systemImage: "shippingbox.fill") }
+                .tag(2)
             WalletView()
                 .tabItem { Label(store.l("tab_earnings"), systemImage: "banknote.fill") }
-                .tag(2)
+                .tag(3)
             DriverProfileView()
                 .tabItem { Label(store.l("tab_profile"), systemImage: "gearshape.fill") }
-                .tag(3)
+                .tag(4)
         }
         .tint(KJ.blue)
         .task { await store.refreshProfile() }
