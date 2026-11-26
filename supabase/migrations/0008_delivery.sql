@@ -60,7 +60,7 @@ RETURNS TABLE (
   id uuid, passenger_id uuid, pickup_label text, pickup_lat double precision,
   pickup_lng double precision, dest_label text, dest_lat double precision,
   dest_lng double precision, city text, distance_km numeric, vehicle text,
-  package_description text, delivery_fee integer, status text, created_at timestamptz
+  package_description text, delivery_fee integer, payment_method text, status text, created_at timestamptz
 )
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public
 AS $$
@@ -75,7 +75,7 @@ BEGIN
   RETURN QUERY
     SELECT d.id, d.passenger_id, d.pickup_label, d.pickup_lat, d.pickup_lng,
            d.dest_label, d.dest_lat, d.dest_lng, d.city, d.distance_km, d.vehicle,
-           d.package_description, d.delivery_fee, d.status, d.created_at
+           d.package_description, d.delivery_fee, d.payment_method, d.status, d.created_at
     FROM public.delivery_orders d
     WHERE d.status = 'open' AND d.expires_at > now()
     ORDER BY d.created_at DESC
