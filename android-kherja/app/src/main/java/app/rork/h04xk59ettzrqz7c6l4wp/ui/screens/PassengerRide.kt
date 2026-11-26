@@ -283,8 +283,12 @@ fun RequestScreen(state: AppState, requestId: String) {
                 TextButton(onClick = {
                     confirmCancel = false
                     scope.launch {
-                        runCatching { state.api.cancelRequest(requestId) }
-                        state.setActiveRequest(null)
+                        try {
+                            state.api.cancelRequest(requestId)
+                            state.setActiveRequest(null)
+                        } catch (e: Exception) {
+                            error = state.serverError(e)
+                        }
                     }
                 }) { Text(state.l("yes"), color = KJ.danger) }
             },
