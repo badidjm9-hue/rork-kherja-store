@@ -16,15 +16,18 @@ struct PassengerMainView: View {
             PassengerHomeView()
                 .tabItem { Label(store.l("tab_home"), systemImage: "house.fill") }
                 .tag(0)
+            DeliveryView()
+                .tabItem { Label(store.l("tab_delivery"), systemImage: "shippingbox.fill") }
+                .tag(1)
             HistoryView()
                 .tabItem { Label(store.l("tab_history"), systemImage: "clock.fill") }
-                .tag(1)
+                .tag(2)
             WalletView()
                 .tabItem { Label(store.l("tab_wallet"), systemImage: "wallet.bifold.fill") }
-                .tag(2)
+                .tag(3)
             SettingsView()
                 .tabItem { Label(store.l("tab_settings"), systemImage: "gearshape.fill") }
-                .tag(3)
+                .tag(4)
         }
         .tint(KJ.blue)
         .task { await store.refreshProfile() }
