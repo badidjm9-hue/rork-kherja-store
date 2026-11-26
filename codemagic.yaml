@@ -46,7 +46,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: "feature/kherja-ui-complete"
+        - pattern: "feature/kherja-integrated"
           include: true
           source: true
       cancel_previous_builds: true
@@ -72,7 +72,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: "feature/kherja-ui-complete"
+        - pattern: "feature/kherja-integrated"
           include: true
           source: true
       cancel_previous_builds: true
