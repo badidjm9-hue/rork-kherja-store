@@ -39,6 +39,12 @@ CREATE INDEX IF NOT EXISTS idx_delivery_orders_passenger
   ON public.delivery_orders (passenger_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_delivery_orders_driver
   ON public.delivery_orders (driver_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_delivery_active_passenger
+  ON public.delivery_orders (passenger_id)
+  WHERE status IN ('open','accepted','picked_up');
+CREATE UNIQUE INDEX IF NOT EXISTS uq_delivery_active_driver
+  ON public.delivery_orders (driver_id)
+  WHERE driver_id IS NOT NULL AND status IN ('accepted','picked_up');
 
 ALTER TABLE public.delivery_orders ENABLE ROW LEVEL SECURITY;
 
@@ -196,8 +202,10 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
   v_order public.delivery_orders;
+  v_me public.profiles;
 BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+  v_me := public.assert_active_user();
+  IF v_me.role <> 'driver' THEN RAISE EXCEPTION 'Driver role required'; END IF;
   SELECT * INTO v_order FROM public.delivery_orders WHERE id = p_order_id FOR UPDATE;
   IF v_order.id IS NULL THEN RAISE EXCEPTION 'Delivery not found'; END IF;
   IF v_order.driver_id <> auth.uid() THEN RAISE EXCEPTION 'Only the assigned driver can update delivery'; END IF;
@@ -216,8 +224,10 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
   v_order public.delivery_orders;
+  v_me public.profiles;
 BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+  v_me := public.assert_active_user();
+  IF v_me.role <> 'passenger' THEN RAISE EXCEPTION 'Passenger role required'; END IF;
   SELECT * INTO v_order FROM public.delivery_orders WHERE id = p_order_id FOR UPDATE;
   IF v_order.id IS NULL OR v_order.passenger_id <> auth.uid() THEN RAISE EXCEPTION 'Delivery not found'; END IF;
   IF v_order.status <> 'open' THEN RAISE EXCEPTION 'Only an unassigned delivery can be cancelled'; END IF;
