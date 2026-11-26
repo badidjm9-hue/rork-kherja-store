@@ -230,3 +230,66 @@ data class DriverDocument(
     @SerialName("uploaded_at") val uploadedAt: String? = null,
     @SerialName("reviewed_at") val reviewedAt: String? = null,
 )
+
+
+@Serializable
+data class SavedPlace(
+    val id: String,
+    val kind: String = "favorite",
+    val label: String,
+    val address: String,
+    val lat: Double,
+    val lng: Double,
+)
+
+@Serializable
+data class AppNotification(
+    val id: String,
+    val kind: String = "system",
+    val title: String,
+    val body: String = "",
+    @SerialName("read_at") val readAt: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val isUnread: Boolean get() = readAt == null
+}
+
+@Serializable
+data class NotificationPrefs(
+    val rides: Boolean = true,
+    val promotions: Boolean = true,
+)
+
+@Serializable
+data class Vehicle(
+    val id: String,
+    val category: String = "car",
+    val make: String,
+    val model: String,
+    val year: Int? = null,
+    val plate: String,
+    val color: String = "",
+    val seats: Int = 4,
+    @SerialName("is_primary") val isPrimary: Boolean = false,
+    val status: String = "active",
+    @SerialName("suspended_reason") val suspendedReason: String? = null,
+)
+
+@Serializable
+data class RideReceipt(
+    @SerialName("ride_id") val rideId: String,
+    val reference: String,
+    val vehicle: String = "car",
+    val fare: Int = 0,
+    @SerialName("distance_km") val distanceKm: Double? = null,
+    @SerialName("pickup_label") val pickupLabel: String = "",
+    @SerialName("dest_label") val destLabel: String = "",
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("driver_name") val driverName: String? = null,
+    @SerialName("vehicle_make") val vehicleMake: String? = null,
+    @SerialName("vehicle_model") val vehicleModel: String? = null,
+    @SerialName("vehicle_plate") val vehiclePlate: String? = null,
+    val payment: String = "cash",
+)

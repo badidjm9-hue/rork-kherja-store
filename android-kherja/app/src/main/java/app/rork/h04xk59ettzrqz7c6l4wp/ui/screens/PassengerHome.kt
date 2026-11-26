@@ -36,7 +36,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Payments
@@ -460,6 +463,8 @@ private fun PlaceSearch(
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<GeoPlace>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
+    var saved by remember { mutableStateOf<List<app.rork.h04xk59ettzrqz7c6l4wp.data.SavedPlace>>(emptyList()) }
+    LaunchedEffect(Unit) { saved = runCatching { state.api.savedPlaces() }.getOrDefault(emptyList()) }
     LaunchedEffect(query) {
         val q = query.trim()
         if (q.length < 3) { results = emptyList(); return@LaunchedEffect }
@@ -492,6 +497,24 @@ private fun PlaceSearch(
         SearchAction(Icons.Filled.Map, state.l("choose_on_map"), onPickOnMap)
         Spacer(Modifier.height(6.dp))
         LazyColumn(Modifier.weight(1f)) {
+            if (query.trim().length < 3) {
+                items(saved) { p ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onSelect(GeoPlace(p.address, p.lat, p.lng)) }.padding(vertical = 10.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconCircle(
+                            when (p.kind) { "home" -> Icons.Filled.Home; "work" -> Icons.Filled.Work; else -> Icons.Filled.Star },
+                            size = 36.dp,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(p.label, color = KJ.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text(p.address, color = KJ.muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
             items(results) { place ->
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onSelect(place) }.padding(vertical = 12.dp, horizontal = 8.dp),

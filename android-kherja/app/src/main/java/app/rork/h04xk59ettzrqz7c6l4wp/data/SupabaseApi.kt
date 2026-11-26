@@ -378,6 +378,75 @@ class SupabaseApi(private val session: SessionStore) {
     suspend fun cancelDeliveryOrder(id: String) =
         rpcVoid("cancel_delivery_order", jsonOf("p_order_id" to id))
 
+    // ---------- saved places (RLS: own rows only) ----------
+
+    suspend fun savedPlaces(): List<SavedPlace> =
+        get("/rest/v1/saved_places?select=id,kind,label,address,lat,lng&order=created_at.asc&limit=50")
+
+    suspend fun addSavedPlace(userId: String, kind: String, label: String, address: String, lat: Double, lng: Double) {
+        send(HttpMethod.Post, "/rest/v1/saved_places",
+            jsonOf("user_id" to userId, "kind" to kind, "label" to label, "address" to address, "lat" to lat, "lng" to lng).toString(),
+            prefer = "return=minimal")
+    }
+
+    suspend fun deleteSavedPlace(id: String) {
+        send(HttpMethod.Delete, "/rest/v1/saved_places?id=eq.${q(id)}", prefer = "return=minimal")
+    }
+
+    // ---------- notifications ----------
+
+    suspend fun notifications(): List<AppNotification> =
+        get("/rest/v1/notifications?select=id,kind,title,body,read_at,created_at&order=created_at.desc&limit=100")
+
+    suspend fun unreadNotificationCount(): Int = rpc("unread_notification_count")
+
+    suspend fun markNotificationRead(id: String) = rpcVoid("mark_notification_read", jsonOf("p_id" to id))
+
+    suspend fun markAllNotificationsRead() = rpcVoid("mark_all_notifications_read")
+
+    suspend fun deleteNotification(id: String) {
+        send(HttpMethod.Delete, "/rest/v1/notifications?id=eq.${q(id)}", prefer = "return=minimal")
+    }
+
+    suspend fun notificationPrefs(userId: String): NotificationPrefs =
+        get<List<NotificationPrefs>>("/rest/v1/notification_prefs?select=rides,promotions&user_id=eq.${q(userId)}&limit=1").firstOrNull()
+            ?: NotificationPrefs()
+
+    suspend fun saveNotificationPrefs(userId: String, prefs: NotificationPrefs) {
+        send(HttpMethod.Post, "/rest/v1/notification_prefs?on_conflict=user_id",
+            jsonOf("user_id" to userId, "rides" to prefs.rides, "promotions" to prefs.promotions, "updated_at" to java.time.Instant.now().toString()).toString(),
+            prefer = "resolution=merge-duplicates,return=minimal")
+    }
+
+    // ---------- driver vehicles ----------
+
+    suspend fun myVehicles(driverId: String): List<Vehicle> =
+        get("/rest/v1/vehicles?select=*&driver_id=eq.${q(driverId)}&order=created_at.asc")
+
+    suspend fun addVehicle(driverId: String, category: String, make: String, model: String, year: Int?, plate: String, color: String, seats: Int) {
+        send(HttpMethod.Post, "/rest/v1/vehicles",
+            jsonOf("driver_id" to driverId, "category" to category, "make" to make, "model" to model, "year" to year,
+                "plate" to plate, "color" to color, "seats" to seats).toString(),
+            prefer = "return=minimal")
+    }
+
+    suspend fun updateVehicle(id: String, category: String, make: String, model: String, year: Int?, plate: String, color: String, seats: Int) {
+        send(HttpMethod.Patch, "/rest/v1/vehicles?id=eq.${q(id)}",
+            jsonOf("category" to category, "make" to make, "model" to model, "year" to year,
+                "plate" to plate, "color" to color, "seats" to seats).toString(),
+            prefer = "return=minimal")
+    }
+
+    suspend fun deleteVehicle(id: String) {
+        send(HttpMethod.Delete, "/rest/v1/vehicles?id=eq.${q(id)}", prefer = "return=minimal")
+    }
+
+    suspend fun setPrimaryVehicle(id: String) = rpcVoid("set_primary_vehicle", jsonOf("p_id" to id))
+
+    // ---------- receipts ----------
+
+    suspend fun rideReceipt(rideId: String): RideReceipt = rpc("ride_receipt", jsonOf("p_ride" to rideId))
+
     suspend fun myDriverOffers(driverId: String): List<Offer> =
         get("/rest/v1/offers?select=*&driver_id=eq.$driverId&status=eq.pending&order=created_at.desc&limit=50")
 

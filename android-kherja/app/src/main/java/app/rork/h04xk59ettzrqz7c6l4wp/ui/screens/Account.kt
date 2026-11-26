@@ -97,6 +97,7 @@ fun HistoryScreen(state: AppState, driver: Boolean) {
     var error by remember { mutableStateOf<String?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var filter by remember { mutableStateOf("all") }
+    var receiptRideId by remember { mutableStateOf<String?>(null) }
 
     suspend fun load() {
         val uid = state.userId ?: return
@@ -105,6 +106,11 @@ fun HistoryScreen(state: AppState, driver: Boolean) {
             .onFailure { error = state.serverError(it); if (rides == null) rides = emptyList() }
     }
     LaunchedEffect(driver) { load() }
+
+    receiptRideId?.let { id ->
+        ReceiptScreen(state, id) { receiptRideId = null }
+        return
+    }
 
     val filtered = rides.orEmpty().filter {
         when (filter) {
@@ -147,7 +153,7 @@ fun HistoryScreen(state: AppState, driver: Boolean) {
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(filtered, key = { it.id }) { RideRow(state, it, driver) }
+                    items(filtered, key = { it.id }) { RideRow(state, it, driver) { receiptRideId = it.id } }
                 }
             }
         }
@@ -155,13 +161,13 @@ fun HistoryScreen(state: AppState, driver: Boolean) {
 }
 
 @Composable
-private fun RideRow(state: AppState, ride: Ride, driver: Boolean) {
+private fun RideRow(state: AppState, ride: Ride, driver: Boolean, onReceipt: () -> Unit) {
     val (label, fg, bg) = when {
         ride.status == "completed" -> Triple(state.l("completed"), KJ.success, KJ.successBg)
         ride.status == "cancelled" -> Triple(state.l("cancelled"), KJ.danger, KJ.dangerBg)
         else -> Triple(state.l("in_progress"), KJ.blue, KJ.softBlue)
     }
-    KJCard(Modifier.fillMaxWidth(), padding = 16.dp) {
+    KJCard(Modifier.fillMaxWidth().clickable(enabled = ride.status == "completed", onClick = onReceipt), padding = 16.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconCircle(if (ride.vehicle == "moto") Icons.Filled.TwoWheeler else Icons.Filled.DirectionsCar, size = 40.dp)
             Spacer(Modifier.width(10.dp))
@@ -181,6 +187,10 @@ private fun RideRow(state: AppState, ride: Ride, driver: Boolean) {
         ride.distanceKm?.let {
             Spacer(Modifier.height(8.dp))
             Text(String.format(Locale.US, "%.1f %s", it, state.l("km")), color = KJ.muted, fontSize = 12.sp)
+        }
+        if (ride.status == "completed") {
+            Spacer(Modifier.height(8.dp))
+            Text(state.l("receipt_view") + " ›", color = KJ.blue, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -344,7 +354,7 @@ private fun TxRow(state: AppState, tx: Transaction) {
 // ===================== Settings / profile =====================
 
 @Composable
-fun SettingsScreen(state: AppState) {
+private fun SettingsMain(state: AppState, onOpen: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     val p = state.profile
     val driver = state.role == "driver"
@@ -423,6 +433,11 @@ fun SettingsScreen(state: AppState) {
                     StatTile(Modifier.weight(1f), "${p?.tripsCount ?: 0}", state.l("trips"))
                 }
             }
+
+            Spacer(Modifier.height(18.dp))
+            SectionTitle(state.l("my_space"))
+            Spacer(Modifier.height(8.dp))
+            MySpaceCard(state, onOpen)
 
             Spacer(Modifier.height(18.dp))
             SectionTitle(state.l("summary"))
