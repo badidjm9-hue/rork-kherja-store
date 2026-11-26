@@ -432,3 +432,26 @@ nonisolated struct OtpVerifyResponse: Codable, Sendable {
         error = try c.decodeIfPresent(String.self, forKey: .error)
     }
 }
+
+
+nonisolated struct DriverDocument: Codable, Identifiable, Sendable {
+    let id: UUID
+    let driverId: UUID
+    let docType: String
+    let storagePath: String
+    let mimeType: String
+    let status: String
+    let reason: String?
+    let uploadedAt: Date
+    var reviewedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, reason
+        case driverId = "driver_id"
+        case docType = "doc_type"
+        case storagePath = "storage_path"
+        case mimeType = "mime_type"
+        case uploadedAt = "uploaded_at"
+        case reviewedAt = "reviewed_at"
+    }
+}
