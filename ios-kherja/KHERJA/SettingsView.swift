@@ -70,7 +70,7 @@ struct SettingsView: View {
                         icon: "questionmark.circle",
                         page: .help
                     )
-                    Divider().overlay(KJ.border)
+                    Divider().overlay(Color(hex: 0xE8EAF1))
                     settingsInfoRow(
                         title: store.language == .ar ? "الخصوصية والبيانات" : "Confidentialité et données",
                         subtitle: store.language == .ar ? "كيف تُستخدم بياناتك داخل التطبيق" : "Comprendre l’utilisation de vos données",
@@ -255,6 +255,7 @@ private enum SettingsInfoPage: String, Identifiable {
 private struct SettingsInfoView: View {
     let page: SettingsInfoPage
     let language: AppLanguage
+    @Environment(\.dismiss) private var dismiss
 
     private var isArabic: Bool { language == .ar }
     private var title: String {
@@ -304,7 +305,8 @@ private struct SettingsInfoView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                    ForEach(items.indices, id: \.self) { index in
+                        let item = items[index]
                         VStack(alignment: .leading, spacing: 6) {
                             Text(item.0)
                                 .font(.system(size: 16, weight: .heavy))
@@ -325,7 +327,7 @@ private struct SettingsInfoView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(isArabic ? "تم" : "Terminé") { }
+                    Button(isArabic ? "تم" : "Terminé") { dismiss() }
                         .foregroundStyle(KJ.blue)
                 }
             }
