@@ -32,6 +32,8 @@ struct PassengerHomeView: View {
     @State private var activeRequest: RideRequest?
     @State private var requestTimer: Timer?
     @State private var showNegotiation = false
+    @State private var cancellingRequest = false
+    @State private var cancelError: String?
 
     enum Field { case pickup, destination }
 
@@ -387,7 +389,15 @@ struct PassengerHomeView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(KJ.danger)
                 }
+                .disabled(cancellingRequest)
                 .padding(.top, 4)
+
+                if let cancelError {
+                    Text(cancelError)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(KJ.danger)
+                        .multilineTextAlignment(.center)
+                }
             }
             .padding(.top, 20)
         }
@@ -468,13 +478,23 @@ struct PassengerHomeView: View {
     }
 
     private func cancelRequest() {
-        guard let request = activeRequest else { return }
-        requestTimer?.invalidate()
+        guard !cancellingRequest, let request = activeRequest else { return }
+        cancelError = nil
+        cancellingRequest = true
         Task {
-            try? await SupabaseService.shared.cancelRequest(request.id)
-            await MainActor.run {
-                activeRequest = nil
-                store.setActiveRequest(nil)
+            do {
+                try await SupabaseService.shared.cancelRequest(request.id)
+                await MainActor.run {
+                    requestTimer?.invalidate()
+                    activeRequest = nil
+                    store.setActiveRequest(nil)
+                    cancellingRequest = false
+                }
+            } catch {
+                await MainActor.run {
+                    cancelError = store.serverErrorMessage(error)
+                    cancellingRequest = false
+                }
             }
         }
     }
