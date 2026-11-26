@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.delivery_orders (
   recipient_name text NOT NULL CHECK (char_length(btrim(recipient_name)) BETWEEN 2 AND 100),
   recipient_phone text NOT NULL CHECK (char_length(btrim(recipient_phone)) BETWEEN 8 AND 20),
   sender_note text CHECK (sender_note IS NULL OR char_length(sender_note) <= 300),
-  delivery_fee integer NOT NULL CHECK (delivery_fee >= 350),
+  delivery_fee integer NOT NULL CHECK (delivery_fee > 0),
   payment_method text NOT NULL DEFAULT 'cash' CHECK (payment_method = 'cash'),
   status text NOT NULL DEFAULT 'open'
     CHECK (status IN ('open','accepted','picked_up','delivered','cancelled','expired')),
@@ -62,14 +62,16 @@ RETURNS TABLE (
   dest_lng double precision, city text, distance_km numeric, vehicle text,
   package_description text, delivery_fee integer, status text, created_at timestamptz
 )
-LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
-AS $
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public
+AS $$
 DECLARE v_me public.profiles;
 BEGIN
   v_me := public.assert_active_user();
   IF v_me.role <> 'driver' OR v_me.driver_status <> 'approved' OR NOT v_me.is_online THEN
     RAISE EXCEPTION 'Approved online driver required';
   END IF;
+  UPDATE public.delivery_orders SET status = 'expired', updated_at = now()
+  WHERE status = 'open' AND expires_at <= now();
   RETURN QUERY
     SELECT d.id, d.passenger_id, d.pickup_label, d.pickup_lat, d.pickup_lng,
            d.dest_label, d.dest_lat, d.dest_lng, d.city, d.distance_km, d.vehicle,
@@ -79,7 +81,7 @@ BEGIN
     ORDER BY d.created_at DESC
     LIMIT 50;
 END;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.quote_delivery(
   p_pickup_lat double precision, p_pickup_lng double precision,
@@ -189,7 +191,7 @@ BEGIN
     RAISE EXCEPTION 'Finish your active job first';
   END IF;
   SELECT * INTO v_order FROM public.delivery_orders WHERE id = p_order_id FOR UPDATE;
-  IF v_order.id IS NULL OR v_order.status <> 'open' THEN RAISE EXCEPTION 'Delivery no longer available'; END IF;
+  IF v_order.id IS NULL OR v_order.status <> 'open' OR v_order.expires_at <= now() THEN RAISE EXCEPTION 'Delivery no longer available'; END IF;
   UPDATE public.delivery_orders
   SET driver_id = auth.uid(), status = 'accepted', accepted_at = now(), updated_at = now()
   WHERE id = p_order_id AND status = 'open';
