@@ -45,6 +45,14 @@ struct RideMapView: UIViewRepresentable {
         map.pointOfInterestFilter = .includingAll
         map.tintColor = KJ.blue.uiColor
         map.isRotateEnabled = false
+        // Start on Algiers instead of the world view before GPS permission resolves.
+        map.setRegion(
+            MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 36.7538, longitude: 3.0588),
+                span: MKCoordinateSpan(latitudeDelta: 0.075, longitudeDelta: 0.075)
+            ),
+            animated: false
+        )
         let config = MKStandardMapConfiguration(emphasisStyle: .muted)
         config.pointOfInterestFilter = .includingAll
         map.preferredConfiguration = config
