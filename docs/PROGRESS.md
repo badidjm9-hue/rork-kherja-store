@@ -61,3 +61,10 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - Android passenger home already renders its interactive map preview; this was confirmed in the current source.
 - Added `docs/UI_COMPLETION_TRACKER.md` to record existing screen coverage, missing passenger/driver/admin interfaces, and build/E2E verification gates.
 - This UI pass is code-only. Xcode/Gradle builds and device tests have not been run. No Supabase migration or production change was made.
+
+
+## Additional settings UI pass — 2026-11-26
+
+- Added Arabic/French help, privacy-information, and about panels to Android and iOS settings. These panels explain basic app flows and device permissions; they are not a substitute for owner-approved legal policy text or a configured support channel.
+- Corrected the Android driver delivery tab to use the parcel/shipping icon.
+- No native build or device test was run. No production backend, database, or storage configuration was changed.
