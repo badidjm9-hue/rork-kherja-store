@@ -179,6 +179,7 @@ nonisolated struct DeliveryOrder: Codable, Identifiable, Sendable, Equatable {
     var paymentMethod: String
     var status: String
     var createdAt: Date?
+    var expiresAt: Date?
     var acceptedAt: Date?
     var pickedUpAt: Date?
     var deliveredAt: Date?
@@ -201,6 +202,7 @@ nonisolated struct DeliveryOrder: Codable, Identifiable, Sendable, Equatable {
         case deliveryFee = "delivery_fee"
         case paymentMethod = "payment_method"
         case createdAt = "created_at"
+        case expiresAt = "expires_at"
         case acceptedAt = "accepted_at"
         case pickedUpAt = "picked_up_at"
         case deliveredAt = "delivered_at"
