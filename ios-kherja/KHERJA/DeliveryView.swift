@@ -108,7 +108,7 @@ struct DeliveryView: View {
                 TextField(store.l("delivery_destination"), text: $destinationQuery)
                     .textFieldStyle(.roundedBorder)
                 Button(store.l("delivery_search")) { Task { await searchDestination() } }
-                    .buttonStyle(KJOutlineButtonStyle())
+                    .buttonStyle(GhostButtonStyle())
                 ForEach(suggestions) { place in
                     Button {
                         destination = place
@@ -181,7 +181,7 @@ struct DeliveryView: View {
     private var driverContent: some View {
         if let activeOrder {
             orderCard(activeOrder, passenger: false)
-        } else if !store.profile!.isOnline {
+        } else if store.profile?.isOnline != true {
             Text(store.l("go_online_first"))
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(KJ.muted)
                 .padding(18).frame(maxWidth: .infinity).kjCard()
