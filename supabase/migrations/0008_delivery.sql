@@ -221,6 +221,17 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.expire_delivery_orders() RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $
+DECLARE v_me public.profiles;
+BEGIN
+  v_me := public.assert_active_user();
+  UPDATE public.delivery_orders SET status = 'expired', updated_at = now()
+  WHERE passenger_id = auth.uid() AND status = 'open' AND expires_at <= now();
+END;
+$;
+
 CREATE OR REPLACE FUNCTION public.cancel_delivery_order(p_order_id uuid) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -245,9 +256,11 @@ REVOKE EXECUTE ON FUNCTION public.create_delivery_order(text,double precision,do
 REVOKE EXECUTE ON FUNCTION public.claim_delivery_order(uuid) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.update_delivery_status(uuid,text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.cancel_delivery_order(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.expire_delivery_orders() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.open_delivery_feed() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.quote_delivery(double precision,double precision,double precision,double precision,numeric,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_delivery_order(text,double precision,double precision,text,double precision,double precision,numeric,text,text,text,text,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_delivery_order(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_delivery_status(uuid,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_delivery_order(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.expire_delivery_orders() TO authenticated;
