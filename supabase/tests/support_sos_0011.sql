@@ -45,3 +45,52 @@ RESET ROLE; GRANT USAGE ON SCHEMA t TO anon; GRANT EXECUTE ON ALL FUNCTIONS IN S
 SELECT t.fails($$SELECT public.raise_sos(NULL,1,1)$$,'permission denied','anon cannot raise SOS');
 RESET ROLE;
 SELECT 'SUPPORT/SOS 0011 PASSED' AS result;
+
+
+-- Migration 0012: support/SOS event notifications and notification privacy.
+-- New ticket -> authorized support staff; status changes -> ticket owner.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','bbbbbbbb-0000-0000-0000-000000000001',false);
+INSERT INTO public.support_tickets(id,user_id,category,message)
+VALUES ('eeeeeeee-0000-0000-0000-000000000001',auth.uid(),'account','Notification status lifecycle test');
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','bbbbbbbb-0000-0000-0000-000000000004',false);
+SELECT t.eq(
+  (SELECT count(*)::text FROM public.notifications
+   WHERE user_id=auth.uid() AND data->>'entity_type'='support_ticket'
+     AND data->>'entity_id'='eeeeeeee-0000-0000-0000-000000000001' AND data->>'event'='created'),
+  '1','support staff receive new ticket notification');
+SELECT public.admin_set_ticket_status('eeeeeeee-0000-0000-0000-000000000001','in_progress');
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','bbbbbbbb-0000-0000-0000-000000000001',false);
+SELECT t.eq(
+  (SELECT count(*)::text FROM public.notifications
+   WHERE user_id=auth.uid() AND data->>'entity_type'='support_ticket'
+     AND data->>'entity_id'='eeeeeeee-0000-0000-0000-000000000001' AND data->>'event'='status_changed'),
+  '1','ticket owner receives status notification');
+SELECT public.raise_sos(NULL,36.7,3.0);
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','bbbbbbbb-0000-0000-0000-000000000004',false);
+SELECT t.eq(
+  (SELECT count(*)::text FROM public.notifications
+   WHERE user_id=auth.uid() AND data->>'entity_type'='sos_alert' AND data->>'event'='created'),
+  '1','support staff receive SOS notification');
+SELECT public.admin_set_sos_status(
+  (SELECT id FROM public.sos_alerts WHERE user_id='bbbbbbbb-0000-0000-0000-000000000001' ORDER BY created_at DESC LIMIT 1),
+  'acknowledged');
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','bbbbbbbb-0000-0000-0000-000000000001',false);
+SELECT t.eq(
+  (SELECT count(*)::text FROM public.notifications
+   WHERE user_id=auth.uid() AND data->>'entity_type'='sos_alert' AND data->>'event'='status_changed'),
+  '1','SOS owner receives acknowledgement notification');
+RESET ROLE;
+SELECT 'SUPPORT/SOS 0012 NOTIFICATION CHECKS FINISHED' AS result;

@@ -114,3 +114,12 @@ Executed in this environment, with results:
 | Behavioural SQL suite `supabase/tests/stack_behavior.sql` (run via `supabase/tests/run_local.sh`): phone gate, document upload/submit/review + audit, admin permissions (0009), delivery create/feed/claim/status with recipient-data privacy | 41 checks passed |
 
 Not executed / not verified: Android build, iOS build, any device or simulator test, RTL/LTR visual check, comparison with the owner's design references (none in the repository), real Supabase behaviour (stand-ins are not Supabase), Edge Function deployment, SMS, Google/Apple sign-in, push notifications, and the first Codemagic run (stopped earlier because `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` are not set in Codemagic).
+
+
+## Support/SOS completion continuation — 2026-11-26
+
+- Current integrated branch HEAD at start of this pass: `48b075e`.
+- Source inspection confirms Android support/SOS is reachable from shared settings for rider and driver; iOS saved places, notifications/preferences, driver vehicles, receipts, and support/SOS are wired into Settings and ride history; Admin Support/SOS is permission-gated and has ticket/SOS status actions.
+- Added migration 0012 for support staff notifications on new tickets/SOS, user notifications when ticket/SOS status changes, and per-user transaction locking for the SOS rate limit.
+- Added SQL behavioral checks for the notification lifecycle. These have not been executed in this environment; migration 0012 has not been applied to any Supabase project.
+- Native builds and device testing remain unverified. Admin typecheck/lint/build remain unverified here because dependencies cannot be installed.
