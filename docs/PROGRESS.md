@@ -68,3 +68,12 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - Added Arabic/French help, privacy-information, and about panels to Android and iOS settings. These panels explain basic app flows and device permissions; they are not a substitute for owner-approved legal policy text or a configured support channel.
 - Corrected the Android driver delivery tab to use the parcel/shipping icon.
 - No native build or device test was run. No production backend, database, or storage configuration was changed.
+
+## Driver profile and document workflow — 2026-11-26
+
+- Android and iOS driver profiles now expose vehicle make, model, plate, and color. iOS saves the existing vehicle_color profile field with visible error handling.
+- Added typed driver-document models and read APIs on both platforms for the existing driver_documents table.
+- Added private Storage upload and submit_driver_document RPC wiring on Android and iOS. The UI lists the five required document types and reflects pending, approved, and rejected review states, including rejection reasons.
+- The existing migration 0003_driver_documents.sql defines the private bucket, Storage policies, table/RLS, upload RPC, and admin review flow. This work did not apply or deploy that migration; verify its presence in the target Supabase project before attempting uploads.
+- Current client pickers accept images only (JPEG output on iOS; JPEG/PNG/HEIC image selection on Android). PDF selection and document preview/download are not included yet.
+- No Xcode or Gradle build, device upload, RLS test, or admin review E2E was run. Treat this implementation as source-complete but not build-verified.
