@@ -82,6 +82,7 @@ export default function Support() {
   };
 
   const openSos = (sos.data ?? []).filter((a) => a.status === "open").length;
+  const openTickets = (tickets.data ?? []).filter((ticket) => ticket.status !== "resolved").length;
 
   return (
     <div>
@@ -96,7 +97,7 @@ export default function Support() {
         </Button>
         <Button size="sm" variant={tab === "tickets" ? "default" : "outline"} onClick={() => setTab("tickets")}>
           <LifeBuoy className="me-1 h-4 w-4" />
-          {t("Demandes", "الطلبات")}
+          {t("Demandes", "الطلبات")} {openTickets > 0 ? `(${openTickets})` : ""}
         </Button>
       </div>
 
