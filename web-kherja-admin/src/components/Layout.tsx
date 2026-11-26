@@ -5,6 +5,7 @@ import {
   CarFront,
   ClipboardList,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Package,
   Car,
@@ -46,6 +47,7 @@ const NAV: NavItem[] = [
   { to: "/notifications", fr: "Notifications", ar: "الإشعارات", icon: Bell, perm: "notifications.read" },
   { to: "/settings", fr: "Paramètres", ar: "الإعدادات", icon: Settings, perm: "settings.read" },
   { to: "/admins", fr: "Administrateurs", ar: "المسؤولون", icon: ShieldCheck, perm: "admins.manage" },
+  { to: "/support", fr: "Support & SOS", ar: "الدعم وSOS", icon: LifeBuoy, perm: "support.read" },
   { to: "/audit", fr: "Journal d'audit", ar: "سجل التدقيق", icon: ClipboardList, perm: "audit.read" },
 ];
 

@@ -24,7 +24,9 @@ export type Permission =
   | "notifications.manage"
   | "reports.read"
   | "settings.read"
-  | "settings.manage";
+  | "settings.manage"
+  | "support.read"
+  | "support.manage";
 
 export interface AdminMe {
   user_id: string;

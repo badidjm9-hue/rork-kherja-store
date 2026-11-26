@@ -24,6 +24,7 @@ const Vehicles = lazy(() => import("./pages/Vehicles"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const Support = lazy(() => import("./pages/Support"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -96,6 +97,7 @@ function Shell() {
           <Route path="/passengers" element={<Guard perm="users.read"><Passengers /></Guard>} />
           <Route path="/pricing" element={<Guard perm="pricing.read"><Pricing /></Guard>} />
           <Route path="/admins" element={<Guard perm="admins.manage"><Admins /></Guard>} />
+          <Route path="/support" element={<Guard perm="support.read"><Support /></Guard>} />
           <Route path="/audit" element={<Guard perm="audit.read"><Audit /></Guard>} />
           <Route path="*" element={<NotFound />} />
         </Route>

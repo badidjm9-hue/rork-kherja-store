@@ -197,6 +197,18 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      support_tickets: {
+        Row: { category: string; created_at: string; id: string; message: string; ride_id: string | null; status: string; user_id: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      sos_alerts: {
+        Row: { created_at: string; id: string; lat: number | null; lng: number | null; ride_id: string | null; status: string; user_id: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       app_settings: {
         Row: { key: string; updated_at: string; updated_by: string | null; value: Json }
         Insert: never
@@ -903,6 +915,14 @@ export type Database = {
       admin_restore_pricing: {
         Args: { p_id: string; p_note?: string }
         Returns: string
+      }
+      admin_set_ticket_status: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_set_sos_status: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
       }
       admin_set_vehicle_status: {
         Args: { p_id: string; p_reason?: string; p_status: string }
