@@ -97,3 +97,20 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 | Admin: driver "phone verified" badge via `admin_driver_phone_status()` | done; requires migration 0009 |
 | Migration 0009 (additive, **not applied**) | applies and re-applies cleanly on throwaway Postgres 16 with stand-in `auth`/permission schema; RLS and RPC permission checks pass |
 | Codemagic: debug APK + iOS simulator workflows trigger on this branch | configured; first debug build reached `generateConfig` and stopped because `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` are not set in Codemagic |
+
+## Integration verification — `feature/kherja-integrated` (2026-11-26)
+
+Executed in this environment, with results:
+
+| Check | Result |
+|---|---|
+| `bun install --frozen-lockfile` (admin) after rewriting 117 lockfile URLs from `package-firewall.replit.internal` to `registry.npmjs.org` (only the URL prefix changed; versions and integrity hashes untouched; every URL matches `<name>/-/<basename>-<version>.tgz`) | passed, 120 packages |
+| Admin `tsc --noEmit` (includes the new files) | passed |
+| Admin `vite build` | passed (entry chunk still ~617 kB, Vite size warning remains) |
+| Admin unit tests (`vitest run`): pricing (3) + labels (5) | 8 passed, 0 failed; no browser tests exist |
+| Admin `eslint` | 0 errors, 11 pre-existing warnings |
+| Backend `bun test` (auth-otp) | 70 passed, 0 failed |
+| Migrations 0001-0009 applied in order on a fresh throwaway PostgreSQL 16 with stand-in `auth`/`storage` objects (`supabase/tests/local_stack_stub.sql`) | all applied without errors |
+| Behavioural SQL suite `supabase/tests/stack_behavior.sql` (run via `supabase/tests/run_local.sh`): phone gate, document upload/submit/review + audit, admin permissions (0009), delivery create/feed/claim/status with recipient-data privacy | 41 checks passed |
+
+Not executed / not verified: Android build, iOS build, any device or simulator test, RTL/LTR visual check, comparison with the owner's design references (none in the repository), real Supabase behaviour (stand-ins are not Supabase), Edge Function deployment, SMS, Google/Apple sign-in, push notifications, and the first Codemagic run (stopped earlier because `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` are not set in Codemagic).
