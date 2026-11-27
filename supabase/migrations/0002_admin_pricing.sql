@@ -982,6 +982,7 @@ BEGIN
   SELECT * INTO v_before FROM profiles WHERE id = p_user FOR UPDATE;
   IF v_before.id IS NULL THEN RAISE EXCEPTION 'User not found'; END IF;
   PERFORM public.require_perm(CASE WHEN v_before.role = 'driver' THEN 'drivers.manage' ELSE 'users.manage' END);
+  IF v_before.account_status = 'deleted' THEN RAISE EXCEPTION 'Deleted accounts cannot be reactivated'; END IF;
   IF p_status NOT IN ('active','suspended') THEN RAISE EXCEPTION 'Invalid status'; END IF;
   IF p_status = 'suspended' AND coalesce(trim(p_reason), '') = '' THEN RAISE EXCEPTION 'A reason is required'; END IF;
   UPDATE profiles SET account_status = p_status, status_reason = p_reason,

@@ -42,6 +42,7 @@ export default function PeopleTable({ role }: { role: "driver" | "passenger" }) 
       rejected: list.filter((p) => p.driver_status === "rejected").length,
       online: list.filter((p) => p.is_online).length,
       suspended: list.filter((p) => p.account_status === "suspended").length,
+      deleted: list.filter((p) => p.account_status === "deleted").length,
     };
   }, [q.data]);
 
@@ -53,6 +54,7 @@ export default function PeopleTable({ role }: { role: "driver" | "passenger" }) 
       if (filter === "rejected" && p.driver_status !== "rejected") return false;
       if (filter === "online" && !p.is_online) return false;
       if (filter === "suspended" && p.account_status !== "suspended") return false;
+      if (filter === "deleted" && p.account_status !== "deleted") return false;
       if (!s) return true;
       return [p.name, p.phone, p.vehicle_plate, p.city, p.vehicle_make, p.vehicle_model]
         .filter(Boolean)
@@ -68,11 +70,13 @@ export default function PeopleTable({ role }: { role: "driver" | "passenger" }) 
           { id: "online", label: t("En ligne", "متصلون"), n: counts.online },
           { id: "rejected", label: t("Refusés", "مرفوضون"), n: counts.rejected },
           { id: "suspended", label: t("Suspendus", "معلقون"), n: counts.suspended },
+          { id: "deleted", label: t("Supprimés", "محذوفة"), n: counts.deleted },
           { id: "all", label: t("Tous", "الكل"), n: counts.all },
         ]
       : [
           { id: "all", label: t("Tous", "الكل"), n: counts.all },
           { id: "suspended", label: t("Suspendus", "معلقون"), n: counts.suspended },
+          { id: "deleted", label: t("Supprimés", "محذوفة"), n: counts.deleted },
         ];
 
   const canApprove = can("drivers.approve");
@@ -80,6 +84,9 @@ export default function PeopleTable({ role }: { role: "driver" | "passenger" }) 
 
   const run = async (a: Action, reason: string) => {
     try {
+      if (a.person.account_status === "deleted") {
+        throw new Error(t("Ce compte a été supprimé et ne peut plus être modifié.", "هذا الحساب محذوف ولا يمكن تعديله."));
+      }
       if (a.kind === "approve" || a.kind === "reject" || a.kind === "pending") {
         const status = a.kind === "approve" ? "approved" : a.kind === "reject" ? "rejected" : "pending";
         must(await supabase.rpc("admin_set_driver_status", { p_user: a.person.id, p_status: status, p_reason: reason || undefined }));
@@ -111,25 +118,25 @@ export default function PeopleTable({ role }: { role: "driver" | "passenger" }) 
 
   const ActionButtons = ({ p, compact }: { p: Profile; compact?: boolean }) => (
     <div className={cn("flex flex-wrap items-center gap-1.5", compact && "justify-end")}>
-      {role === "driver" && canApprove && p.driver_status !== "approved" && (
+      {role === "driver" && canApprove && p.account_status !== "deleted" && p.driver_status !== "approved" && (
         <Button size="sm" className="h-8 bg-success hover:bg-success/90" onClick={() => setAction({ kind: "approve", person: p })}>
           <Check className="h-4 w-4" />
           {t("Valider", "قبول")}
         </Button>
       )}
-      {role === "driver" && canApprove && p.driver_status === "pending" && (
+      {role === "driver" && canApprove && p.account_status !== "deleted" && p.driver_status === "pending" && (
         <Button size="sm" variant="outline" className="h-8 text-destructive" onClick={() => setAction({ kind: "reject", person: p })}>
           <X className="h-4 w-4" />
           {t("Refuser", "رفض")}
         </Button>
       )}
-      {role === "driver" && canApprove && p.driver_status === "approved" && !compact && (
+      {role === "driver" && canApprove && p.account_status !== "deleted" && p.driver_status === "approved" && !compact && (
         <Button size="sm" variant="outline" className="h-8" onClick={() => setAction({ kind: "pending", person: p })}>
           <CircleSlash className="h-4 w-4" />
           {t("Retirer la validation", "سحب القبول")}
         </Button>
       )}
-      {canSuspend &&
+      {canSuspend && p.account_status !== "deleted" &&
         (p.account_status === "suspended" ? (
           <Button size="sm" variant="outline" className="h-8" onClick={() => setAction({ kind: "activate", person: p })}>
             <RotateCcw className="h-4 w-4" />
@@ -238,7 +245,8 @@ export default function PeopleTable({ role }: { role: "driver" | "passenger" }) 
                         <div className="flex flex-wrap gap-1.5">
                           {role === "driver" && <Pill tone={ds.tone}>{ds.label}</Pill>}
                           {p.account_status === "suspended" && <Pill tone="red">{t("Suspendu", "معلق")}</Pill>}
-                          {role === "passenger" && p.account_status !== "suspended" && <Pill tone="green">{t("Actif", "نشط")}</Pill>}
+                          {p.account_status === "deleted" && <Pill tone="gray">{t("Supprimé", "محذوف")}</Pill>}
+                          {role === "passenger" && p.account_status === "active" && <Pill tone="green">{t("Actif", "نشط")}</Pill>}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -334,8 +342,12 @@ function PersonDetail({
 
       <div className="flex flex-wrap gap-1.5">
         {role === "driver" && <Pill tone={ds.tone}>{ds.label}</Pill>}
-        <Pill tone={p.account_status === "suspended" ? "red" : "green"}>
-          {p.account_status === "suspended" ? t("Suspendu", "معلق") : t("Actif", "نشط")}
+        <Pill tone={p.account_status === "deleted" ? "gray" : p.account_status === "suspended" ? "red" : "green"}>
+          {p.account_status === "deleted"
+            ? t("Supprimé", "محذوف")
+            : p.account_status === "suspended"
+              ? t("Suspendu", "معلق")
+              : t("Actif", "نشط")}
         </Pill>
         {role === "driver" && <Pill tone={p.is_online ? "blue" : "gray"}>{p.is_online ? t("En ligne", "متصل") : t("Hors ligne", "غير متصل")}</Pill>}
         {role === "driver" && phoneStatus.data !== undefined && (
