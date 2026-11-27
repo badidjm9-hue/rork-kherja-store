@@ -22,7 +22,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 function stringData(input: Record<string, unknown> | undefined): Record<string, string> {
   const output: Record<string, string> = {};
   for (const [key, value] of Object.entries(input ?? {})) {
-    if (/^[a-zA-Z0-9_.-]{1,64}$/.test(key)) output[key] = typeof value === "string" ? value : JSON.stringify(value);
+    if (/^[a-zA-Z0-9_.-]{1,64}$/.test(key)) output[key] = typeof value === "string" ? value : JSON.stringify(value) ?? String(value);
   }
   return output;
 }

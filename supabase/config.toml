@@ -1,0 +1,6 @@
+[functions.auth-otp]
+verify_jwt = true
+
+# Called only by a Supabase Database Webhook authenticated with PUSH_WEBHOOK_SECRET.
+[functions.push-notifications]
+verify_jwt = false
