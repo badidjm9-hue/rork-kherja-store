@@ -13,3 +13,4 @@ $PSQL -v ON_ERROR_STOP=1 -f "$HERE/stack_behavior.sql" 2>&1 | grep -E 'PASS|FAIL
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/support_sos_0011.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0013.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0015.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
+$PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0016.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"

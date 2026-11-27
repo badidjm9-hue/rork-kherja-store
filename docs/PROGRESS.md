@@ -162,3 +162,4 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - A schema review found `profiles.id → auth.users.id ON DELETE CASCADE`; migration 0015 removes that FK so deleting the Auth identity cannot cascade-delete the anonymised profile and retained ride/wallet/message history.
 - Migration 0015 also replaces `delete_my_account()` to remove private driver-document Storage objects before deleting their metadata.
 - Handler tests and a disposable-Postgres migration test are being added. Migration 0015 and Edge Function code are not applied/deployed to Supabase. Native builds remain unrun.
+- Follow-up migration 0016 converts remaining nullable foreign keys to `auth.users` (creator, reviewer, publisher, and audit actors) to `ON DELETE SET NULL`, while keeping cascade only for identity-owned rows. This prevents historical audit/admin metadata from blocking Auth deletion.
