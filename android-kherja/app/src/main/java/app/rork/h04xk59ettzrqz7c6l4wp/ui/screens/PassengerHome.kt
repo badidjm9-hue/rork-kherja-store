@@ -495,14 +495,24 @@ private fun PlaceSearch(
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<GeoPlace>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
+    var searchError by remember { mutableStateOf<String?>(null) }
     var saved by remember { mutableStateOf<List<app.rork.h04xk59ettzrqz7c6l4wp.data.SavedPlace>>(emptyList()) }
-    LaunchedEffect(Unit) { saved = runCatching { state.api.savedPlaces() }.getOrDefault(emptyList()) }
+    var savedLoading by remember { mutableStateOf(true) }
+    var savedError by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        savedLoading = true
+        try { saved = state.api.savedPlaces(); savedError = null }
+        catch (e: Exception) { savedError = state.serverError(e) }
+        savedLoading = false
+    }
     LaunchedEffect(query) {
         val q = query.trim()
-        if (q.length < 3) { results = emptyList(); return@LaunchedEffect }
+        if (q.length < 3) { results = emptyList(); searchError = null; searching = false; return@LaunchedEffect }
         delay(450) // debounce; Nominatim allows ~1 req/s
         searching = true
-        results = state.geo.search(q, state.language, near)
+        searchError = null
+        try { results = state.geo.searchOrThrow(q, state.language, near) }
+        catch (e: Exception) { results = emptyList(); searchError = state.serverError(e) }
         searching = false
     }
     Column(Modifier.fillMaxSize().background(KJ.canvas).statusBarsPadding().imePadding().padding(16.dp)) {
@@ -529,6 +539,12 @@ private fun PlaceSearch(
         SearchAction(Icons.Filled.Map, state.l("choose_on_map"), onPickOnMap)
         Spacer(Modifier.height(6.dp))
         LazyColumn(Modifier.weight(1f)) {
+            if (query.trim().length < 3 && savedLoading) item { CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp) }
+            if (query.trim().length < 3 && savedError != null) item { ErrorBanner(savedError!!) }
+            if (query.trim().length < 3 && !savedLoading && savedError == null && saved.isEmpty()) item {
+                Text(if (state.isRtl) "لا توجد أماكن محفوظة بعد." else "Aucun lieu enregistré pour le moment.", color = KJ.muted, modifier = Modifier.padding(12.dp))
+            }
+            if (searchError != null) item { ErrorBanner(searchError!!) }
             if (query.trim().length < 3) {
                 items(saved) { p ->
                     Row(
@@ -557,7 +573,7 @@ private fun PlaceSearch(
                     Text(place.label, color = KJ.ink, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
-            if (!searching && query.trim().length >= 3 && results.isEmpty()) {
+            if (!searching && searchError == null && query.trim().length >= 3 && results.isEmpty()) {
                 item { Text(state.l("no_results"), color = KJ.muted, modifier = Modifier.padding(12.dp)) }
             }
         }

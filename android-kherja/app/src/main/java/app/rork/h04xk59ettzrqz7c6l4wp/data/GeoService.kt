@@ -23,19 +23,25 @@ import kotlin.math.sqrt
 class GeoService(private val http: HttpClient) {
     private val ua = "KHERJA-Android/1.0 (app.rork.kherja)"
 
-    suspend fun search(query: String, lang: String, near: GeoPlace?): List<GeoPlace> = runCatching {
+    suspend fun search(query: String, lang: String, near: GeoPlace?): List<GeoPlace> =
+        runCatching { searchOrThrow(query, lang, near) }.getOrDefault(emptyList())
+
+    /** Strict variant for UI that must distinguish an empty result from a network/provider error. */
+    suspend fun searchOrThrow(query: String, lang: String, near: GeoPlace?): List<GeoPlace> {
         val viewbox = near?.let { "&viewbox=${it.lng - 0.6},${it.lat + 0.6},${it.lng + 0.6},${it.lat - 0.6}" } ?: ""
         val url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&countrycodes=dz" +
             "&accept-language=$lang$viewbox&q=${query.encodeURLQueryComponent()}"
-        val text = http.get(url) { header("User-Agent", ua) }.bodyAsText()
-        KJson.parseToJsonElement(text).jsonArray.mapNotNull { el ->
+        val response = http.get(url) { header("User-Agent", ua) }
+        if (response.status.value !in 200..299) throw IllegalStateException("Address search unavailable (${response.status.value})")
+        val text = response.bodyAsText()
+        return KJson.parseToJsonElement(text).jsonArray.mapNotNull { el ->
             val o = el.jsonObject
             val lat = o["lat"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: return@mapNotNull null
             val lng = o["lon"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: return@mapNotNull null
             val display = o["display_name"]?.jsonPrimitive?.content ?: return@mapNotNull null
             GeoPlace(shorten(display), lat, lng)
         }
-    }.getOrDefault(emptyList())
+    }
 
     suspend fun reverse(lat: Double, lng: Double, lang: String): String? = runCatching {
         val url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language=$lang&lat=$lat&lon=$lng"
