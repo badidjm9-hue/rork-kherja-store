@@ -3,7 +3,7 @@
 # Usage: PSQL="psql -h /tmp/sock -p 55432 -U postgres -d postgres" supabase/tests/run_local.sh
 # The database must be empty. Never point this at a real Supabase project.
 set -euo pipefail
-: "\${PSQL:?set PSQL to a psql command for a disposable empty database}"
+: "${PSQL:?set PSQL to a psql command for a disposable empty database}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
 run_sql() {
