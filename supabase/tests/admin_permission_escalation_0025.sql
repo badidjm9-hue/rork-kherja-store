@@ -5,9 +5,12 @@ DECLARE
   v_manager uuid := 'eeeeeeee-0000-0000-0000-000000000021';
   v_target uuid := 'eeeeeeee-0000-0000-0000-000000000022';
   v_new uuid := 'eeeeeeee-0000-0000-0000-000000000025';
+  v_peer uuid := 'eeeeeeee-0000-0000-0000-000000000026';
   v_failed boolean := false;
 BEGIN
-  INSERT INTO auth.users(id,email) VALUES(v_new,'newstaff0025@kherja.test');
+  INSERT INTO auth.users(id,email) VALUES
+    (v_new,'newstaff0025@kherja.test'),
+    (v_peer,'superpeer0025@kherja.test');
 
   PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
   PERFORM public.admin_set_admin('staff20020@kherja.test','pricing_manager',true,'Staff Two');
@@ -55,7 +58,19 @@ BEGIN
     RAISE EXCEPTION 'new employee inherited role permissions before explicit selection';
   END IF;
 
+  -- A super admin may invite/promote a peer super admin; that account receives every permission.
+  PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
+  PERFORM public.admin_set_admin('superpeer0025@kherja.test','super_admin',true,'Peer Super');
+  PERFORM set_config('request.jwt.claim.sub',v_peer::text,false);
+  IF NOT public.has_perm('settings.manage') OR NOT public.has_perm('admins.manage') THEN
+    RAISE EXCEPTION 'peer super admin did not receive full privileges';
+  END IF;
+  IF (SELECT count(*) FROM public.admin_permissions) <>
+     (SELECT count(*) FROM public.admin_role_permissions WHERE role_code='super_admin') THEN
+    RAISE EXCEPTION 'super admin role permission map is incomplete';
+  END IF;
+
   PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
   IF public.has_perm('finance.adjust') THEN RAISE EXCEPTION 'manager context unexpectedly has finance.adjust'; END IF;
-  RAISE NOTICE 'PASS: delegated managers cannot escalate privileges, role changes are bounded, and new employees start with zero permissions';
+  RAISE NOTICE 'PASS: delegated managers cannot escalate privileges; super admins retain full access; new employees start with zero permissions';
 END $$;
