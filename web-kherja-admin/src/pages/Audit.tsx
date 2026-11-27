@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 const PAGE = 50;
 
-const ENTITY_TYPES = ["profile", "ride", "pricing_version", "admin_user"];
+const ENTITY_TYPES = ["profile", "ride", "delivery_order", "pricing_version", "admin_user"];
 
 export default function Audit() {
   const { t, date } = useI18n();
@@ -51,7 +51,9 @@ export default function Audit() {
     "pricing.unschedule",
     "ride.cancel",
     "ride.adjust",
+    "delivery.cancel",
     "admin.set",
+    "admin.permissions",
   ];
 
   return (
