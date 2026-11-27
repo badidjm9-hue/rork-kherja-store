@@ -167,6 +167,7 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 ## Phase 5 – push delivery backend prepared (not deployed)
 
 - Migration 0017 adds a private device-token registry, authenticated register/unregister RPCs, and automatic token cleanup when an account is deleted.
+- Migration 0018 excludes deleted/staff profiles from customer metrics and broadcasts, adds a deleted-account dashboard metric, and blocks new in-app/push notifications to deleted profiles. A disposable SQL regression test is wired into the local runner.
 - Added `push-notifications` Edge Function for Supabase notification-insert webhooks, with FCM HTTP v1 and APNs token authentication. Provider secrets are read only from function environment; no keys or tokens are committed.
 - Added disposable SQL checks for token ownership, unregister, and deleted-account cleanup.
 - Android Firebase project/configuration and iOS APNs entitlement/token registration remain outstanding. See `docs/PUSH_SETUP.md`. No provider credentials, database migration, webhook or Edge Function were configured/deployed.
@@ -193,3 +194,9 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Customer broadcasts exclude deleted profiles and admin/staff accounts; the recipient count reflects the eligible audience.
 - Added a disposable-Postgres regression test and wired it into `supabase/tests/run_local.sh`.
 - Migration 0018 is not applied to Supabase. No native build or device test was run.
+
+## Phase 6 – Admin deleted-account visibility
+
+- Added migration 0018 to keep anonymised/deleted accounts out of active passenger/driver totals and customer broadcast audiences, while exposing a separate deleted-account metric.
+- `push_notification()` now refuses new notifications for deleted profiles; customer broadcasts also skip staff/admin accounts and report the actual eligible recipient count.
+- Added regression coverage for metrics, notification suppression, broadcast recipient counts and deleted/staff exclusions. Migration 0018 remains unapplied to Supabase.
