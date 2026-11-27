@@ -38,7 +38,7 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 
 ### Passenger
 - Saved places management/selection, notification inbox/preferences, help/about/privacy information, and ride receipt/share are already present in Android and iOS source.
-- Remaining: refine explicit location-permission denial/retry and address-search empty/error states; compare the full passenger journey against approved designs.
+- Location denial now has Settings/retry guidance on Android and a Settings action on iOS; iOS saved-place loading errors are surfaced. Remaining: finish address-search empty/error review and compare the full passenger journey against approved designs.
 - Official privacy/terms wording and a verified support contact still require owner approval; current informational panels are not legal policy documents.
 
 ### Driver
@@ -53,7 +53,7 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 - Remaining: finish secondary-query loading/error/empty-state review and compare the full Admin workflow against the live schema after migrations are approved.
 
 ### Backend integrations
-- Auth account deletion is implemented in code; migrations 0015–0016 and the updated auth-otp Edge Function are not deployed.
+- Auth account deletion is implemented in code; profile anonymisation, private Storage API cleanup and Auth identity removal are sequenced with retry-safe partial states. Migrations 0015–0016 and the updated auth-otp Edge Function are not deployed.
 - Push registration and FCM/APNs delivery are implemented in code; migration 0017, Edge Function deployment, webhook and provider credentials are not configured.
 - Migration 0018 prevents deleted profiles from receiving new notifications and excludes deleted/staff profiles from customer metrics/broadcasts; it is not deployed.
 - SMS OTP provider/dev-mode setup is still deferred until the development scope is complete.
@@ -99,3 +99,10 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 - Added PDF selection/upload for driver documents on Android and iOS; no Storage schema change was needed because migration 0003 already permits PDF.
 - Added Admin deleted-account metrics, staff/deleted broadcast exclusion, and notification suppression (migration 0018).
 - These changes are source-only. No Supabase deployment, provider secret changes, native builds, or final tests were performed.
+
+## Development updates — 2026-11-27
+
+- Completed authenticated account deletion path with retry-safe private Storage cleanup and Auth identity removal; backend changes remain code-only.
+- Added private push-device registration, FCM/APNs delivery, invalid-token cleanup, and native permission/token handling. Provider credentials, entitlements and webhook are not configured.
+- Added PDF driver document uploads on Android/iOS and improved passenger location-permission error guidance.
+- Added deleted-account metrics/broadcast suppression, Admin secondary-query errors, and live-map loading/empty-state refinements.

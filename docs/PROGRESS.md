@@ -187,21 +187,13 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Live-map empty copy now distinguishes an empty active-ride/request list from online drivers still visible on the map.
 - Reports already provides CSV export, date-range validation, query errors and empty-state messages; no changes needed there.
 
-## Phase 5 – admin metrics and deleted-account notification guard (code only)
-
-- Migration 0018 updates `push_notification()` so anonymised/deleted profiles cannot receive new in-app or push notifications.
-- Admin overview passenger/driver totals now exclude deleted profiles and staff accounts; online/pending driver counts exclude deleted/staff accounts. A separate deleted-account metric is exposed in the dashboard.
-- Customer broadcasts exclude deleted profiles and admin/staff accounts; the recipient count reflects the eligible audience.
-- Added a disposable-Postgres regression test and wired it into `supabase/tests/run_local.sh`.
-- Migration 0018 is not applied to Supabase. No native build or device test was run.
-
-## Phase 6 – Admin deleted-account visibility
+## Phase 5 – Admin deleted-account visibility
 
 - Added migration 0018 to keep anonymised/deleted accounts out of active passenger/driver totals and customer broadcast audiences, while exposing a separate deleted-account metric.
 - `push_notification()` now refuses new notifications for deleted profiles; customer broadcasts also skip staff/admin accounts and report the actual eligible recipient count.
 - Added regression coverage for metrics, notification suppression, broadcast recipient counts and deleted/staff exclusions. Migration 0018 remains unapplied to Supabase.
 
-## Phase 7 – private driver-document cleanup on account deletion
+## Phase 6 – private driver-document cleanup on account deletion
 
 - Account deletion closes/anonymises the profile, removes all files in the user's private `driver-documents` folder through the Supabase Storage API, then deletes the Auth identity.
 - This avoids deleting Storage metadata directly in SQL, which can leave underlying object files orphaned. Cleanup repeats the first page after each removal so offset pagination cannot skip files as the result set shrinks.
@@ -215,3 +207,9 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Android creates the `kherja_updates` notification channel during app startup, before Android can render background FCM notifications; the messaging service reuses the same channel helper.
 - Admin live-map now has an initial loading overlay, a clear empty state, and filters out drivers without both coordinates.
 - No tests or native builds were run in this pass. Push credentials, APNs entitlement, Firebase project configuration, database webhook, and Supabase deployment remain owner setup steps.
+
+## Phase 8 – passenger location-permission UX
+
+- Android passenger booking now explains denied location permission and offers direct app Settings and retry actions while preserving manual address/map selection.
+- iOS address picker now explains denied/restricted permission, links to app Settings, handles the denied state without waiting for a location timeout, and surfaces saved-place loading failures.
+- Admin live map now shows its initial loading overlay and filters online drivers without both coordinates. These changes remain uncompiled/unverified on devices.
