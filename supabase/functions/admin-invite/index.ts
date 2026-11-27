@@ -56,5 +56,17 @@ Deno.serve(async (req) => {
     return json({ error: assignError.message }, 400);
   }
 
+  // Least privilege by default: a new employee receives no role-inherited permissions
+  // until the administrator explicitly selects the allowed actions in the dashboard.
+  const { error: permissionError } = await caller.rpc("admin_set_user_permissions", {
+    p_user_id: invite.user.id,
+    p_permission_codes: [],
+    p_use_custom: true,
+  });
+  if (permissionError) {
+    await service.auth.admin.deleteUser(invite.user.id);
+    return json({ error: permissionError.message }, 400);
+  }
+
   return json({ user_id: invite.user.id, invited: true });
 });

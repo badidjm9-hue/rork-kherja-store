@@ -12,6 +12,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+const permissionArabic: Record<string, string> = {
+  "overview.read": "عرض لوحة التحكم",
+  "users.read": "عرض الركاب",
+  "users.manage": "تعليق وإعادة تفعيل حسابات الركاب",
+  "drivers.read": "عرض السائقين",
+  "drivers.approve": "قبول أو رفض السائقين",
+  "drivers.manage": "تعليق وإعادة تفعيل حسابات السائقين",
+  "rides.read": "عرض الرحلات والعروض",
+  "rides.manage": "إلغاء الرحلات",
+  "finance.read": "عرض المعاملات والماليات",
+  "finance.adjust": "إجراء التسويات والاستردادات",
+  "pricing.read": "عرض الأسعار والعمولات",
+  "pricing.manage": "تعديل ونشر الأسعار والعمولات",
+  "admins.manage": "إدارة المسؤولين والموظفين",
+  "audit.read": "عرض سجل التدقيق",
+  "deliveries.read": "عرض طلبات التوصيل",
+  "deliveries.manage": "إلغاء طلبات التوصيل",
+  "vehicles.read": "عرض المركبات",
+  "vehicles.manage": "تعليق وإعادة تفعيل المركبات",
+  "notifications.read": "عرض الإشعارات المرسلة",
+  "notifications.manage": "إرسال الإشعارات",
+  "reports.read": "عرض التقارير",
+  "settings.read": "عرض الإعدادات",
+  "settings.manage": "تعديل الإعدادات",
+  "support.read": "عرض الدعم وتنبيهات SOS",
+  "support.manage": "معالجة تذاكر الدعم وتنبيهات SOS",
+};
+
 type PermissionRow = { code: string; description: string };
 type IndividualPermission = { permission_code: string };
 
@@ -120,10 +148,14 @@ export default function Admins() {
           <div><p className="font-bold">{t("Permissions de","صلاحيات")} {selectedAdmin.display_name}</p><p className="text-xs text-muted-foreground">{t("Désactive le mode personnalisé pour revenir aux permissions du rôle.","عطّل الصلاحيات المخصصة للعودة إلى صلاحيات الدور.")}</p></div>
           {individual.isLoading||perms.isLoading?<LoadingBlock/>:individual.error||perms.error?<ErrorBlock error={individual.error||perms.error}/>:<>
             <label className="flex items-center justify-between rounded-xl bg-muted/50 p-3 text-sm font-semibold"><span>{t("Utiliser des permissions personnalisées","استخدام صلاحيات مخصصة")}</span><Switch checked={customEnabled} onCheckedChange={setCustomEnabled}/></label>
+            <div className="flex justify-end gap-2">
+              <Button type="button" size="sm" variant="ghost" disabled={!customEnabled} onClick={()=>setSelectedPermissions(perms.data?.map(p=>p.code)??[])}>{t("Tout sélectionner","تحديد الكل")}</Button>
+              <Button type="button" size="sm" variant="ghost" disabled={!customEnabled} onClick={()=>setSelectedPermissions([])}>{t("Tout effacer","مسح الكل")}</Button>
+            </div>
             <div className={customEnabled?"space-y-2":"pointer-events-none space-y-2 opacity-40"}>
               {perms.data?.map(p=><label key={p.code} className="flex items-start gap-3 rounded-lg border p-2.5 text-sm">
                 <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} onChange={e=>toggle(p.code,e.target.checked)}/>
-                <span className="min-w-0"><span className="block font-semibold">{p.code}</span><span className="block text-xs text-muted-foreground">{p.description}</span></span>
+                <span className="min-w-0"><span className="block font-semibold">{p.code}</span><span className="block text-xs text-muted-foreground">{t(p.description,permissionArabic[p.code]??p.description)}</span></span>
               </label>)}
             </div>
             <div className="flex items-center justify-between gap-3 border-t pt-3"><span className="text-xs text-muted-foreground">{customEnabled?selectedPermissions.length+" "+t("permissions sélectionnées","صلاحية محددة"):t("Permissions du rôle","صلاحيات الدور")}</span>

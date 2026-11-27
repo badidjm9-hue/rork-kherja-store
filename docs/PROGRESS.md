@@ -232,3 +232,12 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 
 - Migration 0019 adds a per-device APNs environment field. iOS Debug registers as development; Release/TestFlight/App Store registers as production. The webhook chooses the APNs sandbox/production endpoint per token; Android defaults to production because FCM does not use APNs environments.
 - Added a disposable SQL test for both environment paths. Migration 0019 is committed only and has not been applied to Supabase.
+
+## Phase 9 – Admin RBAC, staff invitations and delivery operations
+
+- Added per-employee permission overrides backed by PostgreSQL. Custom permissions replace role defaults; the super-admin always resolves to every registered permission, including permissions added by later migrations.
+- Hardened admin promotion: only an active super-admin may grant super-admin access or grant `admins.manage`; the last active super-admin cannot be deactivated or demoted.
+- Added an employee invitation Edge Function. New invitations start with an empty custom permission set (least privilege) and only gain the actions selected by an authorized admin in the dashboard.
+- Added `deliveries.manage` and an audited, reason-required admin cancellation action. Delivery participants receive in-app notifications when support cancels an active delivery.
+- Admin dashboard now displays an explicit access-denied screen for authenticated non-admin accounts and supports bilingual permission descriptions and bulk select/clear.
+- Added tests for custom-permission exact overrides, super-admin completeness, escalation protection and delivery cancellation. These are committed but have not been run; no migration or Edge Function has been deployed.
