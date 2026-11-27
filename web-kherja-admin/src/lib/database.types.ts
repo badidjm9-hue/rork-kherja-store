@@ -63,6 +63,15 @@ export type Database = {
           },
         ]
       }
+      admin_user_permissions: {
+        Row: { created_at: string; granted_by: string | null; permission_code: string; user_id: string }
+        Insert: { created_at?: string; granted_by?: string | null; permission_code: string; user_id: string }
+        Update: { created_at?: string; granted_by?: string | null; permission_code?: string; user_id?: string }
+        Relationships: [
+          { foreignKeyName: "admin_user_permissions_permission_code_fkey"; columns: ["permission_code"]; isOneToOne: false; referencedRelation: "admin_permissions"; referencedColumns: ["code"] },
+          { foreignKeyName: "admin_user_permissions_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "admin_users"; referencedColumns: ["user_id"] }
+        ]
+      }
       admin_roles: {
         Row: {
           code: string
@@ -87,6 +96,7 @@ export type Database = {
       admin_users: {
         Row: {
           active: boolean
+          custom_permissions_enabled: boolean
           created_at: string
           created_by: string | null
           display_name: string
@@ -97,6 +107,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          custom_permissions_enabled?: boolean
           created_at?: string
           created_by?: string | null
           display_name?: string
@@ -107,6 +118,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          custom_permissions_enabled?: boolean
           created_at?: string
           created_by?: string | null
           display_name?: string
@@ -955,6 +967,7 @@ export type Database = {
         Args: { p_reason?: string; p_status: string; p_user: string }
         Returns: undefined
       }
+      admin_set_user_permissions: { Args: { p_permission_codes: string[]; p_use_custom: boolean; p_user_id: string }; Returns: undefined }
       admin_set_admin: {
         Args: {
           p_active?: boolean
