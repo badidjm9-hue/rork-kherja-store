@@ -12,7 +12,7 @@ BEGIN
   VALUES(v_staff3,'support_agent','Staff Three','staff30020@kherja.test',true);
 
   PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
-  PERFORM public.admin_set_user_permissions(v_staff,ARRAY['admins.manage','drivers.read']::text[],true);
+  PERFORM public.admin_set_user_permissions(v_staff,ARRAY['admins.manage','drivers.read','users.read']::text[],true);
   PERFORM public.admin_set_user_permissions(v_staff2,ARRAY['admins.manage','drivers.read']::text[],true);
 
   PERFORM set_config('request.jwt.claim.sub',v_staff::text,false);
