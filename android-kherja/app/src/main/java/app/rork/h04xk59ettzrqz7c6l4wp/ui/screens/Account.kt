@@ -340,12 +340,21 @@ internal fun SettingsMain(state: AppState, onOpen: (String) -> Unit) {
         documentsLoading = false
     }
 
-    val documentPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val documentPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val type = pendingDocType
         pendingDocType = null
         if (uri != null && type != null) {
-            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
-            val extension = when (mime) { "image/png" -> "png"; "image/heic" -> "heic"; else -> "jpg" }
+            val mime = context.contentResolver.getType(uri) ?: ""
+            if (mime !in setOf("image/jpeg", "image/png", "image/heic", "application/pdf")) {
+                documentError = if (state.isRtl) "نوع الملف غير مدعوم. اختر صورة أو PDF." else "Format non pris en charge. Choisissez une image ou un PDF."
+                return@rememberLauncherForActivityResult
+            }
+            val extension = when (mime) {
+                "image/png" -> "png"
+                "image/heic" -> "heic"
+                "application/pdf" -> "pdf"
+                else -> "jpg"
+            }
             scope.launch {
                 uploadingDoc = type
                 documentError = null
@@ -424,7 +433,7 @@ internal fun SettingsMain(state: AppState, onOpen: (String) -> Unit) {
                             if (status != "approved") {
                                 KJOutlineButton(if (uploadingDoc == type) (if (state.isRtl) "جارٍ..." else "Envoi…") else if (state.isRtl) "إضافة" else "Ajouter", enabled = uploadingDoc == null) {
                                     pendingDocType = type
-                                    documentPicker.launch("image/*")
+                                    documentPicker.launch(arrayOf("image/jpeg", "image/png", "image/heic", "application/pdf"))
                                 }
                             } else Pill(statusLabel, KJ.success, KJ.successBg, icon = Icons.Filled.CheckCircle)
                         }
