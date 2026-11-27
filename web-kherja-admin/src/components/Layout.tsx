@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   BadgeDollarSign,
@@ -25,6 +26,11 @@ import { roleLabel } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Avatar } from "@/components/kj";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface NavItem {
   to: string;
@@ -58,6 +64,33 @@ export function allowedNav(can: (p: Permission) => boolean) {
 function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const { admin, can, signOut } = useAuth();
   const { t, lang, setLang } = useI18n();
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+
+  const changePassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      toast.error(t("Le mot de passe doit contenir au moins 8 caractères.", "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل."));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t("Les mots de passe ne correspondent pas.", "كلمتا المرور غير متطابقتين."));
+      return;
+    }
+    setPasswordBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(t("Mot de passe mis à jour.", "تم تحديث كلمة المرور."));
+    setPasswordOpen(false);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 pb-4 pt-6">
@@ -109,17 +142,43 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
               <p className="truncate text-sm font-bold">{admin.display_name}</p>
               <p className="truncate text-xs text-muted-foreground">{roleLabel(t, admin.role)}</p>
             </div>
-            <button
-              onClick={() => void signOut()}
-              title={t("Se déconnecter", "تسجيل الخروج")}
-              className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4 rtl:rotate-180" />
-            </button>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => setPasswordOpen(true)}>
+                {t("Mot de passe", "كلمة المرور")}
+              </Button>
+              <button
+                onClick={() => void signOut()}
+                title={t("Se déconnecter", "تسجيل الخروج")}
+                className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut className="h-4 w-4 rtl:rotate-180" />
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Changer le mot de passe", "تغيير كلمة المرور")}</DialogTitle>
+            <DialogDescription>{t("Utilisez au moins 8 caractères. Cette option permet aussi aux employés invités de définir leur mot de passe après activation.", "استعمل 8 أحرف على الأقل. تتيح هذه الخاصية للموظفين المدعوين تعيين كلمة مرورهم بعد تفعيل الحساب.")}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={changePassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("Nouveau mot de passe", "كلمة المرور الجديدة")}</Label>
+              <Input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("Confirmer le mot de passe", "تأكيد كلمة المرور")}</Label>
+              <Input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} />
+            </div>
+            <Button type="submit" disabled={passwordBusy} className="w-full">
+              {passwordBusy ? t("Enregistrement…", "جارٍ الحفظ…") : t("Enregistrer", "حفظ")}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
   );
 }
 
