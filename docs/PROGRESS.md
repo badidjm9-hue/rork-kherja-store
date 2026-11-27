@@ -75,7 +75,7 @@ Commission 15%/12% unapproved placeholders (admin-configurable); passenger payme
 - Added typed driver-document models and read APIs on both platforms for the existing driver_documents table.
 - Added private Storage upload and submit_driver_document RPC wiring on Android and iOS. The UI lists the five required document types and reflects pending, approved, and rejected review states, including rejection reasons.
 - The existing migration 0003_driver_documents.sql defines the private bucket, Storage policies, table/RLS, upload RPC, and admin review flow. This work did not apply or deploy that migration; verify its presence in the target Supabase project before attempting uploads.
-- Current client pickers accept images only (JPEG output on iOS; JPEG/PNG/HEIC image selection on Android). PDF selection and document preview/download are not included yet.
+- Driver document uploads now accept JPEG/PNG/HEIC images and PDF on both Android and iOS. The Storage bucket in migration 0003 already permits PDF; Android uses the document picker and iOS uses the Files importer for PDFs. Native build and upload verification remain pending.
 - No Xcode or Gradle build, device upload, RLS test, or admin review E2E was run. Treat this implementation as source-complete but not build-verified.
 
 ## Feature-branch verification — 2026-11-26
@@ -173,3 +173,9 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Android source now has an optional Firebase Messaging dependency, conditional Google Services plugin activation when `google-services.json` is present, token registration/unregistration, permission prompting and foreground/background notification display. iOS source requests notification permission after sign-in, registers APNs tokens, and unregisters on sign-out. Neither platform can receive real pushes until its provider project/capability is configured.
 - Android token registration now checks the Android 13+ notification permission before sending an FCM token to Supabase; denied permission does not register a push endpoint.
 - The retryable partial-deletion response uses HTTP 202 with an explicit `partial` flag so both native clients can display the server's actionable message instead of collapsing it into a generic 5xx service error.
+
+## Driver document PDF support
+
+- Android driver settings now use the document picker for JPEG/PNG/HEIC/PDF and validate supported MIME types before upload.
+- iOS driver profile now offers photo or PDF selection, enforces the 10 MB limit, preserves the correct MIME type/extension, and uploads to the existing private bucket.
+- Migration 0003 already permits `application/pdf`; no new schema migration was required. No build or device upload test was run.

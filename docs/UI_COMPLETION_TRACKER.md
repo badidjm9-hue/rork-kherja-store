@@ -46,7 +46,7 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 
 ### Driver
 - Driver personal details and vehicle category/type selection (requires a separately approved persisted field).
-- Driver document review workflow is wired to the existing private driver-documents bucket, driver_documents table, and submit_driver_document RPC defined in migration 0003; verify that migration is applied to the target Supabase project before testing uploads. The client picker currently accepts images only.
+- Driver document review workflow is wired to the existing private driver-documents bucket, driver_documents table, and submit_driver_document RPC defined in migration 0003; verify that migration is applied to the target Supabase project before testing uploads. The client pickers now accept images and PDF files; actual device upload and preview verification remain pending.
 - Driver verification details and resubmission state.
 - Dedicated notification, help, and settings screens.
 - Earnings breakdown and withdrawal request only after commission/payout rules are approved.
