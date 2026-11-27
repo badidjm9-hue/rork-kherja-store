@@ -35,6 +35,16 @@ BEGIN
     WHERE p.role='driver' AND p.account_status <> 'deleted'
       AND NOT EXISTS (SELECT 1 FROM public.admin_users a WHERE a.user_id=p.id)
   ) THEN RAISE EXCEPTION 'overview driver count includes deleted/staff profiles'; END IF;
+  IF (v_data->>'drivers_pending')::integer <> (
+    SELECT count(*) FROM public.profiles p
+    WHERE p.role='driver' AND p.driver_status='pending' AND p.account_status <> 'deleted'
+      AND NOT EXISTS (SELECT 1 FROM public.admin_users a WHERE a.user_id=p.id)
+  ) THEN RAISE EXCEPTION 'overview pending driver count includes deleted/staff profiles'; END IF;
+  IF (v_data->>'drivers_online')::integer <> (
+    SELECT count(*) FROM public.profiles p
+    WHERE p.role='driver' AND p.is_online AND p.account_status='active'
+      AND NOT EXISTS (SELECT 1 FROM public.admin_users a WHERE a.user_id=p.id)
+  ) THEN RAISE EXCEPTION 'overview online driver count includes inactive/staff profiles'; END IF;
   IF (v_data->>'deleted')::integer <> (SELECT count(*) FROM public.profiles WHERE account_status='deleted') THEN
     RAISE EXCEPTION 'overview deleted count is incorrect';
   END IF;
@@ -42,6 +52,13 @@ BEGIN
   SELECT count(*) INTO v_expected FROM public.profiles p
   WHERE p.account_status <> 'deleted'
     AND NOT EXISTS (SELECT 1 FROM public.admin_users a WHERE a.user_id=p.id);
+  IF public.push_notification(v_deleted_passenger,'system','Must not send','Deleted account', '{}'::jsonb) THEN
+    RAISE EXCEPTION 'push_notification accepted a deleted profile';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.notifications WHERE user_id=v_deleted_passenger AND title='Must not send') THEN
+    RAISE EXCEPTION 'push_notification created an in-app notification for a deleted profile';
+  END IF;
+
   v_recipients := public.admin_send_broadcast('all','system','TEST 0018','Visibility check');
   SELECT id INTO v_broadcast FROM public.notification_broadcasts ORDER BY created_at DESC LIMIT 1;
   IF v_recipients <> v_expected THEN
