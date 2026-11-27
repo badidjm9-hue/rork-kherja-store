@@ -144,3 +144,12 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 
 ## Phase 2 – suspended passengers
 - Suspended passenger accounts previously got no gate (every action failed with "Account suspended"). Android now wraps the passenger tabs in `DriverGate(driverRules = false)`; iOS shows `DriverStatusView(.suspended, showSignOut: true)` instead of the tab bar. Not built or run on a device here.
+
+## Phase 3 – admin account-state and detail-query handling
+
+- Admin passenger/driver lists now include a dedicated deleted-account filter and count, and render deleted accounts as deleted rather than active.
+- Deleted profiles no longer expose driver approval, suspension, or reactivation actions in the Admin UI.
+- Added migration 0014 to make deleted accounts terminal in `admin_set_account_status`; privileged account-status changes cannot reactivate a deleted profile. Migration 0014 is committed only and has NOT been applied to Supabase.
+- Restored the historical migration 0002 unchanged; the new guard lives in additive migration 0014.
+- Admin person-detail panels now render errors from the ride-history and driver-phone-verification queries instead of silently omitting those sections.
+- No builds or tests were run in this development pass. Supabase TEST and deployed Edge Functions were not changed.
