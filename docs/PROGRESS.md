@@ -241,3 +241,4 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Added `deliveries.manage` and an audited, reason-required admin cancellation action. Delivery participants receive in-app notifications when support cancels an active delivery.
 - Admin dashboard now displays an explicit access-denied screen for authenticated non-admin accounts and supports bilingual permission descriptions and bulk select/clear.
 - Added tests for custom-permission exact overrides, super-admin completeness, escalation protection and delivery cancellation. These are committed but have not been run; no migration or Edge Function has been deployed.
+- Follow-up hardening lets delegated admin managers preserve an existing `admins.manage` grant while still preventing them from granting it to new employees.

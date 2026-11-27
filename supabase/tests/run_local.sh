@@ -22,3 +22,4 @@ $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_deleted_metrics_0018.sql" 2>&1 | grep -
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_custom_permissions_0020.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_delivery_management_0021.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_custom_permissions_0020.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
+$PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_permission_escalation_0024.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
