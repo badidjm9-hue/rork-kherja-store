@@ -38,3 +38,4 @@ $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_permission_escalation_0024.sql" 2>&1 | 
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_permission_escalation_0025.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_profile_rls_0026.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_profile_read_permissions_0027.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
+$PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_permission_dependencies_0027.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
