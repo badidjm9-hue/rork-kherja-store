@@ -16,5 +16,6 @@ $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0013.sql" 2>&1 | grep -E "PASS
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0015.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0016.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/push_devices_0017.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
+$PSQL -v ON_ERROR_STOP=1 -f "$HERE/push_environment_0019.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/push_devices_0019.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_deleted_metrics_0018.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"

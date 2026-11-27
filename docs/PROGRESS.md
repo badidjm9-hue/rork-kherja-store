@@ -227,3 +227,8 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Android passenger booking now stops showing an endless location spinner when GPS has no fix after 10 seconds, and offers location settings plus a retry that restarts the tracker.
 - iOS already shows no-results and search errors; the address picker now also handles denied location and saved-place failures.
 - No device permission, network, or map tests were run.
+
+## Push environment routing
+
+- Migration 0019 adds a per-device APNs environment field. iOS Debug registers as development; Release/TestFlight/App Store registers as production. The webhook chooses the APNs sandbox/production endpoint per token; Android defaults to production because FCM does not use APNs environments.
+- Added a disposable SQL test for both environment paths. Migration 0019 is committed only and has not been applied to Supabase.
