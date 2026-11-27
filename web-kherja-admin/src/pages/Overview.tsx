@@ -11,6 +11,7 @@ import {
   HandCoins,
   Radio,
   UserCheck,
+  UserX,
   Users,
   Wallet,
 } from "lucide-react";
@@ -26,6 +27,7 @@ interface OverviewData {
   drivers_online: number;
   drivers_pending: number;
   suspended: number;
+  deleted: number;
   open_requests: number;
   active_rides: number;
   completed: number;
@@ -215,6 +217,7 @@ export default function Overview() {
             />
             <StatCard label={t("Chauffeurs à valider", "سائقون بانتظار التحقق")} value={num(d.drivers_pending)} icon={UserCheck} tone="amber" />
             <StatCard label={t("Comptes suspendus", "حسابات معلقة")} value={num(d.suspended)} icon={CircleX} tone="red" />
+            <StatCard label={t("Comptes supprimés", "حسابات محذوفة")} value={num(d.deleted)} icon={UserX} tone="gray" />
           </div>
         </div>
       )}

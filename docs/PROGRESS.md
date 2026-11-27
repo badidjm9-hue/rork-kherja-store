@@ -185,3 +185,11 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Vehicles page now displays loading and error states for its secondary driver-profile lookup instead of silently replacing failed owner names with IDs.
 - Live-map empty copy now distinguishes an empty active-ride/request list from online drivers still visible on the map.
 - Reports already provides CSV export, date-range validation, query errors and empty-state messages; no changes needed there.
+
+## Phase 5 – admin metrics and deleted-account notification guard (code only)
+
+- Migration 0018 updates `push_notification()` so anonymised/deleted profiles cannot receive new in-app or push notifications.
+- Admin overview passenger/driver totals now exclude deleted profiles and staff accounts; online/pending driver counts exclude deleted/staff accounts. A separate deleted-account metric is exposed in the dashboard.
+- Customer broadcasts exclude deleted profiles and admin/staff accounts; the recipient count reflects the eligible audience.
+- Added a disposable-Postgres regression test and wired it into `supabase/tests/run_local.sh`.
+- Migration 0018 is not applied to Supabase. No native build or device test was run.
