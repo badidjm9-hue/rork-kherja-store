@@ -42,6 +42,26 @@ struct RootView: View {
                     }
                 }
                 .environmentObject(PhoneFlowManager.shared)
+            } else if store.bootstrapFailed {
+                VStack(spacing: 18) {
+                    KJLogo(height: 72)
+                    Text(store.l("error_generic"))
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(KJ.ink)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        Task { await store.bootstrap() }
+                    } label: {
+                        Text(store.l("retry"))
+                    }
+                    .buttonStyle(KJButtonStyle())
+                    Button(store.l("logout")) { store.signOut() }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(KJ.muted)
+                }
+                .padding(28)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(KJ.canvasGradient.ignoresSafeArea())
             } else if store.profile == nil {
                 CompleteProfileView()
             } else if store.role == "driver" && store.phoneVerified == false {

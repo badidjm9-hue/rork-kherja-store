@@ -24,6 +24,7 @@ final class AppState: ObservableObject {
     @Published var activeRequestId: UUID?
     @Published var activeRideId: UUID?
     @Published var bootstrapDone = false
+    @Published var bootstrapFailed = false
     /// One-shot message shown on the sign-in screen (e.g. the account was deleted).
     @Published var accountNotice: String?
 
@@ -91,6 +92,8 @@ final class AppState: ObservableObject {
     // MARK: Bootstrap
 
     func bootstrap() async {
+        bootstrapDone = false
+        bootstrapFailed = false
         guard session.isSignedIn else {
             bootstrapDone = true
             return
@@ -118,6 +121,7 @@ final class AppState: ObservableObject {
             await resumeActiveFlow()
         } catch {
             print("KHERJA bootstrap error: \(error)")
+            bootstrapFailed = true
         }
         bootstrapDone = true
     }
@@ -157,6 +161,8 @@ final class AppState: ObservableObject {
         Task {
             if let pushToken { try? await supabase.unregisterPushDevice(token: pushToken) }
             session.signOut()
+            bootstrapFailed = false
+            bootstrapDone = true
             profile = nil
             phoneVerified = nil
             setActiveRequest(nil)
