@@ -165,20 +165,19 @@ const store: Store = {
     // Upload paths are stored directly under the user UUID folder. Paginate so old replaced
     // documents and any stale uploads are removed as well, not just the current DB metadata row.
     const bucket = admin.storage.from("driver-documents");
-    let offset = 0;
     const pageSize = 1000;
     while (true) {
-      const { data, error } = await bucket.list(userId, { limit: pageSize, offset });
+      // Always read the first page again after deletion; offset pagination would skip files
+      // because removing the current page shifts the remaining rows toward offset zero.
+      const { data, error } = await bucket.list(userId, { limit: pageSize, offset: 0 });
       if (error) return false;
       const paths = (data ?? [])
         .filter((item) => item.id !== null)
         .map((item) => `${userId}/${item.name}`);
-      if (paths.length > 0) {
-        const { error: removeError } = await bucket.remove(paths);
-        if (removeError) return false;
-      }
+      if (paths.length === 0) break;
+      const { error: removeError } = await bucket.remove(paths);
+      if (removeError) return false;
       if ((data ?? []).length < pageSize) break;
-      offset += pageSize;
     }
     return true;
   },

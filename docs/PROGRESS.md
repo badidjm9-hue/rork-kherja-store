@@ -200,3 +200,10 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Added migration 0018 to keep anonymised/deleted accounts out of active passenger/driver totals and customer broadcast audiences, while exposing a separate deleted-account metric.
 - `push_notification()` now refuses new notifications for deleted profiles; customer broadcasts also skip staff/admin accounts and report the actual eligible recipient count.
 - Added regression coverage for metrics, notification suppression, broadcast recipient counts and deleted/staff exclusions. Migration 0018 remains unapplied to Supabase.
+
+## Phase 7 – private driver-document cleanup on account deletion
+
+- Account deletion closes/anonymises the profile, removes all files in the user's private `driver-documents` folder through the Supabase Storage API, then deletes the Auth identity.
+- This avoids deleting Storage metadata directly in SQL, which can leave underlying object files orphaned. Cleanup repeats the first page after each removal so offset pagination cannot skip files as the result set shrinks.
+- If Storage cleanup fails, the Auth identity is retained and the Edge Function returns a retryable partial-completion response. Repeating the request is safe because profile closure is idempotent and remaining files are listed again.
+- Handler tests cover cleanup ordering, active-trip blocking and retryable Storage failure. Changes are code-only; no migration or Edge Function has been deployed.
