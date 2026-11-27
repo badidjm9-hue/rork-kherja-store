@@ -88,6 +88,15 @@ export function auditAction(t: T, a: string) {
     "admin.set": ["Accès admin modifié", "تعديل صلاحيات مسؤول"],
     "admin.permissions": ["Permissions d'employé modifiées", "تعديل صلاحيات موظف"],
     "delivery.cancel": ["Livraison annulée par l'administration", "إلغاء طلب توصيل من الإدارة"],
+    "vehicle.active": ["Véhicule réactivé", "إعادة تفعيل مركبة"],
+    "vehicle.suspended": ["Véhicule suspendu", "تعليق مركبة"],
+    "notification.broadcast": ["Notification diffusée", "إرسال إشعار جماعي"],
+    "setting.update": ["Paramètre modifié", "تعديل إعداد"],
+    "support.open": ["Demande de support ouverte", "فتح طلب دعم"],
+    "support.in_progress": ["Demande de support en cours", "طلب الدعم قيد المعالجة"],
+    "support.resolved": ["Demande de support résolue", "حل طلب الدعم"],
+    "sos.acknowledged": ["Alerte SOS prise en charge", "التكفل بتنبيه SOS"],
+    "sos.resolved": ["Alerte SOS clôturée", "إغلاق تنبيه SOS"],
   };
   const v = map[a];
   return v ? t(v[0], v[1]) : a;

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 const PAGE = 50;
 
-const ENTITY_TYPES = ["profile", "ride", "delivery_order", "pricing_version", "admin_user"];
+const ENTITY_TYPES = ["profile", "ride", "delivery_order", "vehicle", "broadcast", "setting", "support_ticket", "sos_alert", "pricing_version", "admin_user"];
 
 export default function Audit() {
   const { t, date } = useI18n();
@@ -52,6 +52,15 @@ export default function Audit() {
     "ride.cancel",
     "ride.adjust",
     "delivery.cancel",
+    "vehicle.active",
+    "vehicle.suspended",
+    "notification.broadcast",
+    "setting.update",
+    "support.open",
+    "support.in_progress",
+    "support.resolved",
+    "sos.acknowledged",
+    "sos.resolved",
     "admin.set",
     "admin.permissions",
   ];
