@@ -16,6 +16,10 @@ class SessionStore(context: Context) {
         get() = prefs.getString("refresh", null)
         private set(v) { prefs.edit().putString("refresh", v).apply() }
 
+    var pushToken: String?
+        get() = prefs.getString("push_token", null)
+        set(v) { prefs.edit().putString("push_token", v).apply() }
+
     var language: String
         get() = prefs.getString("lang", "fr") ?: "fr"
         set(v) { prefs.edit().putString("lang", v).apply() }
@@ -58,7 +62,7 @@ class SessionStore(context: Context) {
     fun clear() {
         prefs.edit()
             .remove("access").remove("refresh")
-            .remove("active_request").remove("active_ride")
+            .remove("active_request").remove("active_ride").remove("push_token")
             .apply()
     }
 

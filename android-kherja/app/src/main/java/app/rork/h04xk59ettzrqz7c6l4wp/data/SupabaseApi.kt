@@ -224,6 +224,15 @@ class SupabaseApi(private val session: SessionStore) {
         return KJson.decodeFromString(otpRaw(jsonOf("action" to "link_verify", "phone" to phone, "code" to code), token))
     }
 
+    /** Register/unregister this installation for authenticated push delivery (migration 0017). */
+    suspend fun registerPushDevice(token: String, platform: String) {
+        rpc<String>("register_push_device", jsonOf("p_token" to token, "p_platform" to platform))
+    }
+
+    suspend fun unregisterPushDevice(token: String) {
+        rpcVoid("unregister_push_device", jsonOf("p_token" to token))
+    }
+
     /** Whether the signed-in account has a verified phone (RPC my_phone_verified, migration 0007). */
     suspend fun phoneVerified(): Boolean = rpc("my_phone_verified")
 
