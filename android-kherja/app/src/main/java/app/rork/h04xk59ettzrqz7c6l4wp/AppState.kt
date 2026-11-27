@@ -2,6 +2,8 @@ package app.rork.h04xk59ettzrqz7c6l4wp
 
 import android.app.Application
 import android.util.Log
+import com.google.firebase.FirebaseApp
+import com.google.firebase.messaging.FirebaseMessaging
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -101,7 +103,22 @@ class AppState(app: Application) : AndroidViewModel(app) {
         session.rememberMe = remember
         session.save(access, refresh)
         signedIn = true
+        syncPushToken()
         viewModelScope.launch { bootstrap() }
+    }
+
+    /** Register FCM only when this build has a configured Firebase app. */
+    fun syncPushToken() {
+        val context = getApplication<Application>()
+        if (FirebaseApp.getApps(context).isEmpty()) return
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            if (token.isNullOrBlank()) return@addOnSuccessListener
+            session.pushToken = token
+            viewModelScope.launch {
+                runCatching { api.registerPushDevice(token, "android") }
+                    .onFailure { Log.w("KHERJA", "push token registration failed", it) }
+            }
+        }
     }
 
     /** Handles the kherja://auth-callback deep link that ends a Google/Apple sign-in. */
@@ -183,6 +200,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
         val wasDriver = role == "driver"
         location.stop()
         viewModelScope.launch {
+            session.pushToken?.let { token -> runCatching { api.unregisterPushDevice(token) } }
             if (id != null && wasDriver) {
                 runCatching { api.updateProfile(id, jsonOf("is_online" to false)) }
             }
