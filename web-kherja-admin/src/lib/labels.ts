@@ -86,6 +86,8 @@ export function auditAction(t: T, a: string) {
     "ride.cancel": ["Course annulée", "إلغاء رحلة"],
     "ride.adjust": ["Ajustement de course", "تعديل رحلة"],
     "admin.set": ["Accès admin modifié", "تعديل صلاحيات مسؤول"],
+    "admin.permissions": ["Permissions d'employé modifiées", "تعديل صلاحيات موظف"],
+    "delivery.cancel": ["Livraison annulée par l'administration", "إلغاء طلب توصيل من الإدارة"],
   };
   const v = map[a];
   return v ? t(v[0], v[1]) : a;
