@@ -95,7 +95,7 @@ export default function Admins() {
     try{
       const invited=must(await supabase.functions.invoke("admin-invite",{
         body:{email:normalized,display_name:name.trim(),role},
-      })) as {user_id:string};
+      })) as {user_id:string; invited:boolean};
       toast.success(invited.invited
         ? t("Invitation envoyée. Configurez ses permissions.","تم إرسال الدعوة. اضبط صلاحيات الموظف.")
         : t("Compte existant ajouté. Configurez ses permissions.","تمت إضافة الحساب الموجود. اضبط صلاحياته."));
