@@ -320,7 +320,7 @@ private fun PhoneStep(state: AppState, phone: String, onPhone: (String) -> Unit,
                     val res = state.api.requestOtp(p)
                     if (res.ok) onSent(res.devCode) else error = res.error ?: state.l("error_generic")
                 } catch (e: Exception) {
-                    error = state.l("error_generic")
+                    error = state.l(AuthRules.exceptionKey(e))
                 }
                 loading = false
             }
@@ -362,7 +362,7 @@ private fun OtpStep(state: AppState, phone: String, devCode: String?, ctx: OtpCo
                     code = ""
                 }
             } catch (e: Exception) {
-                error = state.l("error_generic")
+                error = state.l(AuthRules.exceptionKey(e))
             }
             loading = false
         }

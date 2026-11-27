@@ -100,6 +100,13 @@ internal object AuthRules {
             else -> "error_generic"
         }
     }
+
+    /** Maps a transport/service failure (never a business error) to a safe, useful message key. */
+    fun exceptionKey(e: Throwable): String = when (e) {
+        is app.rork.h04xk59ettzrqz7c6l4wp.data.AuthServiceException -> "err_auth_service"
+        is java.io.IOException -> "err_network"
+        else -> "error_generic"
+    }
 }
 
 /** (primary, secondary) label pair: the app language first, the other language below, as in the reference design. */
@@ -356,7 +363,8 @@ fun AuthStep(
                     error = state.l(AuthRules.errorKey(res.error))
                 }
             } catch (e: Exception) {
-                error = state.l("error_generic")
+                android.util.Log.w("KHERJA", "auth call failed: ${e.javaClass.simpleName} ${e.message}")
+                error = state.l(AuthRules.exceptionKey(e))
             }
             loading = false
         }
@@ -382,7 +390,8 @@ fun AuthStep(
                     error = state.l(AuthRules.errorKey(res.error))
                 }
             } catch (e: Exception) {
-                error = state.l("error_generic")
+                android.util.Log.w("KHERJA", "auth call failed: ${e.javaClass.simpleName} ${e.message}")
+                error = state.l(AuthRules.exceptionKey(e))
             }
             loading = false
         }
@@ -525,7 +534,8 @@ fun ForgotStep(state: AppState, onOtp: (phone: String, ctx: OtpContext, devCode:
                 if (res.ok) onOtp(p, OtpContext("reset", password, null), res.devCode)
                 else error = state.l(AuthRules.errorKey(res.error))
             } catch (e: Exception) {
-                error = state.l("error_generic")
+                android.util.Log.w("KHERJA", "auth call failed: ${e.javaClass.simpleName} ${e.message}")
+                error = state.l(AuthRules.exceptionKey(e))
             }
             loading = false
         }
@@ -583,7 +593,8 @@ fun LinkPhoneScreen(state: AppState) {
                 val res = state.api.linkRequest(p)
                 if (res.ok) { sentTo = p; devCode = res.devCode } else error = state.l(AuthRules.errorKey(res.error))
             } catch (e: Exception) {
-                error = state.l("error_generic")
+                android.util.Log.w("KHERJA", "auth call failed: ${e.javaClass.simpleName} ${e.message}")
+                error = state.l(AuthRules.exceptionKey(e))
             }
             loading = false
         }
@@ -599,7 +610,8 @@ fun LinkPhoneScreen(state: AppState) {
                 val res = state.api.linkVerify(p, code)
                 if (res.ok) state.refreshProfile() else error = state.l(AuthRules.errorKey(res.error))
             } catch (e: Exception) {
-                error = state.l("error_generic")
+                android.util.Log.w("KHERJA", "auth call failed: ${e.javaClass.simpleName} ${e.message}")
+                error = state.l(AuthRules.exceptionKey(e))
             }
             loading = false
         }

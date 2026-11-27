@@ -24,6 +24,9 @@ import kotlinx.serialization.json.jsonPrimitive
 
 class ApiException(message: String, val status: Int) : Exception(message)
 
+/** The auth backend is unreachable or not deployed (HTTP [status]); carries no response body on purpose. */
+class AuthServiceException(val status: Int) : Exception("auth service unavailable (HTTP $status)")
+
 val KJson = Json {
     ignoreUnknownKeys = true
     coerceInputValues = true
@@ -232,7 +235,14 @@ class SupabaseApi(private val session: SessionStore) {
             contentType(ContentType.Application.Json)
             setBody(body.toString())
         }
-        return res.bodyAsText()
+        val text = res.bodyAsText()
+        // The auth-otp function answers JSON for every business outcome (wrong code, rate limit...).
+        // A non-JSON reply, a 404 (function not deployed) or a 5xx gateway error is a service problem.
+        val status = res.status.value
+        if (status == 404 || status >= 500 || !text.trimStart().startsWith("{")) {
+            throw AuthServiceException(status)
+        }
+        return text
     }
 
     // ---------- profiles ----------
