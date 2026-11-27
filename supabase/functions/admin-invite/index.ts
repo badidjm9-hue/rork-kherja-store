@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const allowedRoles = new Set(["operations_manager", "support_agent", "financial_manager", "pricing_manager"]);
+const allowedRoles = new Set(["operations_manager", "support_agent", "financial_manager", "pricing_manager", "super_admin"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -71,16 +71,19 @@ Deno.serve(async (req) => {
     return json({ error: assignError.message }, 400);
   }
 
-  // Least privilege by default: no role-inherited permissions until explicitly selected.
-  const { error: permissionError } = await caller.rpc("admin_set_user_permissions", {
-    p_user_id: userId,
-    p_permission_codes: [],
-    p_use_custom: true,
-  });
-  if (permissionError) {
-    await service.from("admin_users").delete().eq("user_id", userId);
-    if (newlyInvited) await service.auth.admin.deleteUser(userId);
-    return json({ error: permissionError.message }, 400);
+  // Least privilege by default: employees receive no permissions until selected.
+  // A super admin is the sole exception and always receives the complete permission set.
+  if (role !== "super_admin") {
+    const { error: permissionError } = await caller.rpc("admin_set_user_permissions", {
+      p_user_id: userId,
+      p_permission_codes: [],
+      p_use_custom: true,
+    });
+    if (permissionError) {
+      await service.from("admin_users").delete().eq("user_id", userId);
+      if (newlyInvited) await service.auth.admin.deleteUser(userId);
+      return json({ error: permissionError.message }, 400);
+    }
   }
 
   return json({ user_id: userId, invited: newlyInvited });

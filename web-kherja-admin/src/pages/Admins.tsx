@@ -193,10 +193,10 @@ export default function Admins() {
           <div className="space-y-1.5"><Label>{t("Email","البريد الإلكتروني")}</Label><Input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="h-10 rounded-xl"/></div>
           <div className="space-y-1.5"><Label>{t("Nom affiché","الاسم الظاهر")}</Label><Input value={name} onChange={e=>setName(e.target.value)} className="h-10 rounded-xl"/></div>
           <div className="space-y-1.5"><Label>{t("Rôle de base","الدور الأساسي")}</Label><select value={role} onChange={e=>setRole(e.target.value)} className="h-10 w-full rounded-xl border bg-card px-3 text-sm">
-            {ROLE_CODES.filter(r=>r!=="super_admin").map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}</select></div>
+            {ROLE_CODES.filter(r=>r!=="super_admin"||isSuperAdmin).map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}</select></div>
           <Button type="submit" className="h-11 w-full font-bold" disabled={busy==="new"||!email.trim()}>{busy==="new"&&<Loader2 className="h-4 w-4 animate-spin"/>}{t("Inviter l'employé","إرسال دعوة الموظف")}</Button>
         </form>
-        {selectedAdmin&&<section className="kj-card space-y-4 p-5">
+        {selectedAdmin&&selectedAdmin.role_code!=="super_admin"&&<section className="kj-card space-y-4 p-5">
           <div><p className="font-bold">{t("Permissions de","صلاحيات")} {selectedAdmin.display_name}</p><p className="text-xs text-muted-foreground">{t("Désactive le mode personnalisé pour revenir aux permissions du rôle.","عطّل الصلاحيات المخصصة للعودة إلى صلاحيات الدور.")}</p></div>
           {individual.isLoading||perms.isLoading?<LoadingBlock/>:individual.error||perms.error?<ErrorBlock error={individual.error||perms.error}/>:<>
             <label className="flex items-center justify-between rounded-xl bg-muted/50 p-3 text-sm font-semibold"><span>{t("Utiliser des permissions personnalisées","استخدام صلاحيات مخصصة")}</span><Switch checked={customEnabled} disabled={customEnabled&&!canRestoreRolePermissions} onCheckedChange={setCustomEnabled}/></label>
