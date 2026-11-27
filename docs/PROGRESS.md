@@ -123,3 +123,14 @@ Not executed / not verified: Android build, iOS build, any device or simulator t
 - Added migration 0012 for support staff notifications on new tickets/SOS, user notifications when ticket/SOS status changes, and per-user transaction locking for the SOS rate limit.
 - Added SQL behavioral checks for the notification lifecycle. These have not been executed in this environment; migration 0012 has not been applied to any Supabase project.
 - Native builds and device testing remain unverified. Admin typecheck/lint/build remain unverified here because dependencies cannot be installed.
+
+## Verification of integrated head (executed, 2026-11-27)
+
+Run on `feature/kherja-integrated` at 7fb6476 (migrations 0001-0012 on a throwaway PG16, never a real Supabase):
+
+- SQL: 136 PASS lines, `ALL CHECKS PASSED` (stack_behavior incl. 0010) and `SUPPORT/SOS 0011 PASSED`.
+- Admin: `bun install --frozen-lockfile` ok, `tsc -p tsconfig.app.json` 0 errors, vitest 12/12, eslint 0 errors (11 warnings), `vite build` ok.
+- Edge function: `bun test` 70 pass / 0 fail.
+- Static: every localisation key used on Android and iOS is defined (fr + ar); only intentional `app_tagline_ar` is fr-only.
+
+Not executed (environment cannot): Android/iOS builds, device/simulator runs, RTL visual check, design comparison against reference images (none supplied), real Supabase, SMS, Google/Apple sign-in, push delivery, Codemagic (needs EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY).
