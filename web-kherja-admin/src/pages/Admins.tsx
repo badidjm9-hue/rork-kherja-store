@@ -40,6 +40,20 @@ const permissionArabic: Record<string, string> = {
   "support.manage": "معالجة تذاكر الدعم وتنبيهات SOS",
 };
 
+const permissionDependencies: Record<string, string[]> = {
+  "users.manage": ["users.read"],
+  "drivers.approve": ["drivers.read"],
+  "drivers.manage": ["drivers.read"],
+  "rides.manage": ["rides.read"],
+  "finance.adjust": ["finance.read", "rides.read"],
+  "pricing.manage": ["pricing.read"],
+  "deliveries.manage": ["deliveries.read"],
+  "vehicles.manage": ["vehicles.read"],
+  "notifications.manage": ["notifications.read"],
+  "settings.manage": ["settings.read"],
+  "support.manage": ["support.read"],
+};
+
 type PermissionRow = { code: string; description: string };
 type IndividualPermission = { permission_code: string };
 
@@ -68,10 +82,13 @@ export default function Admins() {
   const [selectedPermissions,setSelectedPermissions]=useState<string[]>([]);
   const selectedAdmin=admins.data?.find(a=>a.user_id===selectedUser)??null;
   const isSuperAdmin = admin?.role === "super_admin";
-  const canGrant = (code: string) => isSuperAdmin || (
-    (admin?.permissions as string[] | undefined)?.includes(code) === true
-    && (code !== "admins.manage" || Boolean(selectedAdmin && individual.data?.some(p => p.permission_code === code)))
-  );
+  const canGrant = (code: string) => {
+    if (isSuperAdmin) return true;
+    const held = admin?.permissions as string[] | undefined;
+    return held?.includes(code) === true
+      && (permissionDependencies[code] ?? []).every(required => held.includes(required))
+      && (code !== "admins.manage" || Boolean(selectedAdmin && individual.data?.some(p => p.permission_code === code)));
+  };
   const canAssignRole = (code: string) => isSuperAdmin || Boolean(rolePermissions.data && rolePermissions.data
     .filter(p => p.role_code === code)
     .every(p => (admin?.permissions as string[] | undefined)?.includes(p.permission_code) === true));
@@ -120,7 +137,25 @@ export default function Admins() {
     finally{setBusy(null);}
   };
   const selectedSet=useMemo(()=>new Set(selectedPermissions),[selectedPermissions]);
-  const toggle=(code:string,checked:boolean)=>setSelectedPermissions(old=>checked?[...new Set([...old,code])]:old.filter(x=>x!==code));
+  const toggle=(code:string,checked:boolean)=>setSelectedPermissions(old=>{
+    const next=new Set(old);
+    if(checked){
+      const add=(permission:string)=>{if(next.has(permission))return;next.add(permission);(permissionDependencies[permission]??[]).forEach(add);};
+      add(code);
+    }else{
+      next.delete(code);
+      let changed=true;
+      while(changed){
+        changed=false;
+        for(const permission of [...next]){
+          if((permissionDependencies[permission]??[]).some(required=>!next.has(required))){
+            next.delete(permission);changed=true;
+          }
+        }
+      }
+    }
+    return [...next];
+  });
 
   return <div className="space-y-6">
     <PageHeader title={t("Administrateurs et employés","المسؤولون والموظفون")} subtitle={t("Créez des accès de travail et choisissez précisément les permissions de chaque employé.","أضف حسابات العمل واختر بدقة صلاحيات كل موظف.")}/>
