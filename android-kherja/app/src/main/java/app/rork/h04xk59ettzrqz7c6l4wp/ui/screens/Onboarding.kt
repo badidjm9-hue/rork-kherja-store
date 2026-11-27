@@ -195,11 +195,17 @@ private fun BackButton(onClick: () -> Unit) {
 @Composable
 private fun LanguageStep(state: AppState, onNext: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(70.dp))
-        KJLogo(96.dp)
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(48.dp))
+        KJLogo(84.dp)
+        Spacer(Modifier.height(12.dp))
+        Image(
+            painter = painterResource(R.drawable.car_moto),
+            contentDescription = null,
+            modifier = Modifier.width(210.dp).height(110.dp),
+        )
+        Spacer(Modifier.height(12.dp))
         Text(state.l("choose_language"), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
         LanguageCard("العربية", "Arabic", "ع", state.language == "ar") { state.setLanguage("ar") }
         Spacer(Modifier.height(14.dp))
         LanguageCard("Français", "French", "Fr", state.language == "fr") { state.setLanguage("fr") }
@@ -208,7 +214,7 @@ private fun LanguageStep(state: AppState, onNext: () -> Unit) {
             state.setLanguage(state.language)
             onNext()
         }
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
     }
 }
 
