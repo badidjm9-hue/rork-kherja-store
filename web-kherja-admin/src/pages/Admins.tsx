@@ -76,7 +76,7 @@ export default function Admins() {
 
   const setAdmin=async(key:string,args:{p_email:string;p_role:string;p_active?:boolean;p_display_name?:string},ok:string)=>{
     setBusy(key);
-    try{must(await supabase.rpc("admin_set_admin",args));toast.success(ok);await qc.invalidateQueries({queryKey:["admin-users"]});return true;}
+    try{must(await supabase.rpc("admin_set_admin",args));toast.success(ok);await qc.invalidateQueries({queryKey:["admin-users"]});if(key!=="new")await qc.invalidateQueries({queryKey:["admin-user-permissions",key]});return true;}
     catch(e){toast.error(errorMessage(e));return false;}finally{setBusy(null);}
   };
   const savePermissions=async()=>{
@@ -156,7 +156,7 @@ export default function Admins() {
             </div>
             <div className={customEnabled?"space-y-2":"pointer-events-none space-y-2 opacity-40"}>
               {perms.data?.map(p=><label key={p.code} className="flex items-start gap-3 rounded-lg border p-2.5 text-sm">
-                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} onChange={e=>toggle(p.code,e.target.checked)}/>
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} disabled={p.code==="admins.manage"&&admin?.role!=="super_admin"} onChange={e=>toggle(p.code,e.target.checked)}/>
                 <span className="min-w-0"><span className="block font-semibold">{p.code}</span><span className="block text-xs text-muted-foreground">{t(p.description,permissionArabic[p.code]??p.description)}</span></span>
               </label>)}
             </div>
