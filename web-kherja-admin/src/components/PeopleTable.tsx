@@ -355,6 +355,7 @@ function PersonDetail({
             {phoneStatus.data ? t("Téléphone vérifié", "الهاتف موثّق") : t("Téléphone non vérifié", "الهاتف غير موثّق")}
           </Pill>
         )}
+        {role === "driver" && phoneStatus.error && <ErrorBlock error={phoneStatus.error} />}
       </div>
 
       {p.status_reason && (
@@ -394,6 +395,7 @@ function PersonDetail({
         <div>
           <p className="mb-2 font-bold">{t("Dernières courses", "آخر الرحلات")}</p>
           {rides.isLoading && <LoadingBlock />}
+          {rides.error && <ErrorBlock error={rides.error} />}
           {rides.data && rides.data.length === 0 && (
             <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">{t("Aucune course pour l'instant.", "لا توجد رحلات بعد.")}</p>
           )}
