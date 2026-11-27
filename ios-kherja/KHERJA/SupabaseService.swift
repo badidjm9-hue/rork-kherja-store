@@ -354,6 +354,9 @@ final class SupabaseService: ObservableObject {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch is CancellationError {
             throw CancellationError()
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // The user/task cancelled the request: not a connectivity problem.
+            throw CancellationError()
         } catch {
             throw AuthServiceError.network
         }

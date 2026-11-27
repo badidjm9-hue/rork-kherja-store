@@ -38,6 +38,18 @@ struct KHERJATests {
         #expect(AuthRules.exceptionKey(CancellationError()) == "error_generic")
     }
 
+    @Test func cancellationIsNotANetworkFailure() {
+        #expect(AuthRules.isCancellation(CancellationError()))
+        #expect(AuthRules.isCancellation(URLError(.cancelled)))
+        #expect(!AuthRules.isCancellation(URLError(.notConnectedToInternet)))
+        #expect(!AuthRules.isCancellation(URLError(.timedOut)))
+        #expect(!AuthRules.isCancellation(AuthServiceError.network))
+        #expect(AuthRules.exceptionKey(URLError(.cancelled)) != "err_network")
+        // Other network errors keep the offline message.
+        #expect(AuthRules.exceptionKey(URLError(.networkConnectionLost)) == "err_network")
+        #expect(AuthRules.exceptionKey(URLError(.timedOut)) == "err_network")
+    }
+
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.
     }

@@ -412,7 +412,7 @@ struct PhoneEntryView: View {
                     errorMessage = res.error ?? store.l("error_generic")
                 }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }
@@ -534,7 +534,7 @@ struct OtpVerifyView: View {
                 PhoneFlowManager.shared.devCode = res.devCode
                 startCountdown()
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
         }
     }
@@ -564,7 +564,7 @@ struct OtpVerifyView: View {
                     errorMessage = store.l(AuthRules.errorKey(res.error))
                 }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }

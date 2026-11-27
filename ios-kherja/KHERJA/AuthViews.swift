@@ -55,9 +55,17 @@ nonisolated enum AuthRules {
 
     /// Maps a thrown transport/service failure (never a business error) to a safe message key.
     static func exceptionKey(_ error: Error) -> String {
+        if isCancellation(error) { return "error_generic" }
         if let e = error as? AuthServiceError { return e.messageKey }
         if error is URLError { return "err_network" }
         return "error_generic"
+    }
+
+    /// A cancelled task/request (user left the screen, task cancelled): nothing to tell the user.
+    static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let u = error as? URLError, u.code == .cancelled { return true }
+        return false
     }
 }
 
@@ -483,7 +491,7 @@ struct AuthView: View {
                     errorMessage = store.l(AuthRules.errorKey(res.error))
                 }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }
@@ -515,7 +523,7 @@ struct AuthView: View {
                     errorMessage = store.l(AuthRules.errorKey(res.error))
                 }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }
@@ -619,7 +627,7 @@ struct ForgotPasswordView: View {
                     errorMessage = store.l(AuthRules.errorKey(res.error))
                 }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }
@@ -689,7 +697,7 @@ struct LinkPhoneView: View {
                 let res = try await SupabaseService.shared.linkRequest(phone: p)
                 if res.ok { sentTo = p; devCode = res.devCode } else { errorMessage = store.l(AuthRules.errorKey(res.error)) }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }
@@ -705,7 +713,7 @@ struct LinkPhoneView: View {
                 let res = try await SupabaseService.shared.linkVerify(phone: p, code: code)
                 if res.ok { await store.refreshProfile() } else { errorMessage = store.l(AuthRules.errorKey(res.error)) }
             } catch {
-                errorMessage = store.l(AuthRules.exceptionKey(error))
+                if !AuthRules.isCancellation(error) { errorMessage = store.l(AuthRules.exceptionKey(error)) }
             }
             loading = false
         }
