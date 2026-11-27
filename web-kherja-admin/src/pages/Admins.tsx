@@ -139,13 +139,13 @@ export default function Admins() {
               <p className="text-xs text-muted-foreground">{roleLabel(t,a.role_code)} · {a.custom_permissions_enabled?t("Permissions personnalisées","صلاحيات مخصصة"):t("Rôle standard","صلاحيات الدور")}</p>
               <p className="text-xs text-muted-foreground">{t("Dernière activité","آخر نشاط")}: {a.last_seen_at?relative(a.last_seen_at):t("jamais","أبدًا")}</p>
             </div>
-            <select disabled={self||busy===a.user_id||!a.email||isSuper} value={a.role_code}
+            <select disabled={self||busy===a.user_id||!a.email||(isSuper&&admin?.role!=="super_admin")} value={a.role_code}
               onChange={e=>void setAdmin(a.user_id,{p_email:a.email!,p_role:e.target.value,p_active:a.active,p_display_name:a.display_name},t("Rôle mis à jour","تم تحديث الدور"))}
               className="h-9 rounded-xl border bg-card px-3 text-sm font-semibold">
               {ROLE_CODES.filter(r=>r!=="super_admin"&&(r===a.role_code||canAssignRole(r))).map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}
             </select>
             <div className="flex items-center gap-2"><Pill tone={a.active?"green":"gray"}>{a.active?t("Actif","نشط"):t("Désactivé","معطل")}</Pill>
-              <Switch disabled={self||isSuper||!a.email||busy===a.user_id} checked={a.active}
+              <Switch disabled={self||(isSuper&&admin?.role!=="super_admin")||!a.email||busy===a.user_id} checked={a.active}
                 onCheckedChange={x=>void setAdmin(a.user_id,{p_email:a.email!,p_role:a.role_code,p_active:x,p_display_name:a.display_name},x?t("Accès réactivé","تم تفعيل الوصول"):t("Accès désactivé","تم تعطيل الوصول"))}/></div>
             {!isSuper&&<Button size="sm" variant={selectedUser===a.user_id?"default":"outline"} onClick={()=>setSelectedUser(a.user_id)}><SlidersHorizontal className="h-4 w-4"/>{t("Permissions","الصلاحيات")}</Button>}
           </div>;
