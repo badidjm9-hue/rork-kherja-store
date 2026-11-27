@@ -30,7 +30,7 @@ BEGIN
   v_failed := false;
   BEGIN
     PERFORM public.admin_set_user_permissions('eeeeeeee-0000-0000-0000-000000000044',
-      ARRAY['pricing.manage']::text[],true);
+      ARRAY['pricing.read','pricing.manage']::text[],true);
   EXCEPTION WHEN OTHERS THEN v_failed := true;
   END;
   IF NOT v_failed THEN RAISE EXCEPTION 'manager granted a permission they do not hold to a new target'; END IF;
