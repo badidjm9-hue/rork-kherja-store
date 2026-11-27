@@ -41,7 +41,24 @@ Deno.serve(async (req) => {
   const { data: invite, error: inviteError } = await service.auth.admin.inviteUserByEmail(email, {
     data: { display_name: displayName },
   });
-  if (inviteError || !invite.user) return json({ error: inviteError?.message ?? "Invitation failed" }, 400);
+  let userId = invite?.user?.id ?? null;
+  const newlyInvited = Boolean(userId);
+
+  // Existing KHERJA accounts can also be added as employees without sending a duplicate invite.
+  if (!userId && inviteError) {
+    for (let page = 1; page <= 10 && !userId; page++) {
+      const { data, error } = await service.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) return json({ error: error.message }, 500);
+      userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id ?? null;
+      if (data.users.length < 1000) break;
+    }
+  }
+  if (!userId) return json({ error: inviteError?.message ?? "Invitation failed" }, 400);
+
+  const { data: existingAdmin, error: existingAdminError } = await service
+    .from("admin_users").select("user_id").eq("user_id", userId).maybeSingle();
+  if (existingAdminError) return json({ error: existingAdminError.message }, 500);
+  if (existingAdmin) return json({ error: "This account is already an administrator" }, 409);
 
   const { error: assignError } = await caller.rpc("admin_set_admin", {
     p_email: email,
@@ -50,23 +67,21 @@ Deno.serve(async (req) => {
     p_display_name: displayName || email.split("@")[0],
   });
   if (assignError) {
-    // This user was just created by this request. Remove the unassigned invite to avoid
-    // leaving a half-created employee record when RBAC rejects the assignment.
-    await service.auth.admin.deleteUser(invite.user.id);
+    if (newlyInvited) await service.auth.admin.deleteUser(userId);
     return json({ error: assignError.message }, 400);
   }
 
-  // Least privilege by default: a new employee receives no role-inherited permissions
-  // until the administrator explicitly selects the allowed actions in the dashboard.
+  // Least privilege by default: no role-inherited permissions until explicitly selected.
   const { error: permissionError } = await caller.rpc("admin_set_user_permissions", {
-    p_user_id: invite.user.id,
+    p_user_id: userId,
     p_permission_codes: [],
     p_use_custom: true,
   });
   if (permissionError) {
-    await service.auth.admin.deleteUser(invite.user.id);
+    await service.from("admin_users").delete().eq("user_id", userId);
+    if (newlyInvited) await service.auth.admin.deleteUser(userId);
     return json({ error: permissionError.message }, 400);
   }
 
-  return json({ user_id: invite.user.id, invited: true });
+  return json({ user_id: userId, invited: newlyInvited });
 });

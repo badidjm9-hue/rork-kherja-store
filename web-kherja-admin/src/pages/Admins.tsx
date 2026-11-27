@@ -96,7 +96,9 @@ export default function Admins() {
       const invited=must(await supabase.functions.invoke("admin-invite",{
         body:{email:normalized,display_name:name.trim(),role},
       })) as {user_id:string};
-      toast.success(t("Invitation envoyée. Configurez ses permissions.","تم إرسال الدعوة. اضبط صلاحيات الموظف."));
+      toast.success(invited.invited
+        ? t("Invitation envoyée. Configurez ses permissions.","تم إرسال الدعوة. اضبط صلاحيات الموظف.")
+        : t("Compte existant ajouté. Configurez ses permissions.","تمت إضافة الحساب الموجود. اضبط صلاحياته."));
       setEmail("");setName("");setSelectedUser(invited.user_id);setCustomEnabled(true);setSelectedPermissions([]);
       await Promise.all([qc.invalidateQueries({queryKey:["admin-users"]}),qc.invalidateQueries({queryKey:["admin-user-permissions",invited.user_id]})]);
     }catch(err){toast.error(errorMessage(err));}
