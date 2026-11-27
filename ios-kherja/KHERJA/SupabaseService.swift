@@ -405,18 +405,28 @@ final class SupabaseService: ObservableObject {
             .decoded(Self.decoder())
     }
 
-    func uploadDriverDocument(driverId: UUID, type: String, data: Data) async throws {
+    func uploadDriverDocument(
+        driverId: UUID,
+        type: String,
+        data: Data,
+        mimeType: String = "image/jpeg",
+        fileExtension: String = "jpg"
+    ) async throws {
         guard ["id_card", "license", "registration", "insurance", "vehicle_photo"].contains(type) else {
             throw NSError(domain: "KHERJA.Documents", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid document type"])
+        }
+        guard ["image/jpeg", "image/png", "image/heic", "application/pdf"].contains(mimeType),
+              ["jpg", "png", "heic", "pdf"].contains(fileExtension) else {
+            throw NSError(domain: "KHERJA.Documents", code: 7, userInfo: [NSLocalizedDescriptionKey: "Unsupported document format"])
         }
         guard !data.isEmpty, data.count <= 10 * 1024 * 1024 else {
             throw NSError(domain: "KHERJA.Documents", code: 2, userInfo: [NSLocalizedDescriptionKey: "File must be smaller than 10 MB"])
         }
-        let path = "\(driverId.uuidString.lowercased())/\(type)_\(UUID().uuidString.lowercased()).jpg"
+        let path = "\(driverId.uuidString.lowercased())/\(type)_\(UUID().uuidString.lowercased()).\(fileExtension)"
         try await client.storage
             .from("driver-documents")
-            .upload(path: path, file: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        try await rpcVoid("submit_driver_document", params: SubmitDriverDocumentParams(type: type, path: path, mime: "image/jpeg"))
+            .upload(path: path, file: data, options: FileOptions(contentType: mimeType, upsert: false))
+        try await rpcVoid("submit_driver_document", params: SubmitDriverDocumentParams(type: type, path: path, mime: mimeType))
     }
 
     // MARK: Passenger flow

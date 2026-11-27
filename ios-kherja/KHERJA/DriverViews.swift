@@ -11,6 +11,7 @@ import MapKit
 import Supabase
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 import UIKit
 
 struct DriverMainView: View {
@@ -810,6 +811,7 @@ struct DriverProfileView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedDocumentType: String?
     @State private var showPhotoPicker = false
+    @State private var showDocumentImporter = false
 
     var body: some View {
         ScrollView {
@@ -861,6 +863,15 @@ struct DriverProfileView: View {
             await loadDocuments()
         }
         .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
+        .fileImporter(isPresented: $showDocumentImporter, allowedContentTypes: [.pdf], allowsMultipleSelection: false) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first, let type = selectedDocumentType else { return }
+                Task { await uploadPDF(url, type: type) }
+            case .failure(let error):
+                documentError = store.serverErrorMessage(error)
+            }
+        }
         .onChange(of: selectedPhoto) { item in
             guard let item, let type = selectedDocumentType else { return }
             Task { await upload(item, type: type) }
@@ -871,7 +882,7 @@ struct DriverProfileView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(store.language == .ar ? "وثائق السائق" : "Documents du chauffeur")
                 .font(.system(size: 18, weight: .heavy)).foregroundStyle(KJ.ink)
-            Text(store.language == .ar ? "حمّل صوراً واضحة. الحد الأقصى 10 ميغابايت لكل وثيقة." : "Ajoutez des photos lisibles. 10 Mo maximum par document.")
+            Text(store.language == .ar ? "حمّل صورة أو ملف PDF واضحاً. الحد الأقصى 10 ميغابايت." : "Ajoutez une image ou un PDF lisible. 10 Mo maximum.")
                 .font(.system(size: 12, weight: .medium)).foregroundStyle(KJ.muted)
             let required: [(String, String)] = [
                 ("id_card", store.language == .ar ? "بطاقة التعريف" : "Carte d’identité"),
@@ -899,10 +910,20 @@ struct DriverProfileView: View {
                     if status == "approved" {
                         Image(systemName: "checkmark.seal.fill").foregroundStyle(KJ.success)
                     } else {
-                        Button {
-                            selectedDocumentType = type
-                            selectedPhoto = nil
-                            showPhotoPicker = true
+                        Menu {
+                            Button {
+                                selectedDocumentType = type
+                                selectedPhoto = nil
+                                showPhotoPicker = true
+                            } label: {
+                                Label(store.language == .ar ? "اختيار صورة" : "Choisir une photo", systemImage: "photo")
+                            }
+                            Button {
+                                selectedDocumentType = type
+                                showDocumentImporter = true
+                            } label: {
+                                Label("PDF", systemImage: "doc.pdf")
+                            }
                         } label: {
                             if uploadingType == type { ProgressView().tint(KJ.blue) }
                             else { Label(store.language == .ar ? "إضافة" : "Ajouter", systemImage: "plus") }
@@ -961,6 +982,30 @@ struct DriverProfileView: View {
             }
             guard let id = store.session.userId else { throw NSError(domain: "KHERJA.Documents", code: 5, userInfo: [NSLocalizedDescriptionKey: "Session required"]) }
             try await SupabaseService.shared.uploadDriverDocument(driverId: id, type: type, data: jpeg)
+            await loadDocuments()
+        } catch {
+            documentError = store.serverErrorMessage(error)
+        }
+        uploadingType = nil
+    }
+
+    @MainActor
+    private func uploadPDF(_ url: URL, type: String) async {
+        uploadingType = type
+        documentError = nil
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let data = try Data(contentsOf: url)
+            guard !data.isEmpty, data.count <= 10 * 1024 * 1024 else {
+                throw NSError(domain: "KHERJA.Documents", code: 6, userInfo: [NSLocalizedDescriptionKey: "PDF must be smaller than 10 MB"])
+            }
+            guard let id = store.session.userId else {
+                throw NSError(domain: "KHERJA.Documents", code: 5, userInfo: [NSLocalizedDescriptionKey: "Session required"])
+            }
+            try await SupabaseService.shared.uploadDriverDocument(
+                driverId: id, type: type, data: data, mimeType: "application/pdf", fileExtension: "pdf"
+            )
             await loadDocuments()
         } catch {
             documentError = store.serverErrorMessage(error)
