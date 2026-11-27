@@ -149,6 +149,23 @@ const store: Store = {
     return { id: data.user.id, email: data.user.email ?? null };
   },
 
+  async deleteMyAccount(accessToken) {
+    const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/delete_my_account`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: Deno.env.get("SUPABASE_ANON_KEY")!, Authorization: `Bearer ${accessToken}` },
+      body: "{}",
+    });
+    if (res.ok) return "ok";
+    const message = (await res.text()).toLowerCase();
+    if (message.includes("active ride") || message.includes("current request")) return "active";
+    return "error";
+  },
+
+  async deleteAuthUser(userId) {
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    return !error;
+  },
+
   async findPhoneOwner(phone) {
     const { data } = await admin.from("verified_phones").select("user_id").eq("phone", phone).maybeSingle();
     if (data?.user_id) return data.user_id as string;

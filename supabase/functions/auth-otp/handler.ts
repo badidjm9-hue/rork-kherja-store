@@ -44,6 +44,8 @@ export interface Store {
   getVerifiedPhone(userId: string, email: string | null): Promise<string | null>;
   /** Records a verified phone for a user. "conflict" when the phone or the user is already linked. */
   linkVerifiedPhone(userId: string, phone: string): Promise<"ok" | "conflict" | "error">;
+  deleteMyAccount(accessToken: string): Promise<"ok" | "active" | "error">;
+  deleteAuthUser(userId: string): Promise<boolean>;
 }
 
 export interface Deps {
@@ -145,6 +147,18 @@ export function createHandler(deps: Deps) {
       // behaviour: that is decided solely by server-side environment (see policy.ts).
       const body = await req.json();
       const { action, phone: rawPhone, code, password, email: rawEmail } = body ?? {};
+      if (action === "delete_account") {
+        const auth = req.headers.get("Authorization") ?? "";
+        const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+        const user = token ? await store.getAuthUser(token) : null;
+        if (!user) return json({ error: "Session requise" }, 401);
+        const closed = await store.deleteMyAccount(token);
+        if (closed === "active") return json({ error: "Terminez ou annulez votre trajet en cours avant de supprimer le compte." }, 409);
+        if (closed !== "ok") return json({ error: "Fermeture du compte impossible. Réessayez." }, 500);
+        const removed = await store.deleteAuthUser(user.id);
+        if (!removed) return json({ error: "Compte fermé, mais suppression de l’identité en attente. Reconnectez-vous et réessayez." }, 502);
+        return json({ ok: true, account_deleted: true });
+      }
       const phone = normalizePhone(typeof rawPhone === "string" ? rawPhone : "");
       if (!phone) return json({ error: "Numéro invalide" }, 400);
 

@@ -248,6 +248,10 @@ final class SupabaseService: ObservableObject {
         var phone: String
     }
 
+    nonisolated struct DeleteAccountRequest: Encodable, Sendable {
+        var action: String = "delete_account"
+    }
+
     /// Body for every auth-otp action. Optional fields are omitted when nil, so the legacy
     /// {action, phone, code} payload is byte-for-byte what older clients send.
     nonisolated struct OtpVerify: Encodable, Sendable {
@@ -823,9 +827,13 @@ extension SupabaseService {
         _ = try await client.rpc(name).execute()
     }
 
-    /// Closes and anonymises the signed-in account (RPC delete_my_account, migration 0013).
+    /// Closes/anonymises the profile, then removes the Supabase Auth identity on the server.
     func deleteMyAccount() async throws {
-        try await rpcVoid("delete_my_account")
+        guard let token = await session.validAccessToken() else { throw SocialError.failed }
+        let result: OtpRequestResponse = try await Self.callFunction("auth-otp", body: DeleteAccountRequest(), bearer: token)
+        guard result.ok else {
+            throw NSError(domain: "KHERJA.Account", code: 1, userInfo: [NSLocalizedDescriptionKey: result.error ?? "Account deletion failed"])
+        }
     }
 
     /// Driver live position via the validated server RPC (also stamps location_updated_at), like Android.
