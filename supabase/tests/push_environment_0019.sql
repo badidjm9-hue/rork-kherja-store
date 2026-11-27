@@ -2,11 +2,11 @@
 SET client_min_messages = notice;
 DO $$
 DECLARE
-  u uuid := 'eeeeeeee-0000-0000-0000-000000000019';
+  u uuid := 'eeeeeeee-0000-0000-0000-000000000039';
   android_id uuid;
   ios_id uuid;
 BEGIN
-  INSERT INTO auth.users(id,email) VALUES(u,'u213555900019@phone.kherja.app');
+  INSERT INTO auth.users(id,email) VALUES(u,'u213555900039@phone.kherja.app');
   PERFORM set_config('request.jwt.claim.sub',u::text,false);
   android_id := public.register_push_device(repeat('A',64),'android');
   ios_id := public.register_push_device(repeat('B',64),'ios',NULL,'development');
