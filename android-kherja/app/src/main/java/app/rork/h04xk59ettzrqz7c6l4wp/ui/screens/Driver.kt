@@ -108,13 +108,14 @@ import java.util.Locale
 // ===================== Gate: pending / rejected / suspended =====================
 
 @Composable
-fun DriverGate(state: AppState, content: @Composable () -> Unit) {
+/** Blocks the app for suspended accounts; with [driverRules] it also holds drivers awaiting/denied approval. */
+fun DriverGate(state: AppState, driverRules: Boolean = true, content: @Composable () -> Unit) {
     val p = state.profile
     val blocked = when {
         p == null -> null
         p.accountStatus == "suspended" -> "suspended"
-        p.driverStatus == "pending" -> "pending"
-        p.driverStatus == "rejected" -> "rejected"
+        driverRules && p.driverStatus == "pending" -> "pending"
+        driverRules && p.driverStatus == "rejected" -> "rejected"
         else -> null
     }
     if (blocked == null) {

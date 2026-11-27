@@ -141,3 +141,6 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Known limitation: the Supabase Auth identity is not removed (needs an Edge Function deploy), so the phone number stays registered to the closed account.
 - iOS driver presence now also calls `ping_location` (same as Android).
 - Not built or run on Android/iOS in this environment.
+
+## Phase 2 – suspended passengers
+- Suspended passenger accounts previously got no gate (every action failed with "Account suspended"). Android now wraps the passenger tabs in `DriverGate(driverRules = false)`; iOS shows `DriverStatusView(.suspended, showSignOut: true)` instead of the tab bar. Not built or run on a device here.

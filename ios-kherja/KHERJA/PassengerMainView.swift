@@ -12,6 +12,16 @@ struct PassengerMainView: View {
     @State private var tab = 0
 
     var body: some View {
+        if store.profile?.accountStatus == "suspended" {
+            // Suspended accounts see their status instead of tabs whose actions would all fail.
+            DriverStatusView(kind: .suspended, reason: store.profile?.statusReason, showSignOut: true)
+                .task { await store.refreshProfile() }
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $tab) {
             PassengerHomeView()
                 .tabItem { Label(store.l("tab_home"), systemImage: "house.fill") }

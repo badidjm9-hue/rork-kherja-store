@@ -61,6 +61,8 @@ struct DriverStatusView: View {
     @EnvironmentObject var store: AppState
     let kind: Kind
     let reason: String?
+    /// Full-screen use (suspended passenger): there is no tab bar, so offer a way out.
+    var showSignOut = false
     @State private var refreshing = false
     @State private var pulse = false
 
@@ -161,6 +163,19 @@ struct DriverStatusView: View {
                 .buttonStyle(KJButtonStyle())
                 .disabled(refreshing)
                 .padding(.horizontal, 20)
+
+                if showSignOut {
+                    Button(role: .destructive) {
+                        store.signOut()
+                    } label: {
+                        Text(store.l("logout"))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(KJ.danger)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+                }
             }
             .frame(maxWidth: .infinity)
         }

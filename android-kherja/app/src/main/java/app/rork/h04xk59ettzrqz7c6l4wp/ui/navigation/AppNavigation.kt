@@ -76,7 +76,7 @@ fun AppNavigation() {
                 RootScreen.Profile -> if (state.profile == null && state.signedIn) ProfileLoading(state) else CompleteProfileScreen(state)
                 RootScreen.LinkPhone -> LinkPhoneScreen(state)
                 RootScreen.Driver -> DriverGate(state) { DriverTabs(state) }
-                RootScreen.Passenger -> PassengerTabs(state)
+                RootScreen.Passenger -> DriverGate(state, driverRules = false) { PassengerTabs(state) }
             }
         }
     }
