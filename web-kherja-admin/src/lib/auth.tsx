@@ -18,6 +18,7 @@ export type Permission =
   | "admins.manage"
   | "audit.read"
   | "deliveries.read"
+  | "deliveries.manage"
   | "vehicles.read"
   | "vehicles.manage"
   | "notifications.read"

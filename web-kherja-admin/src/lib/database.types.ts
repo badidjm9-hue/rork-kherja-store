@@ -910,6 +910,7 @@ export type Database = {
         Args: { p_amount: number; p_reason: string; p_ride_id: string }
         Returns: undefined
       }
+      admin_cancel_delivery: { Args: { p_order_id: string; p_reason: string }; Returns: undefined }
       admin_cancel_ride: {
         Args: { p_reason: string; p_ride_id: string }
         Returns: undefined

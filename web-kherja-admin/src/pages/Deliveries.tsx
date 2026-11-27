@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Package, Phone, Search } from "lucide-react";
-import { supabase, must, type DeliveryOrder, type Profile } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Ban, Package, Phone, Search } from "lucide-react";
+import { supabase, must, errorMessage, type DeliveryOrder, type Profile } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { deliveryStatus, vehicleLabel } from "@/lib/labels";
-import { EmptyState, ErrorBlock, LoadingBlock, PageHeader, Pill } from "@/components/kj";
+import { EmptyState, ErrorBlock, LoadingBlock, PageHeader, Pill, ReasonDialog } from "@/components/kj";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +15,10 @@ const STATUSES = ["open", "accepted", "picked_up", "delivered", "cancelled", "ex
 
 export default function Deliveries() {
   const { t, date, money, num } = useI18n();
+  const { can } = useAuth();
+  const qc = useQueryClient();
+  const canManage = can("deliveries.manage");
+  const [target, setTarget] = useState<DeliveryOrder | null>(null);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(PAGE);
@@ -46,6 +52,19 @@ export default function Deliveries() {
     if (!id) return "—";
     const p = people.data?.find((x) => x.id === id);
     return p?.name || p?.phone || `${id.slice(0, 8)}…`;
+  };
+
+  const applyAdminCancel = async (reason: string) => {
+    if (!target) return;
+    try {
+      must(await supabase.rpc("admin_cancel_delivery", { p_order_id: target.id, p_reason: reason }));
+      toast.success(t("Livraison annulée", "تم إلغاء طلب التوصيل"));
+      await qc.invalidateQueries({ queryKey: ["deliveries"] });
+      setTarget(null);
+    } catch (e) {
+      toast.error(errorMessage(e));
+      throw e;
+    }
   };
 
   const needle = search.trim().toLowerCase();
@@ -98,7 +117,14 @@ export default function Deliveries() {
                   <Pill tone={st.tone}>{st.label}</Pill>
                   <span className="text-xs text-muted-foreground">{vehicleLabel(t, o.vehicle)} · {num(o.distance_km, 1)} km</span>
                 </div>
-                <span className="kj-num text-base font-extrabold">{money(o.delivery_fee)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="kj-num text-base font-extrabold">{money(o.delivery_fee)}</span>
+                  {canManage && ["open", "accepted", "picked_up"].includes(o.status) && (
+                    <Button size="sm" variant="destructive" onClick={() => setTarget(o)}>
+                      <Ban className="h-4 w-4" /> {t("Annuler", "إلغاء")}
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="mt-2 font-semibold">{o.package_description}</p>
               <p className="mt-1 text-muted-foreground">{o.pickup_label} → {o.dest_label}</p>
@@ -137,6 +163,16 @@ export default function Deliveries() {
           </Button>
         </div>
       )}
+      <ReasonDialog
+        open={!!target}
+        onOpenChange={(open) => !open && setTarget(null)}
+        title={t("Annuler cette livraison ?", "إلغاء طلب التوصيل؟")}
+        description={t("Le motif sera enregistré dans le journal d'audit et les participants seront informés.", "سيُسجل السبب في سجل التدقيق وسيتم إعلام الأطراف.")}
+        confirmLabel={t("Confirmer l'annulation", "تأكيد الإلغاء")}
+        destructive
+        requireReason
+        onConfirm={applyAdminCancel}
+      />
     </div>
   );
 }
