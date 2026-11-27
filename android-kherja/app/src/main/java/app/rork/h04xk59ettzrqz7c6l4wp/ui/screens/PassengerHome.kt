@@ -1,6 +1,9 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,6 +74,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.rork.h04xk59ettzrqz7c6l4wp.AppState
@@ -109,6 +113,7 @@ private enum class Field { Pickup, Dest }
 @Composable
 private fun BookingScreen(state: AppState) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val myLoc by state.location.location.collectAsState()
     var hasPermission by remember { mutableStateOf(state.location.hasPermission()) }
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
@@ -241,6 +246,33 @@ private fun BookingScreen(state: AppState) {
             ) {
                 Text(state.l("where_to"), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink)
                 Spacer(Modifier.height(14.dp))
+
+                if (!hasPermission) {
+                    KJCard(padding = 12.dp) {
+                        Text(
+                            if (state.isRtl) "إذن الموقع غير مفعّل. يمكنك اختيار العنوان يدوياً أو تفعيل الموقع من إعدادات الهاتف."
+                            else "La localisation est désactivée. Choisissez une adresse manuellement ou autorisez l’accès dans les réglages.",
+                            color = KJ.muted, fontSize = 12.sp,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Text(
+                                if (state.isRtl) "إعدادات الموقع" else "Réglages",
+                                color = KJ.blue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
+                                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+                                    context.startActivity(intent)
+                                },
+                            )
+                            Text(
+                                if (state.isRtl) "إعادة المحاولة" else "Réessayer",
+                                color = KJ.blue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
+                                    permLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                                },
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
 
                 KJCard(padding = 6.dp) {
                     PlaceRow(
