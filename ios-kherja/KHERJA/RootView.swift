@@ -105,6 +105,7 @@ struct CompleteProfileView: View {
     @State private var name = ""
     @State private var city = "Alger"
     @State private var saving = false
+    @State private var errorMessage: String?
 
     private let cities = ["Alger", "Oran", "Constantine", "Annaba", "Blida", "Batna", "Sétif", "Tlemcen", "Béjaïa", "Ouargla"]
 
@@ -137,6 +138,14 @@ struct CompleteProfileView: View {
             .tint(KJ.blue)
             .padding(.top, 10)
 
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(KJ.danger)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+            }
+
             Button {
                 save()
             } label: {
@@ -162,11 +171,23 @@ struct CompleteProfileView: View {
 
     private func save() {
         saving = true
+        errorMessage = nil
         Task {
-            guard let id = store.session.userId else { return }
+            guard let id = store.session.userId else {
+                errorMessage = store.l("error_generic")
+                saving = false
+                return
+            }
             let update = ProfileUpdate(name: name.trimmingCharacters(in: .whitespaces), city: city, language: store.language.rawValue, role: store.role)
-            try? await SupabaseService.shared.updateProfile(id: id, update: update)
-            await store.refreshProfile()
+            do {
+                try await SupabaseService.shared.updateProfile(id: id, update: update)
+                await store.refreshProfile()
+                if (store.profile?.name ?? "").isEmpty {
+                    errorMessage = store.l("error_generic")
+                }
+            } catch {
+                errorMessage = store.serverErrorMessage(error)
+            }
             saving = false
         }
     }
