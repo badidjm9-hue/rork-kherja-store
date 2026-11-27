@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { rideStatus, vehicleLabel } from "@/lib/labels";
 import { useRealtimeInvalidate } from "@/lib/useRealtime";
 import { cn } from "@/lib/utils";
-import { ErrorBlock, PageHeader, Pill } from "@/components/kj";
+import { EmptyState, ErrorBlock, LoadingBlock, PageHeader, Pill } from "@/components/kj";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { RideDetail } from "./Rides";
 
@@ -42,7 +42,7 @@ export default function LiveMap() {
     queryKey: ["live"],
     queryFn: async () => {
       const [drivers, rides, requests] = await Promise.all([
-        supabase.from("profiles").select("*").eq("role", "driver").eq("is_online", true).not("current_lat", "is", null),
+        supabase.from("profiles").select("*").eq("role", "driver").eq("is_online", true).not("current_lat", "is", null).not("current_lng", "is", null),
         supabase.from("rides").select("*").in("status", ["en_route", "arrived", "started"]).order("created_at", { ascending: false }),
         supabase
           .from("ride_requests")
@@ -96,6 +96,11 @@ export default function LiveMap() {
       {q.error && <ErrorBlock error={q.error} />}
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <div className="kj-card relative h-[calc(100vh-220px)] min-h-[460px] overflow-hidden p-0" dir="ltr">
+          {q.isLoading && (
+            <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-background/65 backdrop-blur-[2px]">
+              <LoadingBlock />
+            </div>
+          )}
           <MapContainer center={[36.7538, 3.0588]} zoom={11} className="h-full w-full" scrollWheelZoom>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
@@ -141,8 +146,9 @@ export default function LiveMap() {
             <p className="flex items-center gap-2 font-bold"><Radio className="h-4 w-4 text-primary" />{t("Courses actives", "رحلات جارية")}</p>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
-            {q.data && q.data.rides.length === 0 && (
-              <p className="p-6 text-center text-sm text-muted-foreground">{t("Aucune course en cours.", "لا توجد رحلات جارية.")}</p>
+            {q.isLoading && <LoadingBlock />}
+            {q.data && q.data.rides.length === 0 && q.data.requests.length === 0 && (
+              <EmptyState icon={Radio} title={t("Aucune activité en direct", "لا يوجد نشاط مباشر")} body={t("Les chauffeurs, courses et demandes actives apparaîtront ici.", "سيظهر هنا السائقون والرحلات والطلبات النشطة.")} />
             )}
             {q.data?.rides.map((r) => {
               const st = rideStatus(t, r.status);
