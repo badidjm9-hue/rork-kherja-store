@@ -1,0 +1,36 @@
+name: Supabase SQL regression tests
+
+on:
+  push:
+    branches:
+      - feature/kherja-integrated
+  pull_request:
+    branches:
+      - feature/kherja-integrated
+  workflow_dispatch:
+
+jobs:
+  postgres-migrations-and-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run all migrations and disposable database regression tests
+        env:
+          PSQL: psql -h 127.0.0.1 -p 5432 -U postgres -d postgres
+          PGPASSWORD: postgres
+        run: bash supabase/tests/run_local.sh
