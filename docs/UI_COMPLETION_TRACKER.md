@@ -54,7 +54,7 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 
 ### Backend integrations
 - Auth account deletion is implemented in code; profile anonymisation, private Storage API cleanup and Auth identity removal are sequenced with retry-safe partial states. Migrations 0015–0016 and the updated auth-otp Edge Function are not deployed.
-- Push registration and FCM/APNs delivery are implemented in code; migration 0017, Edge Function deployment, webhook and provider credentials are not configured.
+- Push registration and FCM/APNs delivery are implemented in code; migrations 0017 and 0019 store private device tokens and APNs environment per device. Edge Function deployment, webhook and provider credentials are not configured.
 - Migration 0018 prevents deleted profiles from receiving new notifications and excludes deleted/staff profiles from customer metrics/broadcasts; it is not deployed.
 - SMS OTP provider/dev-mode setup is still deferred until the development scope is complete.
 
@@ -106,3 +106,4 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 - Added private push-device registration, FCM/APNs delivery, invalid-token cleanup, and native permission/token handling. Provider credentials, entitlements and webhook are not configured.
 - Added PDF driver document uploads on Android/iOS and improved passenger location-permission error guidance.
 - Added deleted-account metrics/broadcast suppression, Admin secondary-query errors, and live-map loading/empty-state refinements.
+- APNs sandbox/production routing is now selected per iOS device token (Debug vs Release); Android FCM devices default to production. Migration 0019 and its SQL tests are committed but unapplied.
