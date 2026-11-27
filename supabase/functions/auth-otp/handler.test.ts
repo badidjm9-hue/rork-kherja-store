@@ -13,7 +13,9 @@ function fakeStore() {
   const users = new Map<string, { id: string; password?: string; meta: Record<string, unknown> }>();
   const linked = new Map<string, string>();
   let clock = 1_700_000_000_000;
-  const calls: { updateUser: { password?: string; contactEmail?: string }[] } = { updateUser: [] };
+  const calls: { updateUser: { password?: string; contactEmail?: string }[]; accountClose: string[]; authDelete: string[] } = { updateUser: [], accountClose: [], authDelete: [] };
+  let closeResult: "ok" | "active" | "error" = "ok";
+  let authDeleteResult = true;
 
   const session = (id: string): SessionTokens => ({
     access_token: "access." + id, refresh_token: "refresh." + id, expires_in: 3600, user_id: id,
@@ -47,6 +49,8 @@ function fakeStore() {
       const m = /^social\.(.+)$/.exec(token);
       return m ? { id: m[1], email: m[1] + "@gmail.test" } : null;
     },
+    async deleteMyAccount(token) { calls.accountClose.push(token); return closeResult; },
+    async deleteAuthUser(userId) { calls.authDelete.push(userId); return authDeleteResult; },
     async findPhoneOwner(phone) {
       return linked.get(phone) ?? users.get("u" + phone.replace(/[^0-9]/g, "") + "@phone.kherja.app")?.id ?? null;
     },
@@ -64,7 +68,7 @@ function fakeStore() {
       return u && u.password === password ? session(u.id) : null;
     },
   };
-  return { store, attempts, otps, users, linked, calls, advance: (ms: number) => { clock += ms; }, now: () => clock };
+  return { store, attempts, otps, users, linked, calls, setCloseResult: (v: "ok" | "active" | "error") => { closeResult = v; }, setAuthDeleteResult: (v: boolean) => { authDeleteResult = v; }, advance: (ms: number) => { clock += ms; }, now: () => clock };
 }
 
 function setup(env: Record<string, string> = {}, smsResult = true, code = "123456") {
@@ -454,6 +458,40 @@ describe("stored OTP codes are hashed", () => {
     expect(r.status).toBe(400);
     expect(r.json.error).toContain("expiré");
     expect(t.otps.has(E164)).toBe(false);
+  });
+});
+
+describe("account deletion", () => {
+  const H = { Authorization: "Bearer social.delete-user" };
+  test("requires a valid signed-in user and ignores caller-supplied user ids", async () => {
+    const t = setup();
+    expect((await t.call({ action: "delete_account", user_id: "someone-else" })).status).toBe(401);
+    expect((await t.call({ action: "delete_account", user_id: "someone-else" }, { Authorization: "Bearer anon-key" })).status).toBe(401);
+    expect(t.calls.accountClose).toHaveLength(0);
+    expect(t.calls.authDelete).toHaveLength(0);
+  });
+  test("blocks deletion while a trip is active and never deletes Auth", async () => {
+    const t = setup(); t.setCloseResult("active");
+    const r = await t.call({ action: "delete_account" }, H);
+    expect(r.status).toBe(409);
+    expect(t.calls.accountClose).toEqual(["social.delete-user"]);
+    expect(t.calls.authDelete).toHaveLength(0);
+  });
+  test("anonymises first, then deletes the authenticated identity", async () => {
+    const t = setup();
+    const r = await t.call({ action: "delete_account" }, H);
+    expect(r.status).toBe(200);
+    expect(r.json.account_deleted).toBe(true);
+    expect(t.calls.accountClose).toEqual(["social.delete-user"]);
+    expect(t.calls.authDelete).toEqual(["delete-user"]);
+  });
+  test("reports retryable partial state when Auth deletion fails", async () => {
+    const t = setup(); t.setAuthDeleteResult(false);
+    const r = await t.call({ action: "delete_account" }, H);
+    expect(r.status).toBe(502);
+    expect(r.json.ok).toBeUndefined();
+    expect(t.calls.accountClose).toHaveLength(1);
+    expect(t.calls.authDelete).toEqual(["delete-user"]);
   });
 });
 

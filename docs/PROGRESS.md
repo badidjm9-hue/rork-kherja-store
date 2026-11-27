@@ -154,3 +154,11 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Admin person-detail panels now render errors from the ride-history and driver-phone-verification queries instead of silently omitting those sections.
 - No builds or tests were run in this development pass. Supabase TEST and deployed Edge Functions were not changed.
 - Admin overview custom date ranges now validate missing/reversed dates, disable the invalid query, and show a bilingual inline message instead of producing an invalid timestamp/query key.
+
+## Phase 4 – authenticated account deletion path (code only; not deployed)
+
+- Android and iOS now call the authenticated `auth-otp` `delete_account` action. The Edge Function resolves the user from the verified bearer token, calls the idempotent profile-anonymisation RPC using that user's JWT, then deletes only that Auth identity using the service role.
+- Active trips block deletion before Auth removal. If Auth deletion fails after profile anonymisation, the endpoint returns an explicit retryable partial-state response; the RPC is idempotent for retry.
+- A schema review found `profiles.id → auth.users.id ON DELETE CASCADE`; migration 0015 removes that FK so deleting the Auth identity cannot cascade-delete the anonymised profile and retained ride/wallet/message history.
+- Migration 0015 also replaces `delete_my_account()` to remove private driver-document Storage objects before deleting their metadata.
+- Handler tests and a disposable-Postgres migration test are being added. Migration 0015 and Edge Function code are not applied/deployed to Supabase. Native builds remain unrun.
