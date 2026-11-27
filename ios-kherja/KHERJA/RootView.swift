@@ -69,6 +69,10 @@ struct RootView: View {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             minSplash = false
             await store.bootstrap()
+            if store.session.isSignedIn { await KHERJAPushRegistration.requestIfNeeded() }
+        }
+        .onChange(of: store.session.isSignedIn) { _, signedIn in
+            if signedIn { Task { await KHERJAPushRegistration.requestIfNeeded() } }
         }
         .environment(\.layoutDirection, store.language.isRTL ? .rightToLeft : .leftToRight)
     }

@@ -153,10 +153,14 @@ final class AppState: ObservableObject {
     }
 
     func signOut() {
-        session.signOut()
-        profile = nil
-        phoneVerified = nil
-        setActiveRequest(nil)
-        setActiveRide(nil)
+        let pushToken = KHERJAPushRegistration.cachedToken
+        Task {
+            if let pushToken { try? await supabase.unregisterPushDevice(token: pushToken) }
+            session.signOut()
+            profile = nil
+            phoneVerified = nil
+            setActiveRequest(nil)
+            setActiveRide(nil)
+        }
     }
 }
