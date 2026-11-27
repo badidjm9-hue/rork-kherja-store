@@ -242,3 +242,5 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Admin dashboard now displays an explicit access-denied screen for authenticated non-admin accounts and supports bilingual permission descriptions and bulk select/clear.
 - Added tests for custom-permission exact overrides, super-admin completeness, escalation protection and delivery cancellation. These are committed but have not been run; no migration or Edge Function has been deployed.
 - Follow-up hardening lets delegated admin managers preserve an existing `admins.manage` grant while still preventing them from granting it to new employees.
+- Added a self-service password-change dialog in the admin sidebar so invited employees can set a durable password after accepting their invitation.
+- Added a Codemagic web build workflow for the admin dashboard, using the existing TEST Supabase variables and producing a static `dist` artifact; it does not deploy the site.
