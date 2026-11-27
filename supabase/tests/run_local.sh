@@ -5,9 +5,9 @@
 set -euo pipefail
 : "${PSQL:?set PSQL to a psql command for a disposable empty database}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-$PSQL -v ON_ERROR_STOP=1 -q -f "$HERE/local_stack_stub.sql" 2>&1 | grep -v -E 'NOTICE|WARNING|HINT' || true
+$PSQL -v ON_ERROR_STOP=1 -q -f "$HERE/local_stack_stub.sql"
 for f in "$HERE"/../migrations/*.sql; do
-  echo "== $(basename "$f")"; $PSQL -v ON_ERROR_STOP=1 -q -f "$f" 2>&1 | grep -v NOTICE || true
+  echo "== $(basename "$f")"; $PSQL -v ON_ERROR_STOP=1 -q -f "$f"
 done
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/stack_behavior.sql" 2>&1 | grep -E 'PASS|FAIL|ALL CHECKS|ERROR' 
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_deleted_guard_0014.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
