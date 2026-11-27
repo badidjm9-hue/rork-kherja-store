@@ -142,7 +142,7 @@ export default function Admins() {
             <select disabled={self||busy===a.user_id||!a.email||(isSuper&&admin?.role!=="super_admin")} value={a.role_code}
               onChange={e=>void setAdmin(a.user_id,{p_email:a.email!,p_role:e.target.value,p_active:a.active,p_display_name:a.display_name},t("Rôle mis à jour","تم تحديث الدور"))}
               className="h-9 rounded-xl border bg-card px-3 text-sm font-semibold">
-              {ROLE_CODES.filter(r=>r!=="super_admin"&&(r===a.role_code||canAssignRole(r))).map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}
+              {ROLE_CODES.filter(r=>(r!=="super_admin"||isSuperAdmin)&&(r===a.role_code||canAssignRole(r))).map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}
             </select>
             <div className="flex items-center gap-2"><Pill tone={a.active?"green":"gray"}>{a.active?t("Actif","نشط"):t("Désactivé","معطل")}</Pill>
               <Switch disabled={self||(isSuper&&admin?.role!=="super_admin")||!a.email||busy===a.user_id} checked={a.active}
