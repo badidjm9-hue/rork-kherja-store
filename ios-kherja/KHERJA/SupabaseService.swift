@@ -348,8 +348,22 @@ final class SupabaseService: ObservableObject {
         request.setValue(Config.EXPO_PUBLIC_SUPABASE_ANON_KEY, forHTTPHeaderField: "apikey")
         if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
         request.httpBody = try JSONEncoder().encode(body)
-        let (data, _) = try await URLSession.shared.data(for: request)
-        return try decoder().decode(R.self, from: data)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw AuthServiceError.network
+        }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if let failure = AuthServiceError.classify(status: status, body: data) { throw failure }
+        do {
+            return try decoder().decode(R.self, from: data)
+        } catch {
+            throw AuthServiceError.service
+        }
     }
 
     // MARK: Profile
@@ -804,5 +818,36 @@ extension SupabaseService {
     /// Expire stale open requests and their pending offers before feeding drivers.
     func expireStaleRequests() async {
         try? await rpcVoid("expire_stale_requests")
+    }
+}
+
+
+/// Transport / gateway failures of the auth-otp call (never business outcomes such as a wrong code).
+/// Mirrors Android's AuthServiceException (b998493), plus explicit 429 handling.
+nonisolated enum AuthServiceError: Error, Equatable, Sendable {
+    case network      // no connectivity / timeout
+    case service      // 404 (not deployed), 5xx, non-JSON, or a gateway 401/403 rejection
+    case rateLimited  // 429 without a function-level message
+
+    /// The function answers JSON containing `ok` or `error` for every business outcome
+    /// (wrong code, rate limit...), whatever the status. Anything else is a service problem.
+    static func classify(status: Int, body: Data) -> AuthServiceError? {
+        if status == 404 || status >= 500 { return .service }
+        let obj = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any]
+        guard let obj else { return status == 429 ? .rateLimited : .service }
+        let isFunctionReply = obj["ok"] != nil || obj["error"] is String
+        if isFunctionReply { return nil }
+        if status == 429 { return .rateLimited }
+        // 401/403 or any other non-2xx without the function's shape (e.g. gateway "Invalid JWT").
+        if !(200..<300).contains(status) { return .service }
+        return nil
+    }
+
+    var messageKey: String {
+        switch self {
+        case .network: return "err_network"
+        case .service: return "err_auth_service"
+        case .rateLimited: return "err_too_many"
+        }
     }
 }
