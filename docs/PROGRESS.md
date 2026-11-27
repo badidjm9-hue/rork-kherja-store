@@ -138,7 +138,7 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 ## Phase 1 – account deletion + iOS presence parity (not yet run on a device)
 - `supabase/migrations/0013_delete_account.sql` (NOT applied to any Supabase project): `delete_my_account()` anonymises and closes the profile (`account_status='deleted'`), removes saved places, notifications, vehicles, driver documents rows and verified phone, keeps ride/wallet/message history. Refuses while a request/ride/delivery is active. Local PG16 tests: `supabase/tests/delete_account_0013.sql` (13 checks, all PASS on a disposable database).
 - Android + iOS: "Supprimer mon compte / حذف حسابي" with a confirmation dialog in Settings; on success the user is signed out; a session whose profile is `deleted` is signed out with a notice.
-- Known limitation: the Supabase Auth identity is not removed (needs an Edge Function deploy), so the phone number stays registered to the closed account.
+- Superseded by Phase 4: the Auth identity deletion path is now implemented in code, with migrations 0015–0016 and an authenticated Edge Function action. It is not yet deployed, so live accounts still use the earlier profile-only deletion until the owner approves deployment.
 - iOS driver presence now also calls `ping_location` (same as Android).
 - Not built or run on Android/iOS in this environment.
 
@@ -161,7 +161,7 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Active trips block deletion before Auth removal. If Auth deletion fails after profile anonymisation, the endpoint returns an explicit retryable partial-state response; the RPC is idempotent for retry.
 - A schema review found `profiles.id → auth.users.id ON DELETE CASCADE`; migration 0015 removes that FK so deleting the Auth identity cannot cascade-delete the anonymised profile and retained ride/wallet/message history.
 - Migration 0015 also replaces `delete_my_account()` to remove private driver-document Storage objects before deleting their metadata.
-- Handler tests and a disposable-Postgres migration test are being added. Migration 0015 and Edge Function code are not applied/deployed to Supabase. Native builds remain unrun.
+- Added handler tests and disposable-Postgres migration tests for migrations 0015–0016. Migration 0015/0016 and Edge Function code are not applied/deployed to Supabase. Native builds remain unrun.
 - Follow-up migration 0016 converts remaining nullable foreign keys to `auth.users` (creator, reviewer, publisher, and audit actors) to `ON DELETE SET NULL`, while keeping cascade only for identity-owned rows. This prevents historical audit/admin metadata from blocking Auth deletion.
 
 ## Phase 5 – push delivery backend prepared (not deployed)

@@ -10,6 +10,7 @@ for f in "$HERE"/../migrations/*.sql; do
   echo "== $(basename "$f")"; $PSQL -v ON_ERROR_STOP=1 -q -f "$f" 2>&1 | grep -v NOTICE || true
 done
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/stack_behavior.sql" 2>&1 | grep -E 'PASS|FAIL|ALL CHECKS|ERROR' 
+$PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_deleted_guard_0014.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/support_sos_0011.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0013.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/delete_account_0015.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
