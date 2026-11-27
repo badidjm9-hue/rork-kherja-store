@@ -19,3 +19,4 @@ $PSQL -v ON_ERROR_STOP=1 -f "$HERE/push_devices_0017.sql" 2>&1 | grep -E "PASS|F
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/push_environment_0019.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/push_devices_0019.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
 $PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_deleted_metrics_0018.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"
+$PSQL -v ON_ERROR_STOP=1 -f "$HERE/admin_custom_permissions_0020.sql" 2>&1 | grep -E "PASS|FAIL|PASSED|ERROR"

@@ -94,8 +94,16 @@ fun SplashScreen(state: AppState) {
             KJLogo(110.dp)
             Spacer(Modifier.height(18.dp))
             Text(state.l("app_tagline"), color = KJ.inkSoft, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(18.dp))
+            Image(
+                painter = painterResource(R.drawable.car_moto),
+                contentDescription = null,
+                modifier = Modifier.width(260.dp).height(180.dp),
+            )
+            Spacer(Modifier.height(18.dp))
             CircularProgressIndicator(color = KJ.blue, strokeWidth = 3.dp, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(12.dp))
+            Text(state.l("loading"), color = KJ.muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
