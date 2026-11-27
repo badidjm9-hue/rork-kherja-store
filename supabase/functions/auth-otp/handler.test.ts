@@ -488,8 +488,9 @@ describe("account deletion", () => {
   test("reports retryable partial state when Auth deletion fails", async () => {
     const t = setup(); t.setAuthDeleteResult(false);
     const r = await t.call({ action: "delete_account" }, H);
-    expect(r.status).toBe(502);
-    expect(r.json.ok).toBeUndefined();
+    expect(r.status).toBe(202);
+    expect(r.json.ok).toBe(false);
+    expect(r.json.partial).toBe(true);
     expect(t.calls.accountClose).toHaveLength(1);
     expect(t.calls.authDelete).toEqual(["delete-user"]);
   });

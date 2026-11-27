@@ -156,7 +156,7 @@ export function createHandler(deps: Deps) {
         if (closed === "active") return json({ error: "Terminez ou annulez votre trajet en cours avant de supprimer le compte." }, 409);
         if (closed !== "ok") return json({ error: "Fermeture du compte impossible. Réessayez." }, 500);
         const removed = await store.deleteAuthUser(user.id);
-        if (!removed) return json({ error: "Compte fermé, mais suppression de l’identité en attente. Reconnectez-vous et réessayez." }, 502);
+        if (!removed) return json({ ok: false, partial: true, error: "Compte fermé, mais suppression de l’identité en attente. Réessayez." }, 202);
         return json({ ok: true, account_deleted: true });
       }
       const phone = normalizePhone(typeof rawPhone === "string" ? rawPhone : "");
