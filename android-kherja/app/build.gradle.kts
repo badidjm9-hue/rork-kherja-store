@@ -5,6 +5,11 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Firebase stays optional until the owner supplies google-services.json.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "app.rork.h04xk59ettzrqz7c6l4wp"
     compileSdk = 36
@@ -67,6 +72,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.koin.androidx.compose)
     implementation(libs.osmdroid.android)
+    implementation("com.google.firebase:firebase-messaging:24.1.1")
     debugImplementation(libs.androidx.ui.tooling)
 }
 
