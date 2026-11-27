@@ -29,7 +29,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
   v_failed := false;
   BEGIN
-    PERFORM public.admin_set_user_permissions('eeeeeeee-0000-0000-0000-000000000024',
+    PERFORM public.admin_set_user_permissions('eeeeeeee-0000-0000-0000-000000000044',
       ARRAY['pricing.manage']::text[],true);
   EXCEPTION WHEN OTHERS THEN v_failed := true;
   END;

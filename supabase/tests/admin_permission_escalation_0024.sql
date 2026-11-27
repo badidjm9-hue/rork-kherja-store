@@ -4,7 +4,7 @@ DECLARE
   v_super uuid := 'eeeeeeee-0000-0000-0000-000000000020';
   v_staff uuid := 'eeeeeeee-0000-0000-0000-000000000021';
   v_staff2 uuid := 'eeeeeeee-0000-0000-0000-000000000022';
-  v_staff3 uuid := 'eeeeeeee-0000-0000-0000-000000000024';
+  v_staff3 uuid := 'eeeeeeee-0000-0000-0000-000000000044';
   v_failed boolean := false;
 BEGIN
   INSERT INTO auth.users(id,email) VALUES(v_staff3,'staff30020@kherja.test');
