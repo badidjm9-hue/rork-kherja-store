@@ -59,18 +59,23 @@ export default function Overview() {
   const [customFrom, setCustomFrom] = useState(() => toInputDate(new Date(Date.now() - 14 * 86400_000)));
   const [customTo, setCustomTo] = useState(() => toInputDate(new Date()));
 
+  const customRangeInvalid = preset === "custom" && (!customFrom || !customTo || customFrom > customTo);
+
   const range = useMemo(() => {
     const now = new Date();
     const today = startOfDayAlgiers(now);
     if (preset === "today") return { from: today, to: now };
     if (preset === "7d") return { from: new Date(today.getTime() - 6 * 86400_000), to: now };
     if (preset === "30d") return { from: new Date(today.getTime() - 29 * 86400_000), to: now };
+    // Keep the query key valid while the custom range is incomplete or reversed.
+    if (!customFrom || !customTo || customFrom > customTo) return { from: today, to: now };
     const from = new Date(`${customFrom}T00:00:00+01:00`);
     const to = new Date(`${customTo}T23:59:59+01:00`);
     return { from, to };
   }, [preset, customFrom, customTo]);
 
   const q = useQuery({
+    enabled: !customRangeInvalid,
     queryKey: ["overview", range.from.toISOString(), preset === "custom" ? range.to.toISOString() : preset],
     queryFn: async () =>
       must(await supabase.rpc("admin_overview", { p_from: range.from.toISOString(), p_to: range.to.toISOString() })) as unknown as OverviewData,
@@ -125,6 +130,11 @@ export default function Overview() {
         }
       />
 
+      {customRangeInvalid && (
+        <div role="alert" className="kj-card border border-destructive/30 p-4 text-sm text-destructive">
+          {t("La date de début doit précéder ou égaler la date de fin.", "يجب أن يكون تاريخ البداية قبل تاريخ النهاية أو مساوياً له.")}
+        </div>
+      )}
       {q.isLoading && <LoadingBlock />}
       {q.error && <ErrorBlock error={q.error} />}
 
