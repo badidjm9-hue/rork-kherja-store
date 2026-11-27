@@ -116,6 +116,8 @@ private fun BookingScreen(state: AppState) {
     val context = LocalContext.current
     val myLoc by state.location.location.collectAsState()
     var hasPermission by remember { mutableStateOf(state.location.hasPermission()) }
+    var locationUnavailable by remember { mutableStateOf(false) }
+    var locationRetryNonce by remember { mutableIntStateOf(0) }
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
         hasPermission = res.values.any { it }
         if (hasPermission) state.location.start()
@@ -123,6 +125,13 @@ private fun BookingScreen(state: AppState) {
     LaunchedEffect(Unit) {
         if (state.location.hasPermission()) state.location.start()
         else permLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+    LaunchedEffect(hasPermission, myLoc, locationRetryNonce) {
+        if (hasPermission && myLoc == null) {
+            locationUnavailable = false
+            delay(10_000)
+            if (myLoc == null) locationUnavailable = true
+        } else locationUnavailable = false
     }
 
     var pickup by remember { mutableStateOf<GeoPlace?>(null) }
@@ -247,26 +256,31 @@ private fun BookingScreen(state: AppState) {
                 Text(state.l("where_to"), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink)
                 Spacer(Modifier.height(14.dp))
 
-                if (!hasPermission) {
+                if (!hasPermission || locationUnavailable) {
                     KJCard(padding = 12.dp) {
                         Text(
-                            if (state.isRtl) "إذن الموقع غير مفعّل. يمكنك اختيار العنوان يدوياً أو تفعيل الموقع من إعدادات الهاتف."
-                            else "La localisation est désactivée. Choisissez une adresse manuellement ou autorisez l’accès dans les réglages.",
+                            when {
+                                !hasPermission && state.isRtl -> "إذن الموقع غير مفعّل. يمكنك اختيار العنوان يدوياً أو تفعيل الموقع من إعدادات الهاتف."
+                                !hasPermission -> "La localisation est désactivée. Choisissez une adresse manuellement ou autorisez l’accès dans les réglages."
+                                state.isRtl -> "تعذّر تحديد موقعك. فعّل خدمة GPS أو اختر العنوان يدوياً."
+                                else -> "Position introuvable. Activez le GPS ou choisissez une adresse manuellement."
+                            },
                             color = KJ.muted, fontSize = 12.sp,
                         )
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             Text(
-                                if (state.isRtl) "إعدادات الموقع" else "Réglages",
+                                if (state.isRtl) "الإعدادات" else "Réglages",
                                 color = KJ.blue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
-                                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+                                    val intent = if (!hasPermission) Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")) else Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                                     context.startActivity(intent)
                                 },
                             )
                             Text(
                                 if (state.isRtl) "إعادة المحاولة" else "Réessayer",
                                 color = KJ.blue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
-                                    permLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                                    if (!hasPermission) permLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                                    else { locationUnavailable = false; locationRetryNonce++; state.location.stop(); state.location.start() }
                                 },
                             )
                         }
@@ -277,7 +291,7 @@ private fun BookingScreen(state: AppState) {
                 KJCard(padding = 6.dp) {
                     PlaceRow(
                         icon = Icons.Filled.TripOrigin, tint = KJ.blue, label = state.l("pickup"),
-                        value = pickup?.label ?: if (hasPermission) state.l("loading") else state.l("location_needed"),
+                        value = pickup?.label ?: if (hasPermission && !locationUnavailable) state.l("loading") else state.l("location_needed"),
                         onClick = { searchFor = Field.Pickup },
                         onMap = { pickMode = Field.Pickup },
                     )
