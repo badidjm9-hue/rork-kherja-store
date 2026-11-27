@@ -29,6 +29,15 @@ workflows:
       - name: Accept Android SDK licenses
         script: |
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      - name: Configure optional Firebase Android push credentials
+        script: |
+          if [ -n "${ANDROID_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            python3 -c 'import os,base64,pathlib; pathlib.Path("android-kherja/app/google-services.json").write_bytes(base64.b64decode(os.environ["ANDROID_GOOGLE_SERVICES_JSON_BASE64"], validate=True))'
+            python3 -m json.tool android-kherja/app/google-services.json > /dev/null
+            echo "Firebase Android configuration is present"
+          else
+            echo "Firebase Android config not set; push registration remains disabled in this build"
+          fi
       - name: Build release APK
         working_directory: android-kherja
         script: |
@@ -64,10 +73,17 @@ workflows:
             fi
             echo "$v is set"
           done
-      - name: Configure Android SDK
+      - name: Configure Android SDK and optional Firebase push credentials
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          if [ -n "${ANDROID_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            python3 -c 'import os,base64,pathlib; pathlib.Path("app/google-services.json").write_bytes(base64.b64decode(os.environ["ANDROID_GOOGLE_SERVICES_JSON_BASE64"], validate=True))'
+            python3 -m json.tool app/google-services.json > /dev/null
+            echo "Firebase Android configuration is present"
+          else
+            echo "Firebase Android config not set; push registration remains disabled in this build"
+          fi
       - name: Build Android debug APK
         script: |
           chmod +x ./gradlew
