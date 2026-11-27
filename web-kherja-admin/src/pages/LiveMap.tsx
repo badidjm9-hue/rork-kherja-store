@@ -148,7 +148,7 @@ export default function LiveMap() {
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {q.isLoading && <LoadingBlock />}
             {q.data && q.data.rides.length === 0 && q.data.requests.length === 0 && (
-              <EmptyState icon={Radio} title={t("Aucune activité en direct", "لا يوجد نشاط مباشر")} body={t("Les chauffeurs, courses et demandes actives apparaîtront ici.", "سيظهر هنا السائقون والرحلات والطلبات النشطة.")} />
+              <EmptyState icon={Radio} title={t("Aucune course ni demande active", "لا توجد رحلات أو طلبات نشطة")} body={t("Les courses et demandes actives apparaîtront ici. Les chauffeurs connectés restent visibles sur la carte.", "ستظهر هنا الرحلات والطلبات النشطة، بينما يبقى السائقون المتصلون ظاهرين على الخريطة.")} />
             )}
             {q.data?.rides.map((r) => {
               const st = rideStatus(t, r.status);

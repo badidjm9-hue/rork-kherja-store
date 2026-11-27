@@ -179,3 +179,9 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Android driver settings now use the document picker for JPEG/PNG/HEIC/PDF and validate supported MIME types before upload.
 - iOS driver profile now offers photo or PDF selection, enforces the 10 MB limit, preserves the correct MIME type/extension, and uploads to the existing private bucket.
 - Migration 0003 already permits `application/pdf`; no new schema migration was required. No build or device upload test was run.
+
+## Admin loading/error state pass
+
+- Vehicles page now displays loading and error states for its secondary driver-profile lookup instead of silently replacing failed owner names with IDs.
+- Live-map empty copy now distinguishes an empty active-ride/request list from online drivers still visible on the map.
+- Reports already provides CSV export, date-range validation, query errors and empty-state messages; no changes needed there.

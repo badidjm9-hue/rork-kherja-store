@@ -83,6 +83,8 @@ export default function Vehicles() {
 
       {vehicles.isLoading && <LoadingBlock />}
       {vehicles.error && <ErrorBlock error={vehicles.error} />}
+      {people.isLoading && <LoadingBlock />}
+      {people.error && <ErrorBlock error={people.error} />}
       {vehicles.data && rows.length === 0 && (
         <EmptyState icon={Car} title={t("Aucun véhicule", "لا توجد مركبات")} body={t("Aucun résultat pour ces filtres.", "لا نتائج لهذه التصفية.")} />
       )}
