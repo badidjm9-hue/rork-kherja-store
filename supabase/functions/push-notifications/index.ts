@@ -37,7 +37,6 @@ async function fcmAccessToken(): Promise<string> {
   const assertion = await new SignJWT({ scope: "https://www.googleapis.com/auth/firebase.messaging" })
     .setProtectedHeader({ alg: "RS256", typ: "JWT" })
     .setIssuer(account.client_email)
-    .setSubject(account.client_email)
     .setAudience("https://oauth2.googleapis.com/token")
     .setIssuedAt()
     .setExpirationTime("1h")
