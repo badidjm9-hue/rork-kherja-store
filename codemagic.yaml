@@ -4,6 +4,8 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
+      groups:
+        - kherja_supabase
       java: 17
     triggering:
       events:
@@ -41,6 +43,8 @@ workflows:
     instance_type: mac_mini_m2
     working_directory: android-kherja
     environment:
+      groups:
+        - kherja_supabase
       java: 17
     triggering:
       events:
@@ -51,9 +55,19 @@ workflows:
           source: true
       cancel_previous_builds: true
     scripts:
+      - name: Check Supabase variables are set (values are never printed)
+        script: |
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
+            if [ -z "${!v:-}" ]; then
+              echo "ERROR: $v is empty. Create the Codemagic variable group 'kherja_supabase' with EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY."
+              exit 1
+            fi
+            echo "$v is set"
+          done
       - name: Configure Android SDK
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - name: Build Android debug APK
         script: |
           chmod +x ./gradlew
@@ -67,6 +81,8 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
+      groups:
+        - kherja_supabase
       xcode: latest
     triggering:
       events:
@@ -77,6 +93,28 @@ workflows:
           source: true
       cancel_previous_builds: true
     scripts:
+      - name: Generate Config.swift from Supabase variables (CI workspace only, never committed)
+        script: |
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
+            if [ -z "${!v:-}" ]; then
+              echo "ERROR: $v is empty. Create the Codemagic variable group 'kherja_supabase' with EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY."
+              exit 1
+            fi
+            echo "$v is set"
+          done
+          cat > ios-kherja/KHERJA/Config.swift <<EOF
+          import Foundation
+
+          enum Config {
+              nonisolated static let EXPO_PUBLIC_SUPABASE_ANON_KEY = "${EXPO_PUBLIC_SUPABASE_ANON_KEY}"
+              nonisolated static let EXPO_PUBLIC_SUPABASE_URL = "${EXPO_PUBLIC_SUPABASE_URL}"
+
+              nonisolated static let allValues: [String: String] = [
+                  "EXPO_PUBLIC_SUPABASE_ANON_KEY": EXPO_PUBLIC_SUPABASE_ANON_KEY,
+                  "EXPO_PUBLIC_SUPABASE_URL": EXPO_PUBLIC_SUPABASE_URL,
+              ]
+          }
+          EOF
       - name: Resolve Swift package dependencies
         script: |
           xcodebuild -resolvePackageDependencies \
