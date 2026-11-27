@@ -3,9 +3,9 @@ SET client_min_messages = notice;
 \set ON_ERROR_STOP on
 DO $$
 DECLARE
-  v_admin uuid := 'eeeeeeee-0000-0000-0000-000000000018';
-  v_deleted_passenger uuid := 'eeeeeeee-0000-0000-0000-000000000019';
-  v_deleted_driver uuid := 'eeeeeeee-0000-0000-0000-000000000020';
+  v_admin uuid := 'eeeeeeee-0000-0000-0000-000000000028';
+  v_deleted_passenger uuid := 'eeeeeeee-0000-0000-0000-000000000029';
+  v_deleted_driver uuid := 'eeeeeeee-0000-0000-0000-000000000030';
   v_data jsonb;
   v_recipients integer;
   v_broadcast uuid;
