@@ -163,3 +163,10 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Migration 0015 also replaces `delete_my_account()` to remove private driver-document Storage objects before deleting their metadata.
 - Handler tests and a disposable-Postgres migration test are being added. Migration 0015 and Edge Function code are not applied/deployed to Supabase. Native builds remain unrun.
 - Follow-up migration 0016 converts remaining nullable foreign keys to `auth.users` (creator, reviewer, publisher, and audit actors) to `ON DELETE SET NULL`, while keeping cascade only for identity-owned rows. This prevents historical audit/admin metadata from blocking Auth deletion.
+
+## Phase 5 – push delivery backend prepared (not deployed)
+
+- Migration 0017 adds a private device-token registry, authenticated register/unregister RPCs, and automatic token cleanup when an account is deleted.
+- Added `push-notifications` Edge Function for Supabase notification-insert webhooks, with FCM HTTP v1 and APNs token authentication. Provider secrets are read only from function environment; no keys or tokens are committed.
+- Added disposable SQL checks for token ownership, unregister, and deleted-account cleanup.
+- Android Firebase project/configuration and iOS APNs entitlement/token registration remain outstanding. See `docs/PUSH_SETUP.md`. No provider credentials, database migration, webhook or Edge Function were configured/deployed.
