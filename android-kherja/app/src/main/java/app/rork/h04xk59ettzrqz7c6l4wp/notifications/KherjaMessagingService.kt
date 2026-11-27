@@ -13,6 +13,17 @@ import com.google.firebase.messaging.RemoteMessage
 import app.rork.h04xk59ettzrqz7c6l4wp.MainActivity
 import app.rork.h04xk59ettzrqz7c6l4wp.R
 
+object KherjaNotificationChannels {
+    fun ensure(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(
+                NotificationChannel("kherja_updates", "KHERJA updates", NotificationManager.IMPORTANCE_HIGH)
+            )
+        }
+    }
+}
+
 class KherjaMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         getSharedPreferences("kherja", Context.MODE_PRIVATE)
@@ -22,12 +33,7 @@ class KherjaMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: message.data["title"] ?: "KHERJA"
         val body = message.notification?.body ?: message.data["body"] ?: return
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel("kherja_updates", "KHERJA updates", NotificationManager.IMPORTANCE_HIGH)
-            )
-        }
+        KherjaNotificationChannels.ensure(this)
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }

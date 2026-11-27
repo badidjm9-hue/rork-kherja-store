@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModelProvider
+import app.rork.h04xk59ettzrqz7c6l4wp.notifications.KherjaNotificationChannels
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.navigation.AppNavigation
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.theme.AppTheme
 
@@ -38,6 +39,8 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.WHITE),
         )
+        // Create the FCM channel before Android can display a background notification.
+        KherjaNotificationChannels.ensure(this)
         if (savedInstanceState == null) intent?.data?.let { appState.handleAuthCallback(it) }
         setContent {
             AppTheme {
