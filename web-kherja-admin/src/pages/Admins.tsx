@@ -55,6 +55,10 @@ export default function Admins() {
     queryKey: ["admin-permissions"],
     queryFn: async () => must(await supabase.from("admin_permissions").select("code,description").order("code")) as PermissionRow[],
   });
+  const rolePermissions = useQuery({
+    queryKey: ["admin-role-permissions"],
+    queryFn: async () => must(await supabase.from("admin_role_permissions").select("role_code,permission_code")) as { role_code: string; permission_code: string }[],
+  });
   const [email,setEmail]=useState("");
   const [name,setName]=useState("");
   const [role,setRole]=useState("support_agent");
@@ -63,6 +67,17 @@ export default function Admins() {
   const [customEnabled,setCustomEnabled]=useState(true);
   const [selectedPermissions,setSelectedPermissions]=useState<string[]>([]);
   const selectedAdmin=admins.data?.find(a=>a.user_id===selectedUser)??null;
+  const isSuperAdmin = admin?.role === "super_admin";
+  const canGrant = (code: string) => isSuperAdmin || (
+    (admin?.permissions as string[] | undefined)?.includes(code) === true
+    && (code !== "admins.manage" || Boolean(selectedAdmin && individual.data?.some(p => p.permission_code === code)))
+  );
+  const canAssignRole = (code: string) => isSuperAdmin || Boolean(rolePermissions.data && rolePermissions.data
+    .filter(p => p.role_code === code)
+    .every(p => (admin?.permissions as string[] | undefined)?.includes(p.permission_code) === true));
+  const canRestoreRolePermissions = isSuperAdmin || Boolean(selectedAdmin && rolePermissions.data && rolePermissions.data
+    .filter(p => p.role_code === selectedAdmin.role_code)
+    .every(p => (admin?.permissions as string[] | undefined)?.includes(p.permission_code) === true));
   const individual=useQuery({
     queryKey:["admin-user-permissions",selectedUser],
     enabled:Boolean(selectedUser),
@@ -127,7 +142,7 @@ export default function Admins() {
             <select disabled={self||busy===a.user_id||!a.email||isSuper} value={a.role_code}
               onChange={e=>void setAdmin(a.user_id,{p_email:a.email!,p_role:e.target.value,p_active:a.active,p_display_name:a.display_name},t("Rôle mis à jour","تم تحديث الدور"))}
               className="h-9 rounded-xl border bg-card px-3 text-sm font-semibold">
-              {ROLE_CODES.filter(r=>r!=="super_admin").map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}
+              {ROLE_CODES.filter(r=>r!=="super_admin"&&(r===a.role_code||canAssignRole(r))).map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}
             </select>
             <div className="flex items-center gap-2"><Pill tone={a.active?"green":"gray"}>{a.active?t("Actif","نشط"):t("Désactivé","معطل")}</Pill>
               <Switch disabled={self||isSuper||!a.email||busy===a.user_id} checked={a.active}
@@ -149,14 +164,14 @@ export default function Admins() {
         {selectedAdmin&&<section className="kj-card space-y-4 p-5">
           <div><p className="font-bold">{t("Permissions de","صلاحيات")} {selectedAdmin.display_name}</p><p className="text-xs text-muted-foreground">{t("Désactive le mode personnalisé pour revenir aux permissions du rôle.","عطّل الصلاحيات المخصصة للعودة إلى صلاحيات الدور.")}</p></div>
           {individual.isLoading||perms.isLoading?<LoadingBlock/>:individual.error||perms.error?<ErrorBlock error={individual.error||perms.error}/>:<>
-            <label className="flex items-center justify-between rounded-xl bg-muted/50 p-3 text-sm font-semibold"><span>{t("Utiliser des permissions personnalisées","استخدام صلاحيات مخصصة")}</span><Switch checked={customEnabled} onCheckedChange={setCustomEnabled}/></label>
+            <label className="flex items-center justify-between rounded-xl bg-muted/50 p-3 text-sm font-semibold"><span>{t("Utiliser des permissions personnalisées","استخدام صلاحيات مخصصة")}</span><Switch checked={customEnabled} disabled={customEnabled&&!canRestoreRolePermissions} onCheckedChange={setCustomEnabled}/></label>
             <div className="flex justify-end gap-2">
-              <Button type="button" size="sm" variant="ghost" disabled={!customEnabled} onClick={()=>setSelectedPermissions(perms.data?.map(p=>p.code)??[])}>{t("Tout sélectionner","تحديد الكل")}</Button>
+              <Button type="button" size="sm" variant="ghost" disabled={!customEnabled} onClick={()=>setSelectedPermissions(perms.data?.filter(p=>canGrant(p.code)).map(p=>p.code)??[])}>{t("Tout sélectionner","تحديد الكل")}</Button>
               <Button type="button" size="sm" variant="ghost" disabled={!customEnabled} onClick={()=>setSelectedPermissions([])}>{t("Tout effacer","مسح الكل")}</Button>
             </div>
             <div className={customEnabled?"space-y-2":"pointer-events-none space-y-2 opacity-40"}>
               {perms.data?.map(p=><label key={p.code} className="flex items-start gap-3 rounded-lg border p-2.5 text-sm">
-                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} disabled={p.code==="admins.manage"&&admin?.role!=="super_admin"} onChange={e=>toggle(p.code,e.target.checked)}/>
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} disabled={!canGrant(p.code)} onChange={e=>toggle(p.code,e.target.checked)}/>
                 <span className="min-w-0"><span className="block font-semibold">{p.code}</span><span className="block text-xs text-muted-foreground">{t(p.description,permissionArabic[p.code]??p.description)}</span></span>
               </label>)}
             </div>
