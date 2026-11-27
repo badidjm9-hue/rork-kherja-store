@@ -14,7 +14,7 @@ BEGIN
 
   PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
   PERFORM public.admin_set_admin('staff20020@kherja.test','pricing_manager',true,'Staff Two');
-  PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.manage']::text[],true);
+  PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.read','pricing.manage']::text[],true);
   PERFORM public.admin_set_user_permissions(v_manager,
     ARRAY['admins.manage','support.read','overview.read','users.read','drivers.read','rides.read']::text[],true);
 

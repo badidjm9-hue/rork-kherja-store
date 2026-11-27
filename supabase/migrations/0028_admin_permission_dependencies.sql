@@ -1,4 +1,29 @@
 -- 0027: a permission that mutates a resource also requires its read capability.
+-- Preserve existing management access while making its read dependency explicit.
+INSERT INTO public.admin_user_permissions(user_id,permission_code,granted_by)
+SELECT DISTINCT up.user_id, d.required_code, NULL
+FROM public.admin_user_permissions up
+JOIN (VALUES
+  ('users.manage','users.read'),
+  ('drivers.approve','drivers.read'),
+  ('drivers.manage','drivers.read'),
+  ('rides.manage','rides.read'),
+  ('finance.adjust','finance.read'),
+  ('finance.adjust','rides.read'),
+  ('pricing.manage','pricing.read'),
+  ('deliveries.manage','deliveries.read'),
+  ('vehicles.manage','vehicles.read'),
+  ('notifications.manage','notifications.read'),
+  ('settings.manage','settings.read'),
+  ('support.manage','support.read')
+) AS d(permission_code,required_code)
+  ON d.permission_code=up.permission_code
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.admin_user_permissions existing
+  WHERE existing.user_id=up.user_id AND existing.permission_code=d.required_code
+)
+ON CONFLICT DO NOTHING;
+
 CREATE OR REPLACE FUNCTION public.validate_admin_permission_dependencies(p_codes text[])
 RETURNS void
 LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public
@@ -70,6 +95,10 @@ BEGIN
   IF NOT v_actor_super AND p_use_custom AND EXISTS (
     SELECT 1 FROM unnest(coalesce(p_permission_codes,'{}'::text[])) x
     WHERE NOT public.has_perm(x)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.admin_user_permissions current_grant
+        WHERE current_grant.user_id=p_user_id AND current_grant.permission_code=x
+      )
   ) THEN RAISE EXCEPTION 'You cannot grant a permission you do not hold'; END IF;
 
   IF NOT v_actor_super AND NOT p_use_custom AND EXISTS (
