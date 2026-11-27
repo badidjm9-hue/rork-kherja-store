@@ -207,3 +207,11 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - This avoids deleting Storage metadata directly in SQL, which can leave underlying object files orphaned. Cleanup repeats the first page after each removal so offset pagination cannot skip files as the result set shrinks.
 - If Storage cleanup fails, the Auth identity is retained and the Edge Function returns a retryable partial-completion response. Repeating the request is safe because profile closure is idempotent and remaining files are listed again.
 - Handler tests cover cleanup ordering, active-trip blocking and retryable Storage failure. Changes are code-only; no migration or Edge Function has been deployed.
+
+## Phase 7 – push delivery hardening (code only)
+
+- The push webhook now removes FCM tokens when Google reports `UNREGISTERED` and APNs tokens when Apple returns HTTP 410, preventing repeated delivery attempts to dead devices.
+- FCM service-account OAuth assertions now use the standard service-account claims without a user-impersonation subject.
+- Android creates the `kherja_updates` notification channel during app startup, before Android can render background FCM notifications; the messaging service reuses the same channel helper.
+- Admin live-map now has an initial loading overlay, a clear empty state, and filters out drivers without both coordinates.
+- No tests or native builds were run in this pass. Push credentials, APNs entitlement, Firebase project configuration, database webhook, and Supabase deployment remain owner setup steps.
