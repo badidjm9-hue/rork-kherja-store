@@ -244,3 +244,6 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Follow-up hardening lets delegated admin managers preserve an existing `admins.manage` grant while still preventing them from granting it to new employees.
 - Added a self-service password-change dialog in the admin sidebar so invited employees can set a durable password after accepting their invitation.
 - Added a Codemagic web build workflow for the admin dashboard, using the existing TEST Supabase variables and producing a static `dist` artifact; it does not deploy the site.
+- Added delegated-manager permission ceilings: employees can only be granted permissions the manager already holds; an existing elevated permission can be preserved without allowing it to be newly granted. Role changes are bounded by the actor's own permission set.
+- Added permission-aware profile RLS for admin accounts and a follow-up allowing vehicle readers to resolve driver owners without exposing passenger profiles. Ordinary app-user profile visibility remains unchanged.
+- Added disposable-Postgres regression coverage for profile visibility, deactivated staff access, role changes, delegated permission ceilings and vehicle-owner visibility. None of these tests have been executed yet.
