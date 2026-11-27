@@ -227,6 +227,9 @@ class SupabaseApi(private val session: SessionStore) {
     /** Whether the signed-in account has a verified phone (RPC my_phone_verified, migration 0007). */
     suspend fun phoneVerified(): Boolean = rpc("my_phone_verified")
 
+    /** Closes and anonymises the signed-in account (RPC delete_my_account, migration 0013). */
+    suspend fun deleteMyAccount() = rpcVoid("delete_my_account")
+
     private suspend fun otpRaw(body: JsonObject, bearer: String = anon): String {
         val res = http.request("$base/functions/v1/auth-otp") {
             method = HttpMethod.Post

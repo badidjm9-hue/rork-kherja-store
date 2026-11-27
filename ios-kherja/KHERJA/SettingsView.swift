@@ -13,6 +13,9 @@ struct SettingsView: View {
     @State private var city = "Alger"
     @State private var savedFlash = false
     @State private var confirmLogout = false
+    @State private var confirmDelete = false
+    @State private var deleting = false
+    @State private var deleteError: String?
     @State private var settingsPage: SettingsInfoPage?
     @State private var extrasPage: ExtrasPage?
 
@@ -117,6 +120,18 @@ struct SettingsView: View {
                     .background(Capsule().fill(KJ.dangerBg))
                 }
                 .buttonStyle(.plain)
+
+                Button(role: .destructive) {
+                    confirmDelete = true
+                } label: {
+                    Text(store.l("delete_account"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(KJ.danger)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+                .disabled(deleting)
                 .padding(.bottom, 30)
             }
             .padding(.horizontal, 20)
@@ -129,6 +144,31 @@ struct SettingsView: View {
         .alert(store.l("logout"), isPresented: $confirmLogout) {
             Button(store.l("logout"), role: .destructive) { store.signOut() }
             Button(store.l("ok"), role: .cancel) {}
+        }
+        .alert(store.l("delete_account"), isPresented: $confirmDelete) {
+            Button(store.l("delete_account_confirm"), role: .destructive) {
+                deleting = true
+                Task {
+                    do {
+                        try await SupabaseService.shared.deleteMyAccount()
+                        store.signOut()
+                    } catch {
+                        deleteError = store.l(L10n.serverErrorKey(error.localizedDescription))
+                    }
+                    deleting = false
+                }
+            }
+            Button(store.l("cancel"), role: .cancel) {}
+        } message: {
+            Text(store.l("delete_account_warning"))
+        }
+        .alert(store.l("delete_account"), isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button(store.l("ok"), role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "")
         }
         .fullScreenCover(item: $extrasPage) { page in
             ExtrasHost(page: page)

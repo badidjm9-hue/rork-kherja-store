@@ -725,6 +725,11 @@ nonisolated struct RequestIdParams: Encodable, Sendable {
     init(pRequest: UUID) { p_request_id = pRequest.uuidString }
 }
 
+nonisolated struct PingLocationParams: Encodable, Sendable {
+    var p_lat: Double
+    var p_lng: Double
+}
+
 nonisolated struct RideStatusParams: Encodable, Sendable {
     var p_ride_id: String
     var p_status: String
@@ -816,6 +821,16 @@ extension SupabaseService {
 extension SupabaseService {
     func rpcVoid(_ name: String) async throws {
         _ = try await client.rpc(name).execute()
+    }
+
+    /// Closes and anonymises the signed-in account (RPC delete_my_account, migration 0013).
+    func deleteMyAccount() async throws {
+        try await rpcVoid("delete_my_account")
+    }
+
+    /// Driver live position via the validated server RPC (also stamps location_updated_at), like Android.
+    func pingLocation(lat: Double, lng: Double) async {
+        try? await rpcVoid("ping_location", params: PingLocationParams(p_lat: lat, p_lng: lng))
     }
 
     /// Expire stale open requests and their pending offers before feeding drivers.

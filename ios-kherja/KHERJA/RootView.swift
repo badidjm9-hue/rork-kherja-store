@@ -55,6 +55,14 @@ struct RootView: View {
                 PassengerMainView()
             }
         }
+        .alert(store.l("delete_account"), isPresented: Binding(
+            get: { store.accountNotice != nil },
+            set: { if !$0 { store.accountNotice = nil } }
+        )) {
+            Button(store.l("ok"), role: .cancel) {}
+        } message: {
+            Text(store.accountNotice ?? "")
+        }
         .animation(.easeInOut(duration: 0.25), value: store.bootstrapDone)
         .animation(.easeInOut(duration: 0.25), value: store.session.isSignedIn)
         .task {

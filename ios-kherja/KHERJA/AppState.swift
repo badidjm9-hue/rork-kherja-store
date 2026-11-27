@@ -24,6 +24,8 @@ final class AppState: ObservableObject {
     @Published var activeRequestId: UUID?
     @Published var activeRideId: UUID?
     @Published var bootstrapDone = false
+    /// One-shot message shown on the sign-in screen (e.g. the account was deleted).
+    @Published var accountNotice: String?
 
     private let defaults = UserDefaults.standard
     private static let langKey = "kherja.language"
@@ -98,7 +100,14 @@ final class AppState: ObservableObject {
             return
         }
         do {
-            profile = try await supabase.profile(id: id)
+            let loaded = try await supabase.profile(id: id)
+            if loaded?.accountStatus == "deleted" {
+                accountNotice = l("account_deleted_notice")
+                signOut()
+                bootstrapDone = true
+                return
+            }
+            profile = loaded
             phoneVerified = try? await supabase.phoneVerified()
             if let p = profile {
                 role = p.role
@@ -133,6 +142,11 @@ final class AppState: ObservableObject {
     func refreshProfile() async {
         guard let id = session.userId else { return }
         if let p = try? await supabase.profile(id: id) {
+            if p.accountStatus == "deleted" {
+                accountNotice = l("account_deleted_notice")
+                signOut()
+                return
+            }
             profile = p
         }
         phoneVerified = try? await supabase.phoneVerified()

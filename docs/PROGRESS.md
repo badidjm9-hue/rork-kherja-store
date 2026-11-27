@@ -134,3 +134,10 @@ Run on `feature/kherja-integrated` at 7fb6476 (migrations 0001-0012 on a throwaw
 - Static: every localisation key used on Android and iOS is defined (fr + ar); only intentional `app_tagline_ar` is fr-only.
 
 Not executed (environment cannot): Android/iOS builds, device/simulator runs, RTL visual check, design comparison against reference images (none supplied), real Supabase, SMS, Google/Apple sign-in, push delivery, Codemagic (needs EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY).
+
+## Phase 1 – account deletion + iOS presence parity (not yet run on a device)
+- `supabase/migrations/0013_delete_account.sql` (NOT applied to any Supabase project): `delete_my_account()` anonymises and closes the profile (`account_status='deleted'`), removes saved places, notifications, vehicles, driver documents rows and verified phone, keeps ride/wallet/message history. Refuses while a request/ride/delivery is active. Local PG16 tests: `supabase/tests/delete_account_0013.sql` (13 checks, all PASS on a disposable database).
+- Android + iOS: "Supprimer mon compte / حذف حسابي" with a confirmation dialog in Settings; on success the user is signed out; a session whose profile is `deleted` is signed out with a notice.
+- Known limitation: the Supabase Auth identity is not removed (needs an Edge Function deploy), so the phone number stays registered to the closed account.
+- iOS driver presence now also calls `ping_location` (same as Android).
+- Not built or run on Android/iOS in this environment.

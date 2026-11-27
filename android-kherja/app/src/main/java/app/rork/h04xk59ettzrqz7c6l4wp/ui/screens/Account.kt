@@ -327,6 +327,8 @@ internal fun SettingsMain(state: AppState, onOpen: (String) -> Unit) {
     var uploadingDoc by remember { mutableStateOf<String?>(null) }
     var documentError by remember { mutableStateOf<String?>(null) }
     var pendingDocType by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     suspend fun loadDocuments() {
@@ -565,6 +567,32 @@ internal fun SettingsMain(state: AppState, onOpen: (String) -> Unit) {
 
             Spacer(Modifier.height(22.dp))
             KJOutlineButton(state.l("logout"), color = KJ.danger, icon = Icons.AutoMirrored.Filled.Logout) { state.signOut() }
+            Spacer(Modifier.height(6.dp))
+            TextButton(onClick = { confirmDelete = true }, enabled = !deleting, modifier = Modifier.fillMaxWidth()) {
+                Text(state.l("delete_account"), color = KJ.danger, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
+            if (confirmDelete) {
+                AlertDialog(
+                    onDismissRequest = { if (!deleting) confirmDelete = false },
+                    title = { Text(state.l("delete_account"), fontWeight = FontWeight.Bold) },
+                    text = { Text(state.l("delete_account_warning"), color = KJ.inkSoft) },
+                    confirmButton = {
+                        TextButton(enabled = !deleting, onClick = {
+                            deleting = true
+                            scope.launch {
+                                runCatching { state.api.deleteMyAccount() }
+                                    .onSuccess { confirmDelete = false; state.signOut() }
+                                    .onFailure { confirmDelete = false; error = state.serverError(it) }
+                                deleting = false
+                            }
+                        }) { Text(state.l("delete_account_confirm"), color = KJ.danger, fontWeight = FontWeight.Bold) }
+                    },
+                    dismissButton = {
+                        TextButton(enabled = !deleting, onClick = { confirmDelete = false }) { Text(state.l("cancel"), color = KJ.blue) }
+                    },
+                    containerColor = Color.White,
+                )
+            }
             Spacer(Modifier.height(10.dp))
             Text(
                 "KHERJA · ${state.l("map_attribution")}", color = KJ.muted, fontSize = 11.sp,

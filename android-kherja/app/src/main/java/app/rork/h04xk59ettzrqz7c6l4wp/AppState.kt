@@ -134,6 +134,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
         }
         try {
             val p = api.profile(id)
+            if (p?.accountStatus == "deleted") { oauthError = l("account_deleted_notice"); signOut(); return }
             profile = p
             phoneVerified = runCatching { api.phoneVerified() }.getOrNull()
             if (p != null) {
@@ -170,7 +171,10 @@ class AppState(app: Application) : AndroidViewModel(app) {
 
     suspend fun refreshProfile() {
         val id = userId ?: return
-        runCatching { api.profile(id) }.getOrNull()?.let { profile = it }
+        runCatching { api.profile(id) }.getOrNull()?.let {
+            if (it.accountStatus == "deleted") { oauthError = l("account_deleted_notice"); signOut(); return }
+            profile = it
+        }
         phoneVerified = runCatching { api.phoneVerified() }.getOrNull()
     }
 

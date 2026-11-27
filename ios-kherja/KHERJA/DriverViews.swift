@@ -339,6 +339,9 @@ struct DriverHomeView: View {
         } catch {
             print("KHERJA presence error: \(error)")
         }
+        if let c = location.location?.coordinate {
+            await SupabaseService.shared.pingLocation(lat: c.latitude, lng: c.longitude)
+        }
     }
 
     private func refreshFeed() async {
