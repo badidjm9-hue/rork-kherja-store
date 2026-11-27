@@ -70,7 +70,7 @@ async function apnsProviderToken(): Promise<string> {
   return token;
 }
 
-async function sendAndroid(device: Device, record: NotificationRecord): Promise<boolean> {
+async function sendAndroid(device: Device, record: NotificationRecord): Promise<{ ok: boolean; invalidToken: boolean }> {
   const account = JSON.parse(Deno.env.get("FCM_SERVICE_ACCOUNT_JSON")!);
   const accessToken = await fcmAccessToken();
   const response = await fetch(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
@@ -85,10 +85,12 @@ async function sendAndroid(device: Device, record: NotificationRecord): Promise<
       },
     }),
   });
-  return response.ok;
+  if (response.ok) return { ok: true, invalidToken: false };
+  const result = await response.json().catch(() => null);
+  return { ok: false, invalidToken: result?.error?.status === "UNREGISTERED" };
 }
 
-async function sendIos(device: Device, record: NotificationRecord): Promise<boolean> {
+async function sendIos(device: Device, record: NotificationRecord): Promise<{ ok: boolean; invalidToken: boolean }> {
   const bundleId = Deno.env.get("APNS_BUNDLE_ID");
   if (!bundleId) throw new Error("APNS_BUNDLE_ID_NOT_CONFIGURED");
   const host = Deno.env.get("APNS_USE_SANDBOX") === "true" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
@@ -103,7 +105,7 @@ async function sendIos(device: Device, record: NotificationRecord): Promise<bool
     },
     body: JSON.stringify({ aps: { alert: { title: record.title, body: record.body }, sound: "default" }, data: { notification_id: record.id, ...stringData(record.data) } }),
   });
-  return response.ok;
+  return { ok: response.ok, invalidToken: response.status === 410 };
 }
 
 Deno.serve(async (request) => {
@@ -125,11 +127,14 @@ Deno.serve(async (request) => {
 
     const results = await Promise.all((devices ?? []).map(async (device: Device) => {
       try {
-        const ok = device.platform === "android"
+        const delivery = device.platform === "android"
           ? await sendAndroid(device, record)
           : await sendIos(device, record);
-        if (!ok) return { id: device.id, ok: false };
-        return { id: device.id, ok: true };
+        if (delivery.invalidToken) {
+          const { error: cleanupError } = await supabase.from("push_devices").delete().eq("id", device.id);
+          if (cleanupError) return { id: device.id, ok: false };
+        }
+        return { id: device.id, ok: delivery.ok };
       } catch {
         return { id: device.id, ok: false };
       }
