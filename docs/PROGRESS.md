@@ -153,3 +153,4 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Restored the historical migration 0002 unchanged; the new guard lives in additive migration 0014.
 - Admin person-detail panels now render errors from the ride-history and driver-phone-verification queries instead of silently omitting those sections.
 - No builds or tests were run in this development pass. Supabase TEST and deployed Edge Functions were not changed.
+- Admin overview custom date ranges now validate missing/reversed dates, disable the invalid query, and show a bilingual inline message instead of producing an invalid timestamp/query key.
