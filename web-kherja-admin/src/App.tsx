@@ -63,13 +63,25 @@ function RouteLoading() {
 }
 
 function Shell() {
-  const { session, admin, loading } = useAuth();
+  const { session, admin, loading, denied, signOut } = useAuth();
   if (loading) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <img src="/brand/kj-logo.png" alt="KHERJA" className="h-14 w-auto" />
           <Spinner />
+        </div>
+      </div>
+    );
+  }
+  if (session && denied) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background p-6">
+        <div className="kj-card w-full max-w-md space-y-4 p-7 text-center">
+          <ShieldOff className="mx-auto h-10 w-10 text-destructive" />
+          <h1 className="text-xl font-bold">{/* Access denied */}Accès non autorisé · غير مصرح بالدخول</h1>
+          <p className="text-sm text-muted-foreground">Ce compte n'a pas d'accès actif à l'administration. هذا الحساب لا يملك صلاحية دخول لوحة الإدارة.</p>
+          <button onClick={() => void signOut()} className="h-11 w-full rounded-xl bg-primary px-4 font-semibold text-primary-foreground">Se déconnecter · تسجيل الخروج</button>
         </div>
       </div>
     );

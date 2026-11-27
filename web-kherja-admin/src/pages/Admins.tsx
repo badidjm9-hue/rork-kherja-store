@@ -61,16 +61,18 @@ export default function Admins() {
     }catch(e){toast.error(errorMessage(e));}finally{setBusy(null);}
   };
   const createStaff=async(e:FormEvent)=>{
-    e.preventDefault();const normalized=email.trim().toLowerCase();
-    const ok=await setAdmin("new",{p_email:normalized,p_role:role,p_active:true,p_display_name:name.trim()||undefined},
-      t("Employé ajouté. Configurez ses permissions.","تمت إضافة الموظف. اضبط صلاحياته."));
-    if(!ok)return;
+    e.preventDefault();
+    const normalized=email.trim().toLowerCase();
+    setBusy("new");
     try{
-      const row=must(await supabase.from("admin_users").select("user_id").eq("email",normalized).single()) as {user_id:string};
-      setEmail("");setName("");setSelectedUser(row.user_id);setCustomEnabled(true);setSelectedPermissions([]);
-      await qc.invalidateQueries({queryKey:["admin-users"]});
-      await qc.invalidateQueries({queryKey:["admin-user-permissions",row.user_id]});
+      const invited=must(await supabase.functions.invoke("admin-invite",{
+        body:{email:normalized,display_name:name.trim(),role},
+      })) as {user_id:string};
+      toast.success(t("Invitation envoyée. Configurez ses permissions.","تم إرسال الدعوة. اضبط صلاحيات الموظف."));
+      setEmail("");setName("");setSelectedUser(invited.user_id);setCustomEnabled(true);setSelectedPermissions([]);
+      await Promise.all([qc.invalidateQueries({queryKey:["admin-users"]}),qc.invalidateQueries({queryKey:["admin-user-permissions",invited.user_id]})]);
     }catch(err){toast.error(errorMessage(err));}
+    finally{setBusy(null);}
   };
   const selectedSet=useMemo(()=>new Set(selectedPermissions),[selectedPermissions]);
   const toggle=(code:string,checked:boolean)=>setSelectedPermissions(old=>checked?[...new Set([...old,code])]:old.filter(x=>x!==code));
@@ -107,12 +109,12 @@ export default function Admins() {
       <div className="space-y-5">
         <form className="kj-card space-y-4 p-5" onSubmit={createStaff}>
           <div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-primary"><UserPlus className="h-[18px] w-[18px]"/></span>
-            <div><p className="font-bold">{t("Ajouter un employé","إضافة موظف")}</p><p className="text-xs text-muted-foreground">{t("Son compte KHERJA doit déjà exister.","يجب أن يكون حسابه في KHERJA موجوداً مسبقاً.")}</p></div></div>
+            <div><p className="font-bold">{t("Ajouter un employé","إضافة موظف")}</p><p className="text-xs text-muted-foreground">{t("Une invitation sera envoyée à cette adresse.","سيتم إرسال دعوة إلى هذا البريد الإلكتروني.")}</p></div></div>
           <div className="space-y-1.5"><Label>{t("Email","البريد الإلكتروني")}</Label><Input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="h-10 rounded-xl"/></div>
           <div className="space-y-1.5"><Label>{t("Nom affiché","الاسم الظاهر")}</Label><Input value={name} onChange={e=>setName(e.target.value)} className="h-10 rounded-xl"/></div>
           <div className="space-y-1.5"><Label>{t("Rôle de base","الدور الأساسي")}</Label><select value={role} onChange={e=>setRole(e.target.value)} className="h-10 w-full rounded-xl border bg-card px-3 text-sm">
             {ROLE_CODES.filter(r=>r!=="super_admin").map(r=><option key={r} value={r}>{roleLabel(t,r)}</option>)}</select></div>
-          <Button type="submit" className="h-11 w-full font-bold" disabled={busy==="new"||!email.trim()}>{busy==="new"&&<Loader2 className="h-4 w-4 animate-spin"/>}{t("Créer l'accès employé","إنشاء وصول الموظف")}</Button>
+          <Button type="submit" className="h-11 w-full font-bold" disabled={busy==="new"||!email.trim()}>{busy==="new"&&<Loader2 className="h-4 w-4 animate-spin"/>}{t("Inviter l'employé","إرسال دعوة الموظف")}</Button>
         </form>
         {selectedAdmin&&<section className="kj-card space-y-4 p-5">
           <div><p className="font-bold">{t("Permissions de","صلاحيات")} {selectedAdmin.display_name}</p><p className="text-xs text-muted-foreground">{t("Désactive le mode personnalisé pour revenir aux permissions du rôle.","عطّل الصلاحيات المخصصة للعودة إلى صلاحيات الدور.")}</p></div>
