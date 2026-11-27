@@ -220,3 +220,10 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Added migration 0019 and a disposable-Postgres regression test for environment persistence and token re-registration.
 - Added the iOS `aps-environment` entitlement with Debug/Release build settings. A matching Apple provisioning profile and APNs key are still required before device push delivery can work.
 - Migration 0019 and push function changes are code-only and have not been deployed.
+
+## Passenger address search and GPS fallback
+
+- Android `GeoService` now has a strict address-search path that distinguishes provider/network failures from genuine empty results; PlaceSearch shows saved-place loading/errors and search errors separately.
+- Android passenger booking now stops showing an endless location spinner when GPS has no fix after 10 seconds, and offers location settings plus a retry that restarts the tracker.
+- iOS already shows no-results and search errors; the address picker now also handles denied location and saved-place failures.
+- No device permission, network, or map tests were run.

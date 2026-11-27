@@ -38,7 +38,7 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 
 ### Passenger
 - Saved places management/selection, notification inbox/preferences, help/about/privacy information, and ride receipt/share are already present in Android and iOS source.
-- Location denial now has Settings/retry guidance on Android and a Settings action on iOS; iOS saved-place loading errors are surfaced. Remaining: finish address-search empty/error review and compare the full passenger journey against approved designs.
+- Location denial now has Settings/retry guidance on both platforms; Android GPS timeout no longer spins forever. Android/iOS address search now distinguishes empty results from provider errors, and saved-place loading failures are surfaced. Remaining: compare the full passenger journey against approved designs.
 - Official privacy/terms wording and a verified support contact still require owner approval; current informational panels are not legal policy documents.
 
 ### Driver
