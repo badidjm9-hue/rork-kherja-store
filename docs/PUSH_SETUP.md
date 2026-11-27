@@ -4,7 +4,7 @@ This repository now contains the server-side push registration and delivery path
 
 ## Supabase migrations
 
-Apply migrations 0017 and earlier to the TEST project only after reviewing the full migration chain. Migration 0017 creates private `push_devices` storage, authenticated register/unregister RPCs, and removes device tokens when a profile is deleted. No client can directly read device tokens.
+When the code is ready for backend rollout, apply the pending migrations through 0018 to the TEST project in order, after reviewing the complete chain. Do not apply 0017 by itself: migration 0017 creates the private `push_devices` registry table and authenticated register/unregister RPCs; migration 0018 keeps deleted profiles out of active-user metrics and customer broadcasts and blocks new notifications to deleted accounts. Migrations 0015–0016 are also required for safe Auth identity deletion while preserving historical profile references.
 
 ## Edge Function
 
