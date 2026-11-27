@@ -53,7 +53,12 @@ BEGIN
     RAISE EXCEPTION 'Unknown permission code';
   END IF;
   IF NOT v_actor_super AND p_use_custom AND EXISTS (
-    SELECT 1 FROM unnest(coalesce(p_permission_codes,'{}'::text[])) x WHERE NOT public.has_perm(x)
+    SELECT 1 FROM unnest(coalesce(p_permission_codes,'{}'::text[])) x
+    WHERE NOT public.has_perm(x)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.admin_user_permissions current_grant
+        WHERE current_grant.user_id=p_user_id AND current_grant.permission_code=x
+      )
   ) THEN RAISE EXCEPTION 'You cannot grant a permission you do not hold'; END IF;
   IF NOT v_actor_super AND NOT p_use_custom AND EXISTS (
     SELECT 1 FROM public.admin_role_permissions rp WHERE rp.role_code=v_target.role_code AND NOT public.has_perm(rp.permission_code)

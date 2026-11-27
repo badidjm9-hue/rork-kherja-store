@@ -11,15 +11,26 @@ BEGIN
 
   PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
   PERFORM public.admin_set_admin('staff20020@kherja.test','pricing_manager',true,'Staff Two');
+  PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.manage']::text[],true);
   PERFORM public.admin_set_user_permissions(v_manager,
     ARRAY['admins.manage','support.read','overview.read','users.read','drivers.read','rides.read']::text[],true);
 
   PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
+  -- The manager may preserve an existing elevated permission, but cannot create a new grant.
+  PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.manage','drivers.read']::text[],true);
+  PERFORM set_config('request.jwt.claim.sub',v_target::text,false);
+  IF NOT public.has_perm('pricing.manage') OR NOT public.has_perm('drivers.read') THEN
+    RAISE EXCEPTION 'existing permission preservation or manager-held permission failed';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
+  v_failed := false;
   BEGIN
-    PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.manage']::text[],true);
+    PERFORM public.admin_set_user_permissions('eeeeeeee-0000-0000-0000-000000000024',
+      ARRAY['pricing.manage']::text[],true);
   EXCEPTION WHEN OTHERS THEN v_failed := true;
   END;
-  IF NOT v_failed THEN RAISE EXCEPTION 'manager granted a permission they do not hold'; END IF;
+  IF NOT v_failed THEN RAISE EXCEPTION 'manager granted a permission they do not hold to a new target'; END IF;
 
   v_failed := false;
   BEGIN
