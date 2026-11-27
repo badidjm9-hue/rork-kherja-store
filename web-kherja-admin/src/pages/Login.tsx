@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Loader2, Lock, Mail, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -14,7 +15,27 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resetPassword = async () => {
+    const address = email.trim().toLowerCase();
+    if (!address) {
+      setError(t("Saisissez d'abord votre adresse email.", "أدخل بريدك الإلكتروني أولاً."));
+      return;
+    }
+    setResetBusy(true);
+    setError(null);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(address, {
+      redirectTo: window.location.origin,
+    });
+    setResetBusy(false);
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+    toast.success(t("Si ce compte existe, un lien de réinitialisation sera envoyé.", "إذا كان الحساب موجوداً فسيتم إرسال رابط إعادة تعيين كلمة المرور."));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,6 +170,12 @@ export default function Login() {
                       className="h-12 rounded-xl ps-10"
                     />
                   </div>
+                </div>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => void resetPassword()} disabled={resetBusy || busy}
+                    className="text-xs font-semibold text-primary hover:underline disabled:opacity-50">
+                    {resetBusy ? t("Envoi…", "جارٍ الإرسال…") : t("Mot de passe oublié ?", "نسيت كلمة المرور؟")}
+                  </button>
                 </div>
                 {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
                 <Button type="submit" disabled={busy} className="h-12 w-full rounded-xl text-base font-bold">
