@@ -306,11 +306,19 @@ final class SupabaseService: ObservableObject {
     }
 
     nonisolated struct NoParams: Encodable, Sendable {}
-    nonisolated struct PushDeviceParams: Encodable, Sendable { var p_token: String; var p_platform: String }
+    nonisolated struct PushDeviceParams: Encodable, Sendable { var p_token: String; var p_platform: String; var p_environment: String }
     nonisolated struct PushTokenParams: Encodable, Sendable { var p_token: String }
 
     func registerPushDevice(token: String) async throws {
-        let _: String = try await rpc("register_push_device", params: PushDeviceParams(p_token: token, p_platform: "ios"))
+        #if DEBUG
+        let environment = "development"
+        #else
+        let environment = "production"
+        #endif
+        let _: String = try await rpc(
+            "register_push_device",
+            params: PushDeviceParams(p_token: token, p_platform: "ios", p_environment: environment)
+        )
     }
 
     func unregisterPushDevice(token: String) async throws {

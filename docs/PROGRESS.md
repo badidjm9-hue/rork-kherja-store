@@ -213,3 +213,10 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Android passenger booking now explains denied location permission and offers direct app Settings and retry actions while preserving manual address/map selection.
 - iOS address picker now explains denied/restricted permission, links to app Settings, handles the denied state without waiting for a location timeout, and surfaces saved-place loading failures.
 - Admin live map now shows its initial loading overlay and filters online drivers without both coordinates. These changes remain uncompiled/unverified on devices.
+
+## Phase 8 – APNs environment routing and iOS push entitlement
+
+- Push devices now store their APNs environment per installation. Debug iOS builds register as `development` and release builds as `production`; Android remains on FCM production. The push Edge Function selects the matching APNs host per device, so development and TestFlight devices can coexist in the same TEST project.
+- Added migration 0019 and a disposable-Postgres regression test for environment persistence and token re-registration.
+- Added the iOS `aps-environment` entitlement with Debug/Release build settings. A matching Apple provisioning profile and APNs key are still required before device push delivery can work.
+- Migration 0019 and push function changes are code-only and have not been deployed.

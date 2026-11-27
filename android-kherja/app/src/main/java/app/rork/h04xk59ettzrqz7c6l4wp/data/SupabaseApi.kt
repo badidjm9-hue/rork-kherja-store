@@ -226,7 +226,7 @@ class SupabaseApi(private val session: SessionStore) {
 
     /** Register/unregister this installation for authenticated push delivery (migration 0017). */
     suspend fun registerPushDevice(token: String, platform: String) {
-        rpc<String>("register_push_device", jsonOf("p_token" to token, "p_platform" to platform))
+        rpc<String>("register_push_device", jsonOf("p_token" to token, "p_platform" to platform, "p_environment" to "production"))
     }
 
     suspend fun unregisterPushDevice(token: String) {

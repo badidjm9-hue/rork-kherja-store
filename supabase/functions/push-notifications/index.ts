@@ -9,7 +9,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-type Device = { id: string; platform: "android" | "ios"; token: string };
+type Device = { id: string; platform: "android" | "ios"; token: string; environment: "development" | "production" };
 type NotificationRecord = { id: string; user_id: string; title: string; body: string; data?: Record<string, unknown> };
 
 function constantTimeEqual(a: string, b: string): boolean {
@@ -92,7 +92,7 @@ async function sendAndroid(device: Device, record: NotificationRecord): Promise<
 async function sendIos(device: Device, record: NotificationRecord): Promise<{ ok: boolean; invalidToken: boolean }> {
   const bundleId = Deno.env.get("APNS_BUNDLE_ID");
   if (!bundleId) throw new Error("APNS_BUNDLE_ID_NOT_CONFIGURED");
-  const host = Deno.env.get("APNS_USE_SANDBOX") === "true" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
+  const host = device.environment === "development" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
   const response = await fetch(`${host}/3/device/${device.token}`, {
     method: "POST",
     headers: {
@@ -121,7 +121,7 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Invalid notification webhook payload" }, { status: 400 });
     }
     const { data: devices, error } = await supabase
-      .from("push_devices").select("id,platform,token").eq("user_id", record.user_id);
+      .from("push_devices").select("id,platform,token,environment").eq("user_id", record.user_id);
     if (error) throw new Error("DEVICE_LOOKUP_FAILED");
 
     const results = await Promise.all((devices ?? []).map(async (device: Device) => {
