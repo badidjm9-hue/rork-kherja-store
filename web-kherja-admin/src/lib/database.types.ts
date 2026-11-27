@@ -230,6 +230,7 @@ export type Database = {
       delivery_orders: {
         Row: {
           accepted_at: string | null
+          admin_cancel_reason: string | null
           city: string
           created_at: string
           delivered_at: string | null

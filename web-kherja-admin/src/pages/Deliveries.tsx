@@ -147,6 +147,7 @@ export default function Deliveries() {
                 </div>
               </dl>
               {o.sender_note && <p className="mt-2 rounded-lg bg-muted p-2 text-xs">{o.sender_note}</p>}
+              {o.admin_cancel_reason && <p className="mt-2 rounded-lg bg-destructive/5 p-2 text-xs text-destructive">{t("Motif d'annulation admin", "سبب الإلغاء من الإدارة")}: {o.admin_cancel_reason}</p>}
               <p className="mt-2 text-xs text-muted-foreground">
                 {t("Créée", "أُنشئ")} {date(o.created_at)}
                 {o.delivered_at ? ` · ${t("Livrée", "سُلّم")} ${date(o.delivered_at)}` : ""}
