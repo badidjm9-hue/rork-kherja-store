@@ -45,6 +45,8 @@ export interface Store {
   /** Records a verified phone for a user. "conflict" when the phone or the user is already linked. */
   linkVerifiedPhone(userId: string, phone: string): Promise<"ok" | "conflict" | "error">;
   deleteMyAccount(accessToken: string): Promise<"ok" | "active" | "error">;
+  /** Removes every object under the user's private driver-documents folder via Storage API. */
+  removeDriverDocuments(userId: string): Promise<boolean>;
   deleteAuthUser(userId: string): Promise<boolean>;
 }
 
@@ -155,6 +157,11 @@ export function createHandler(deps: Deps) {
         const closed = await store.deleteMyAccount(token);
         if (closed === "active") return json({ error: "Terminez ou annulez votre trajet en cours avant de supprimer le compte." }, 409);
         if (closed !== "ok") return json({ error: "Fermeture du compte impossible. Réessayez." }, 500);
+        // Storage objects must be removed through the Storage API, not by deleting storage.objects rows.
+        // Do this after the idempotent profile-close RPC so an active trip never loses its documents.
+        // If cleanup partially fails, keep the Auth identity so the caller can safely retry.
+        const documentsRemoved = await store.removeDriverDocuments(user.id);
+        if (!documentsRemoved) return json({ ok: false, partial: true, error: "Compte fermé, mais suppression des documents en attente. Réessayez." }, 202);
         const removed = await store.deleteAuthUser(user.id);
         if (!removed) return json({ ok: false, partial: true, error: "Compte fermé, mais suppression de l’identité en attente. Réessayez." }, 202);
         return json({ ok: true, account_deleted: true });

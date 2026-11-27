@@ -1,5 +1,6 @@
 -- 0015_preserve_anonymised_profiles.sql
 -- Preserve anonymised profile/history rows when the corresponding Supabase Auth identity is deleted.
+-- Private Storage objects are removed through the Storage API by auth-otp, not SQL.
 
 DO $$
 DECLARE v_constraint text;
@@ -33,7 +34,6 @@ BEGIN
   DELETE FROM saved_places WHERE user_id=v_uid;
   DELETE FROM notifications WHERE user_id=v_uid;
   DELETE FROM notification_prefs WHERE user_id=v_uid;
-  DELETE FROM storage.objects WHERE bucket_id='driver-documents' AND name LIKE v_uid::text || '/%';
   DELETE FROM vehicles WHERE driver_id=v_uid;
   DELETE FROM driver_documents WHERE driver_id=v_uid;
   DELETE FROM verified_phones WHERE user_id=v_uid;
