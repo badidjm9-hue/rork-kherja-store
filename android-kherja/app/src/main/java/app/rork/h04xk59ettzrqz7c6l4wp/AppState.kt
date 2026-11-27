@@ -1,9 +1,13 @@
 package app.rork.h04xk59ettzrqz7c6l4wp
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
+import androidx.core.content.ContextCompat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -110,6 +114,7 @@ class AppState(app: Application) : AndroidViewModel(app) {
     /** Register FCM only when this build has a configured Firebase app. */
     fun syncPushToken() {
         val context = getApplication<Application>()
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         if (FirebaseApp.getApps(context).isEmpty()) return
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             if (token.isNullOrBlank()) return@addOnSuccessListener

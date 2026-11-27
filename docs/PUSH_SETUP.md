@@ -13,7 +13,7 @@ Deploy `push-notifications` only after setting these function secrets in Supabas
 - `PUSH_WEBHOOK_SECRET`: a long random webhook secret.
 - `FCM_SERVICE_ACCOUNT_JSON`: Firebase service-account JSON with Firebase Cloud Messaging send permission.
 - `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_BUNDLE_ID`.
-- `APNS_USE_SANDBOX=true` for development/TestFlight sandbox delivery; use production APNs only for production-signed apps.
+- Set `APNS_USE_SANDBOX=true` only for development-signed builds. TestFlight and App Store builds use the production APNs endpoint.
 
 Do not put provider secrets in the mobile apps or Git.
 
