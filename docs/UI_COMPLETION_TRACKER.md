@@ -34,29 +34,29 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 | Driver earnings/history | Wallet/transactions and ride history | Implemented in code; payout/withdrawal workflow not approved |
 | Admin | Login, overview, live map, rides, drivers, passengers, pricing, admins, audit, vehicles, notifications, reports, settings, and Support/SOS | Screens and role-gated actions are present in source; typecheck/build and live-backend verification pending |
 
-## Next interface work, in order
+## Remaining development before verification
 
 ### Passenger
-- Saved locations management and selection.
-- Notifications list and notification preferences.
-- Help/support center and About KHERJA.
-- Privacy screen linked to owner-reviewed legal text.
-- Full ride receipt and share action.
-- Explicit location permission and location-search empty/error states.
+- Saved places management/selection, notification inbox/preferences, help/about/privacy information, and ride receipt/share are already present in Android and iOS source.
+- Remaining: refine explicit location-permission denial/retry and address-search empty/error states; compare the full passenger journey against approved designs.
+- Official privacy/terms wording and a verified support contact still require owner approval; current informational panels are not legal policy documents.
 
 ### Driver
-- Driver personal details and vehicle category/type selection (requires a separately approved persisted field).
-- Driver document review workflow is wired to the existing private driver-documents bucket, driver_documents table, and submit_driver_document RPC defined in migration 0003; verify that migration is applied to the target Supabase project before testing uploads. The client pickers now accept images and PDF files; actual device upload and preview verification remain pending.
-- Driver verification details and resubmission state.
-- Dedicated notification, help, and settings screens.
-- Earnings breakdown and withdrawal request only after commission/payout rules are approved.
+- Profile details (make/model/plate/color), ride/delivery flows, notification/help/settings access, wallet/history, and document review status are present in source.
+- Driver document upload accepts JPEG/PNG/HEIC/PDF on both Android and iOS; the private Storage bucket already permits PDF. Real uploads and signed preview/download still need device verification.
+- Vehicle category/type model needs an owner decision before adding or changing a persisted field.
+- Withdrawal/payout workflow must wait for approved commission, payout provider and settlement rules.
 
 ### Admin
-- Vehicle management.
-- Notification management.
-- Reports and exports.
-- Admin settings and operational configuration.
-- Driver document review, with least-privilege access and audit trail.
+- Overview, live map, rides, drivers, passengers, pricing, admins, audit, vehicles, notifications, reports/CSV export, settings and Support/SOS are present in source.
+- Deleted-account filtering, terminal-state protection, deleted/staff metric exclusions and broadcast suppression are implemented in Admin source/SQL.
+- Remaining: finish secondary-query loading/error/empty-state review and compare the full Admin workflow against the live schema after migrations are approved.
+
+### Backend integrations
+- Auth account deletion is implemented in code; migrations 0015–0016 and the updated auth-otp Edge Function are not deployed.
+- Push registration and FCM/APNs delivery are implemented in code; migration 0017, Edge Function deployment, webhook and provider credentials are not configured.
+- Migration 0018 prevents deleted profiles from receiving new notifications and excludes deleted/staff profiles from customer metrics/broadcasts; it is not deployed.
+- SMS OTP provider/dev-mode setup is still deferred until the development scope is complete.
 
 ## Verification gates
 
@@ -89,3 +89,13 @@ This tracker is based on the existing Android, iOS, and admin source tree plus t
 - Migration 0012 also serializes concurrent SOS submissions per user so the 3-per-10-minute limit cannot be bypassed by simultaneous requests.
 - Added behavioral SQL checks for staff/user notifications. Migration 0012 remains unapplied; no live Supabase project was changed.
 - Native compilation, admin package checks, and device-level RTL/LTR verification remain pending because this environment has no repository checkout, Xcode/Android SDK, or installable admin dependencies.
+
+
+## Development updates — 2026-11-27
+
+- Added authenticated account deletion through auth-otp, with profile anonymisation before Auth identity removal and FK changes to preserve ride/wallet/audit history (migrations 0015–0016).
+- Added Admin terminal deleted-account protection test for migration 0014.
+- Added push-device registration RPCs and FCM/APNs webhook delivery implementation (migration 0017), plus native token registration/permission handling scaffolding. Provider setup remains owner-dependent.
+- Added PDF selection/upload for driver documents on Android and iOS; no Storage schema change was needed because migration 0003 already permits PDF.
+- Added Admin deleted-account metrics, staff/deleted broadcast exclusion, and notification suppression (migration 0018).
+- These changes are source-only. No Supabase deployment, provider secret changes, native builds, or final tests were performed.
