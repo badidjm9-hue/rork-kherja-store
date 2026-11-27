@@ -154,7 +154,7 @@ workflows:
       - name: Validate admin Supabase build variables
         script: |
           for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY; do
-            if [ -z "\${!v:-}" ]; then
+            if [ -z "${!v:-}" ]; then
               echo "ERROR: $v is empty. Add it to the Codemagic group 'kherja_supabase'."
               exit 1
             fi
