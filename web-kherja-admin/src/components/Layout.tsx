@@ -92,6 +92,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
     setConfirmPassword("");
   };
   return (
+    <>
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-5 pb-4 pt-6">
         <img src="/brand/kj-logo.png" alt="KHERJA" className="h-11 w-auto" />
@@ -179,6 +180,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           </form>
         </DialogContent>
       </Dialog>
+    </>
   );
 }
 
