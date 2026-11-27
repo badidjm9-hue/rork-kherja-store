@@ -1,4 +1,28 @@
 -- 0027: a permission that mutates a resource also requires its read capability.
+-- Ensure every predefined role also contains the read capability required by its management actions.
+INSERT INTO public.admin_role_permissions(role_code,permission_code)
+SELECT DISTINCT rp.role_code,d.required_code
+FROM public.admin_role_permissions rp
+JOIN (VALUES
+  ('users.manage','users.read'),
+  ('drivers.approve','drivers.read'),
+  ('drivers.manage','drivers.read'),
+  ('rides.manage','rides.read'),
+  ('finance.adjust','finance.read'),
+  ('finance.adjust','rides.read'),
+  ('pricing.manage','pricing.read'),
+  ('deliveries.manage','deliveries.read'),
+  ('vehicles.manage','vehicles.read'),
+  ('notifications.manage','notifications.read'),
+  ('settings.manage','settings.read'),
+  ('support.manage','support.read')
+) AS d(permission_code,required_code) ON d.permission_code=rp.permission_code
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.admin_role_permissions existing
+  WHERE existing.role_code=rp.role_code AND existing.permission_code=d.required_code
+)
+ON CONFLICT DO NOTHING;
+
 -- Preserve existing management access while making its read dependency explicit.
 INSERT INTO public.admin_user_permissions(user_id,permission_code,granted_by)
 SELECT DISTINCT up.user_id, d.required_code, NULL
