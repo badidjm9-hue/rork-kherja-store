@@ -25,6 +25,6 @@ The webhook sends the notification title/body already generated in the recipient
 
 ## Remaining client/provider setup
 
-- Android still needs the Firebase project, `google-services.json`, Firebase Messaging SDK/service, notification permission and token registration call.
-- iOS still needs Apple Push Notifications capability, provisioning-profile entitlement, permission prompt, APNs token registration callback and token registration RPC.
+- Android now includes the Firebase Messaging service, Android 13+ permission request, token persistence, registration/unregistration RPC calls, and notification display. It still needs the owner's Firebase project and `android-kherja/app/google-services.json` to initialize Firebase.
+- iOS now requests notification permission after sign-in, registers with APNs, caches the device token, and registers/unregisters it through Supabase. It still needs the Apple Push Notifications capability and a provisioning profile with the `aps-environment` entitlement.
 - No credentials are present in the repository. No migration or function has been deployed and no push has been sent.

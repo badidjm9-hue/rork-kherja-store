@@ -306,6 +306,16 @@ final class SupabaseService: ObservableObject {
     }
 
     nonisolated struct NoParams: Encodable, Sendable {}
+    nonisolated struct PushDeviceParams: Encodable, Sendable { var p_token: String; var p_platform: String }
+    nonisolated struct PushTokenParams: Encodable, Sendable { var p_token: String }
+
+    func registerPushDevice(token: String) async throws {
+        let _: String = try await rpc("register_push_device", params: PushDeviceParams(p_token: token, p_platform: "ios"))
+    }
+
+    func unregisterPushDevice(token: String) async throws {
+        try await rpcVoid("unregister_push_device", params: PushTokenParams(p_token: token))
+    }
 
     /// Whether the signed-in account has a verified phone (RPC my_phone_verified, migration 0007).
     func phoneVerified() async throws -> Bool {
