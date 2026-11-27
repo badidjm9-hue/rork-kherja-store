@@ -9,6 +9,7 @@
 import CoreLocation
 import MapKit
 import SwiftUI
+import UIKit
 
 struct AddressPickerSheet: View {
     @EnvironmentObject var store: AppState
@@ -21,6 +22,8 @@ struct AddressPickerSheet: View {
     @State private var query = ""
     @State private var results: [MKMapItem] = []
     @State private var saved: [SavedPlace] = []
+    @State private var savedLoading = true
+    @State private var savedError: String?
     @State private var searching = false
     @State private var errorText: String?
     @State private var searchTask: Task<Void, Never>?
@@ -52,6 +55,23 @@ struct AddressPickerSheet: View {
                     if let errorText {
                         Text(errorText).font(.system(size: 13, weight: .bold)).foregroundStyle(KJ.danger).padding(.bottom, 8)
                     }
+                    if allowCurrentLocation && (location.authorization == .denied || location.authorization == .restricted) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(store.language == .ar ? "إذن الموقع مرفوض. يمكنك اختيار العنوان يدوياً أو تفعيل الموقع من إعدادات الهاتف." : "L’accès à la localisation est refusé. Choisissez une adresse manuellement ou autorisez la localisation dans les réglages.")
+                                .font(.system(size: 12, weight: .semibold)).foregroundStyle(KJ.danger)
+                            Button {
+                                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                            } label: {
+                                Label(store.language == .ar ? "فتح إعدادات الموقع" : "Ouvrir les réglages", systemImage: "gear")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                        }
+                        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(KJ.danger.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(.bottom, 10)
+                    }
+                    if savedLoading { ProgressView().tint(KJ.blue).padding(.bottom, 8) }
+                    if let savedError { Text(savedError).font(.system(size: 12, weight: .semibold)).foregroundStyle(KJ.danger).padding(.bottom, 8) }
                     if allowCurrentLocation && query.trimmingCharacters(in: .whitespaces).count < 3 {
                         row(icon: "location.fill", title: store.l("use_my_location"), subtitle: nil) { Task { await useCurrentLocation() } }
                     }
@@ -78,7 +98,16 @@ struct AddressPickerSheet: View {
             }
         }
         .background(KJ.canvasGradient.ignoresSafeArea())
-        .task { saved = (try? await SupabaseService.shared.savedPlaces()) ?? [] }
+        .task {
+            savedLoading = true
+            do {
+                saved = try await SupabaseService.shared.savedPlaces()
+                savedError = nil
+            } catch {
+                savedError = store.serverErrorMessage(error)
+            }
+            savedLoading = false
+        }
     }
 
     private func icon(_ kind: String) -> String {
@@ -131,6 +160,10 @@ struct AddressPickerSheet: View {
 
     private func useCurrentLocation() async {
         errorText = nil
+        if location.authorization == .denied || location.authorization == .restricted {
+            errorText = store.language == .ar ? "إذن الموقع مرفوض. فعّله من إعدادات الهاتف أو اختر العنوان يدوياً." : "Localisation refusée. Autorisez-la dans les réglages ou choisissez l’adresse manuellement."
+            return
+        }
         location.requestPermission()
         location.refreshOnce()
         for _ in 0..<20 where location.location == nil { try? await Task.sleep(nanoseconds: 250_000_000) }
