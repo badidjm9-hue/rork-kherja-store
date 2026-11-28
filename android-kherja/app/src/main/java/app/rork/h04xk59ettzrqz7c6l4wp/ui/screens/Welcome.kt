@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,12 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,50 +49,26 @@ import app.rork.h04xk59ettzrqz7c6l4wp.ui.theme.KJ
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Original animation timing: 9 frames, 180 ms each, looping. */
-private const val FRAME_MS = 180L
 private const val FRAME_ASPECT = 388f / 438f
-/** Sharpest view of the whole front with both characters, shown when animations are off. */
-private const val STILL_FRAME = 2
-
-private val FRAMES = intArrayOf(
-    R.drawable.welcome_drive_0, R.drawable.welcome_drive_1, R.drawable.welcome_drive_2,
-    R.drawable.welcome_drive_3, R.drawable.welcome_drive_4, R.drawable.welcome_drive_5,
-    R.drawable.welcome_drive_6, R.drawable.welcome_drive_7, R.drawable.welcome_drive_8,
-)
-
-/** The brand line is shown in Arabic in every language; other languages add a translation below it. */
+private const val STILL_FRAME = R.drawable.welcome_drive_2
 private const val BRAND_LINE = "تنقّل بأمان مع خرجة"
 
 /**
- * Welcome scene: the original car animation with its scenery removed, drawn straight on the screen
- * background (no card). The brand line and the start button settle in once. With animations
- * disabled a single still frame and the final state are shown.
+ * Stable Welcome screen. The original car animation is played only by SplashScreen;
+ * Welcome displays one still frame and never starts, loops, or replays the intro.
  */
 @Composable
 fun WelcomeScreen(state: AppState, onStart: () -> Unit) {
     val reduce = rememberReduceMotion()
     val haptic = LocalHapticFeedback.current
-    // Decoded up front so frame changes never stall on the main thread.
-    val resources = LocalContext.current.resources
-    val frames = remember(resources) { FRAMES.map { ImageBitmap.imageResource(resources, it) } }
-    var frame by remember { mutableIntStateOf(0) }
     val text = remember { Animatable(if (reduce) 1f else 0f) }
     val button = remember { Animatable(if (reduce) 1f else 0f) }
     var skipped by remember { mutableStateOf(false) }
 
-    LaunchedEffect(reduce) {
-        while (!reduce) {
-            for (i in frames.indices) {
-                frame = i
-                delay(FRAME_MS)
-            }
-        }
-    }
-
-    LaunchedEffect(skipped) {
+    LaunchedEffect(skipped, reduce) {
         if (reduce || skipped) {
-            text.snapTo(1f); button.snapTo(1f)
+            text.snapTo(1f)
+            button.snapTo(1f)
             return@LaunchedEffect
         }
         delay(350)
@@ -107,7 +80,6 @@ fun WelcomeScreen(state: AppState, onStart: () -> Unit) {
 
     Column(
         Modifier.fillMaxSize()
-            // Tap anywhere to jump to the end of the scene.
             .clickable(remember { MutableInteractionSource() }, null, enabled = button.value < 1f) { skipped = true }
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -117,7 +89,7 @@ fun WelcomeScreen(state: AppState, onStart: () -> Unit) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val artWidth = min(min(maxWidth, 460.dp), maxHeight / FRAME_ASPECT)
             Image(
-                frames[if (reduce) STILL_FRAME else frame],
+                painter = painterResource(STILL_FRAME),
                 contentDescription = state.l("welcome_scene"),
                 modifier = Modifier.width(artWidth).height(artWidth * FRAME_ASPECT),
                 filterQuality = FilterQuality.High,
