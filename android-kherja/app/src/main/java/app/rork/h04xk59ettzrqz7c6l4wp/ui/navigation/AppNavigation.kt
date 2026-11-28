@@ -62,13 +62,9 @@ private enum class RootScreen { Splash, Onboarding, Profile, LinkPhone, Driver, 
 fun AppNavigation() {
     val state: AppState = viewModel()
     var minSplashDone by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(3_200)
-        minSplashDone = true
-    }
     val dir = if (state.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     val root = when {
-        !state.bootstrapDone || !minSplashDone -> RootScreen.Splash
+        !minSplashDone -> RootScreen.Splash
         !state.signedIn -> RootScreen.Onboarding
         state.profile == null -> RootScreen.Profile
         // Driver services need a verified phone (also enforced by the database).
@@ -80,7 +76,7 @@ fun AppNavigation() {
     CompositionLocalProvider(LocalLayoutDirection provides dir) {
         AnimatedContent(root, transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) }, label = "root") { r ->
             when (r) {
-                RootScreen.Splash -> SplashScreen(state)
+                RootScreen.Splash -> SplashScreen(state, onFinished = { minSplashDone = true })
                 RootScreen.Onboarding -> OnboardingFlow(state)
                 RootScreen.Profile -> if (state.profile == null && state.signedIn) ProfileLoading(state) else CompleteProfileScreen(state)
                 RootScreen.LinkPhone -> LinkPhoneScreen(state)
@@ -106,7 +102,7 @@ private fun ProfileLoading(state: AppState) {
         failed = true
     }
     if (!failed) {
-        SplashScreen(state)
+        SplashScreen(state, playIntro = false)
         return
     }
     androidx.compose.foundation.layout.Column(
