@@ -7,6 +7,28 @@ DECLARE
 BEGIN
   PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
 
+  IF EXISTS (
+    SELECT 1 FROM public.admin_role_permissions rp
+    JOIN (VALUES
+      ('users.manage','users.read'),
+      ('drivers.approve','drivers.read'),
+      ('drivers.manage','drivers.read'),
+      ('rides.manage','rides.read'),
+      ('finance.adjust','finance.read'),
+      ('finance.adjust','rides.read'),
+      ('pricing.manage','pricing.read'),
+      ('deliveries.manage','deliveries.read'),
+      ('vehicles.manage','vehicles.read'),
+      ('notifications.manage','notifications.read'),
+      ('settings.manage','settings.read'),
+      ('support.manage','support.read')
+    ) d(permission_code,required_code) ON d.permission_code=rp.permission_code
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.admin_role_permissions required
+      WHERE required.role_code=rp.role_code AND required.permission_code=d.required_code
+    )
+  ) THEN RAISE EXCEPTION 'a predefined admin role is missing a required read permission'; END IF;
+
   BEGIN
     PERFORM public.admin_set_user_permissions(v_staff,ARRAY['drivers.approve']::text[],true);
   EXCEPTION WHEN OTHERS THEN v_failed := true;
