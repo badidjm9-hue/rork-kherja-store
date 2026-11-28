@@ -145,15 +145,17 @@ fun KJButton(
 
 @Composable
 fun KJOutlineButton(text: String, modifier: Modifier = Modifier, color: Color = KJ.blue, icon: ImageVector? = null, enabled: Boolean = true, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
+            .kjPressable(interaction)
             .alpha(if (enabled) 1f else 0.5f)
             .clip(RoundedCornerShape(16.dp))
             .border(1.5.dp, color.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
             .background(Color.White)
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(interaction, null, enabled = enabled, onClick = onClick),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

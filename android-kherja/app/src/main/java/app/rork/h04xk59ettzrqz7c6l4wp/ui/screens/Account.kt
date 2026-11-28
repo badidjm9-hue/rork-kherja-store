@@ -72,6 +72,7 @@ import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJCard
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJOutlineButton
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.Pill
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.PulsingDots
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.SkeletonList
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.SectionTitle
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.dzd
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.formatDate
@@ -144,7 +145,7 @@ fun HistoryScreen(state: AppState, driver: Boolean) {
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) {
             when {
-                rides == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PulsingDots() }
+                rides == null -> SkeletonList(4, Modifier.padding(20.dp))
                 filtered.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
                     item { Box(Modifier.fillMaxWidth().padding(top = 60.dp), contentAlignment = Alignment.Center) { EmptyState(Icons.Filled.History, state.l("no_trips"), state.l("no_trips_hint")) } }
                 }
@@ -270,7 +271,7 @@ fun WalletScreen(state: AppState, driver: Boolean) {
             }
             val list = txs
             when {
-                list == null -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { PulsingDots() } }
+                list == null -> item { SkeletonList(3) }
                 list.isEmpty() -> item {
                     Box(Modifier.fillMaxWidth().padding(top = 30.dp), contentAlignment = Alignment.Center) {
                         EmptyState(Icons.Filled.AccountBalanceWallet, state.l("no_transactions"))

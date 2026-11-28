@@ -48,9 +48,12 @@ struct HistoryView: View {
             filterBar
 
             if loading {
-                Spacer()
-                ProgressView().tint(KJ.blue).scaleEffect(1.2)
-                Spacer()
+                ScrollView {
+                    SkeletonList(count: 4)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                }
+                .scrollDisabled(true)
             } else if filtered.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "clock.badge.questionmark")
@@ -67,10 +70,11 @@ struct HistoryView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 14) {
-                        ForEach(filtered) { ride in
+                        ForEach(Array(filtered.enumerated()), id: \.element.id) { index, ride in
                             RideCard(ride: ride, lang: store.language) {
                                 selectedRide = ride
                             }
+                            .kjReveal(index: index)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -188,7 +192,7 @@ struct RideCard: View {
                     .shadow(color: Color(hex: 0x075BFF).opacity(0.08), radius: 12, y: 6)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KJPressableStyle())
     }
 
     private var trkNumber: Int {

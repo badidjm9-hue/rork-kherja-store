@@ -332,11 +332,11 @@ struct NotificationsView: View {
                     .padding(.top, 8)
 
                     if items == nil {
-                        PulsingDots().frame(maxWidth: .infinity).padding(.top, 20)
+                        SkeletonList(count: 4).padding(.top, 8)
                     } else if items?.isEmpty == true {
                         ExtrasEmpty(icon: "bell.slash", title: store.l("notif_none"), hint: store.l("notif_none_hint"))
                     } else {
-                        ForEach(items ?? []) { n in
+                        ForEach(Array((items ?? []).enumerated()), id: \.element.id) { index, n in
                             HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: n.isUnread ? "bell.badge.fill" : "bell")
                                     .foregroundStyle(n.isUnread ? KJ.burgundy : KJ.muted)
@@ -353,6 +353,7 @@ struct NotificationsView: View {
                             }
                             .kjCard(padding: 12)
                             .onTapGesture { if n.isUnread { Task { await read(n) } } }
+                            .kjReveal(index: index)
                         }
                     }
                 }

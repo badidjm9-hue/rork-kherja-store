@@ -43,9 +43,7 @@ struct WalletView: View {
                     }
 
                     if loading {
-                        PulsingDots()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 30)
+                        SkeletonList(count: 3)
                     } else if transactions.isEmpty {
                         Text(store.l("no_transactions"))
                             .font(.system(size: 14, weight: .medium))
@@ -54,8 +52,9 @@ struct WalletView: View {
                             .padding(.vertical, 26)
                     } else {
                         VStack(spacing: 10) {
-                            ForEach(transactions) { t in
+                            ForEach(Array(transactions.enumerated()), id: \.element.id) { index, t in
                                 TransactionRow(transaction: t, lang: store.language)
+                                    .kjReveal(index: index)
                             }
                         }
                     }

@@ -78,6 +78,7 @@ import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJCard
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.KJOutlineButton
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.Pill
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.PulsingDots
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.SkeletonList
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.SectionTitle
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.dzd
 import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.formatDate
@@ -414,7 +415,7 @@ fun NotificationsScreen(state: AppState, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(8.dp))
             when {
-                items == null -> Box(Modifier.fillMaxWidth().padding(top = 30.dp), contentAlignment = Alignment.Center) { PulsingDots() }
+                items == null -> SkeletonList(4)
                 items.orEmpty().isEmpty() -> EmptyState(Icons.Filled.NotificationsNone, state.l("notif_none"), state.l("notif_none_hint"))
                 else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items.orEmpty().forEach { n ->

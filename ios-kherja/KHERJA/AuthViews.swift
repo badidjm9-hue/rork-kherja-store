@@ -315,6 +315,7 @@ struct AuthView: View {
     @State private var register = false
     @State private var loading = false
     @State private var errorMessage: String?
+    @State private var errorTick = 0
     @State private var phone = ""
     @State private var password = ""
     @State private var confirm = ""
@@ -324,6 +325,14 @@ struct AuthView: View {
     @State private var terms = false
     @State private var role = "passenger"
     @StateObject private var social = SocialAuthCoordinator()
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private func bumpError() {
+        KJHaptics.error()
+        if reduceMotion { return }
+        withAnimation(.linear(duration: 0.4)) { errorTick += 1 }
+    }
 
     var body: some View {
         ScrollView {
@@ -360,6 +369,10 @@ struct AuthView: View {
                         .foregroundStyle(KJ.danger)
                         .multilineTextAlignment(.center)
                         .padding(.top, 12)
+                        .kjShake(errorTick)
+                        .onAppear { bumpError() }
+                        .onChange(of: errorMessage) { _, new in if new != nil { bumpError() } }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
                 BiButton(labelKey: register ? "auth_register_btn" : "auth_signin", loading: loading) {
