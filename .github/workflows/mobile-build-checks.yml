@@ -1,0 +1,67 @@
+name: KHERJA mobile build checks
+
+on:
+  push:
+    branches:
+      - feature/kherja-premium-motion
+  pull_request:
+    branches:
+      - feature/kherja-integrated
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android compile and unit-test task
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build and run available unit tests
+        working-directory: android-kherja
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-build-placeholder
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug
+
+  ios:
+    name: iOS Simulator compile
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate CI-only Supabase config
+        run: |
+          cat > ios-kherja/KHERJA/Config.swift <<'EOF'
+          import Foundation
+
+          enum Config {
+              nonisolated static let EXPO_PUBLIC_SUPABASE_ANON_KEY = "ci-build-placeholder"
+              nonisolated static let EXPO_PUBLIC_SUPABASE_URL = "https://ci-placeholder.supabase.co"
+              nonisolated static let allValues: [String: String] = [
+                  "EXPO_PUBLIC_SUPABASE_ANON_KEY": EXPO_PUBLIC_SUPABASE_ANON_KEY,
+                  "EXPO_PUBLIC_SUPABASE_URL": EXPO_PUBLIC_SUPABASE_URL,
+              ]
+          }
+          EOF
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project ios-kherja/KHERJA.xcodeproj \
+            -scheme KHERJA
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild \
+            -project ios-kherja/KHERJA.xcodeproj \
+            -scheme KHERJA \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios-derived \
+            CODE_SIGNING_ALLOWED=NO \
+            build
