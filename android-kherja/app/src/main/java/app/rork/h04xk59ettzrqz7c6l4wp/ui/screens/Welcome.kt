@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -92,7 +91,6 @@ fun WelcomeScreen(state: AppState, onStart: () -> Unit) {
                 painter = painterResource(STILL_FRAME),
                 contentDescription = state.l("welcome_scene"),
                 modifier = Modifier.width(artWidth).height(artWidth * FRAME_ASPECT),
-                filterQuality = FilterQuality.High,
             )
         }
 
