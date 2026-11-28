@@ -1,5 +1,6 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -109,7 +110,7 @@ fun SplashScreen(state: AppState) {
     }
 }
 
-private enum class Step { Language, Auth, Forgot, Role, Phone, Otp }
+private enum class Step { Welcome, Language, Auth, Forgot, Role, Phone, Otp }
 
 /** Auth screens follow the app language direction (Arabic = RTL) without touching the legacy screens. */
 @Composable
@@ -123,13 +124,23 @@ private fun RtlScope(state: AppState, content: @Composable () -> Unit) {
  */
 @Composable
 fun OnboardingFlow(state: AppState) {
-    var step by remember { mutableStateOf(if (state.session.languageChosen) Step.Auth else Step.Language) }
+    // The welcome scene plays once each time the signed-out flow is entered (not again on rotation).
+    var welcomed by rememberSaveable { mutableStateOf(false) }
+    var step by remember {
+        mutableStateOf(
+            when {
+                !welcomed -> Step.Welcome
+                state.session.languageChosen -> Step.Auth
+                else -> Step.Language
+            },
+        )
+    }
     var phone by remember { mutableStateOf("") }
     var devCode by remember { mutableStateOf<String?>(null) }
     var otpCtx by remember { mutableStateOf(OtpContext()) }
     var otpBack by remember { mutableStateOf(Step.Auth) }
 
-    BackHandler(enabled = step != Step.Language) {
+    BackHandler(enabled = step != Step.Language && step != Step.Welcome) {
         step = when (step) {
             Step.Otp -> otpBack
             Step.Phone -> Step.Role
@@ -143,6 +154,10 @@ fun OnboardingFlow(state: AppState) {
             CornerBlobs()
             Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
                 when (s) {
+                    Step.Welcome -> WelcomeScreen(state) {
+                        welcomed = true
+                        step = if (state.session.languageChosen) Step.Auth else Step.Language
+                    }
                     Step.Language -> LanguageStep(state) { step = Step.Auth }
                     Step.Auth -> RtlScope(state) {
                         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {

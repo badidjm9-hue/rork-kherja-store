@@ -15,11 +15,16 @@ struct RootView: View {
     @EnvironmentObject var store: AppState
     @State private var minSplash = true
     @State private var path: [OnboardingStep] = []
+    /// The welcome scene plays once each time the signed-out flow is entered.
+    @State private var welcomed = false
 
     var body: some View {
         Group {
             if !store.bootstrapDone || minSplash {
                 SplashView()
+            } else if !store.session.isSignedIn && !welcomed {
+                WelcomeView { withAnimation(.easeInOut(duration: 0.3)) { welcomed = true } }
+                    .transition(.opacity)
             } else if !store.session.isSignedIn {
                 NavigationStack(path: $path) {
                     LanguageSelectView(
@@ -92,6 +97,7 @@ struct RootView: View {
             if store.session.isSignedIn { await KHERJAPushRegistration.requestIfNeeded() }
         }
         .onChange(of: store.session.isSignedIn) { _, signedIn in
+            if !signedIn { welcomed = false }   // play it again after a sign-out
             if signedIn { Task { await KHERJAPushRegistration.requestIfNeeded() } }
         }
         .environment(\.layoutDirection, store.language.isRTL ? .rightToLeft : .leftToRight)
