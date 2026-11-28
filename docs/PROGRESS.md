@@ -250,3 +250,6 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Admin permission editor now lets a delegated manager remove an existing elevated grant from an employee, while still preventing that manager from granting the same permission to a new employee. Database-side delegation limits remain authoritative.
 - Aligned the iOS language welcome screen with Android: matching logo/artwork hierarchy, language choices and primary action. Android now holds the branded splash for at least 1.5 seconds, matching the iOS minimum.
 - Reviewed the Admin route guards and permission catalog: super-admin access is backed by the database `has_perm` bypass, while staff routes and mutation actions remain individually permission-gated. Pricing editor exposes per-vehicle price/km and driver commission controls behind `pricing.manage`.
+- Extended the delegated-permission regression case to cover revoking an elevated permission safely; the SQL test is registered in the disposable-Postgres runner but has not been executed.
+- Made both language welcome screens vertically scrollable so the language choices and continue action remain reachable on compact phones.
+- Static permission-catalog comparison found no missing frontend permission identifiers; `ride.adjust` in SQL is an audit action, not an authorization permission.
