@@ -70,6 +70,7 @@ fun OsmMap(
 
     // Animate the native map overlay without forcing Compose to redraw every frame.
     val routeAnimator = remember { arrayOfNulls<ValueAnimator>(1) }
+    val lastRouteKey = remember { arrayOfNulls<String>(1) }
     val driverAnimator = remember { arrayOfNulls<ValueAnimator>(1) }
     val lastDriverPosition = remember { arrayOfNulls<GeoPoint>(1) }
     val driverMarker = remember { arrayOfNulls<Marker>(1) }
@@ -79,6 +80,7 @@ fun OsmMap(
         onDispose {
             routeAnimator[0]?.cancel()
             routeAnimator[0] = null
+            lastRouteKey[0] = null
             driverAnimator[0]?.cancel()
             driverAnimator[0] = null
             driverMarker[0] = null
@@ -108,23 +110,28 @@ fun OsmMap(
                 }
                 override fun longPressHelper(p: GeoPoint): Boolean = false
             }))
+            val routeKey = route.joinToString("|") { "${it.first},${it.second}" }
+            val animateRoute = route.size >= 2 && routeKey != lastRouteKey[0]
+            lastRouteKey[0] = routeKey.takeIf { route.size >= 2 }
             if (route.size >= 2) {
                 val line = Polyline(map).apply {
                     setPoints(route.map { GeoPoint(it.first, it.second) })
                     outlinePaint.color = KJ.blue.toArgb()
                     outlinePaint.strokeWidth = 12f
                     outlinePaint.strokeCap = Paint.Cap.ROUND
-                    outlinePaint.alpha = 0
+                    outlinePaint.alpha = if (animateRoute) 0 else 255
                 }
                 map.overlays.add(line)
-                routeAnimator[0] = ValueAnimator.ofInt(0, 255).apply {
-                    duration = 850L
-                    interpolator = DecelerateInterpolator()
-                    addUpdateListener { animation ->
-                        line.outlinePaint.alpha = animation.animatedValue as Int
-                        map.invalidate()
+                if (animateRoute) {
+                    routeAnimator[0] = ValueAnimator.ofInt(0, 255).apply {
+                        duration = 850L
+                        interpolator = DecelerateInterpolator()
+                        addUpdateListener { animation ->
+                            line.outlinePaint.alpha = animation.animatedValue as Int
+                            map.invalidate()
+                        }
+                        start()
                     }
-                    start()
                 }
             }
             val driverPin = pins.firstOrNull { it.kind == PinKind.Driver }
