@@ -91,17 +91,24 @@ struct RideMapView: UIViewRepresentable {
             for p in parent.points { wanted[p.kind.rawValue] = p }
 
             let existing = map.annotations.compactMap { $0 as? PointAnnotation }
-            let stale = existing.filter { ann in
-                guard let p = wanted[ann.kind] else { return true }
-                return p.coordinate != ann.coordinate
-            }
+            // Preserve annotation identity when a live GPS fix changes. Removing and
+            // recreating the driver pin every poll causes a visible flicker.
+            let stale = existing.filter { wanted[$0.kind] == nil }
             if !stale.isEmpty { map.removeAnnotations(stale) }
-            for (kind, p) in wanted where !existing.contains(where: { $0.kind == kind && $0.coordinate == p.coordinate }) {
-                let a = PointAnnotation()
-                a.kind = kind
-                a.coordinate = p.coordinate
-                a.title = p.title
-                map.addAnnotation(a)
+
+            for (kind, point) in wanted {
+                if let annotation = existing.first(where: { $0.kind == kind }) {
+                    if annotation.coordinate != point.coordinate {
+                        annotation.coordinate = point.coordinate
+                    }
+                    annotation.title = point.title
+                } else {
+                    let annotation = PointAnnotation()
+                    annotation.kind = kind
+                    annotation.coordinate = point.coordinate
+                    annotation.title = point.title
+                    map.addAnnotation(annotation)
+                }
             }
 
             // Route between pickup and destination.
