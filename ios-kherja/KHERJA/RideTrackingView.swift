@@ -380,6 +380,7 @@ struct RideTrackingView: View {
 
 struct RatingSheet: View {
     @EnvironmentObject var store: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let ride: Ride?
     var onDone: () -> Void
 
