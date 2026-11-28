@@ -60,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -589,10 +590,19 @@ private fun RatingScreen(state: AppState, ride: Ride, driver: Profile?) {
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         (1..5).forEach { i ->
+                            val selected = i <= stars
+                            val starScale by animateFloatAsState(
+                                if (selected) 1.12f else 1f,
+                                animationSpec = tween(180),
+                                label = "rating-star-$i",
+                            )
                             Icon(
-                                if (i <= stars) Icons.Filled.Star else Icons.Filled.StarBorder, null,
-                                tint = if (i <= stars) KJ.warning else KJ.softBlueMid,
-                                modifier = Modifier.size(42.dp).clip(CircleShape).clickable { stars = i },
+                                if (selected) Icons.Filled.Star else Icons.Filled.StarBorder, null,
+                                tint = if (selected) KJ.warning else KJ.softBlueMid,
+                                modifier = Modifier.size(42.dp).graphicsLayer {
+                                    scaleX = starScale
+                                    scaleY = starScale
+                                }.clip(CircleShape).clickable { stars = i },
                             )
                         }
                     }
