@@ -30,7 +30,7 @@ struct SplashView: View {
 
                 Spacer()
 
-                Image("car_moto")
+                Image("kj_duo")
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity)
@@ -72,7 +72,7 @@ struct LanguageSelectView: View {
             Spacer(minLength: 32)
             KJLogo(height: 84)
 
-            Image("car_moto")
+            Image("kj_duo")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 210, height: 110)
@@ -219,7 +219,7 @@ struct RoleSelectView: View {
                     titleAr: "سائق",
                     title: store.l("driver"),
                     subtitleKey: "driver",
-                    art: "moto_art",
+                    art: "kj_moto",
                     selected: store.role == "driver"
                 ) { store.setRole("driver") }
 
@@ -227,7 +227,7 @@ struct RoleSelectView: View {
                     titleAr: "راكب",
                     title: store.l("passenger"),
                     subtitleKey: "passenger",
-                    art: "car_moto",
+                    art: "kj_duo",
                     selected: store.role == "passenger"
                 ) { store.setRole("passenger") }
             }

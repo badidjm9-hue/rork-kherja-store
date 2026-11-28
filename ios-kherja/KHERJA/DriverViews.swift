@@ -830,7 +830,7 @@ struct DriverProfileView: View {
                 }
                 .padding(.top, 16)
 
-                Image(store.profile?.vehicleModel == "Moto" ? "moto_art" : "car_hero")
+                Image(store.profile?.vehicleModel == "Moto" ? "kj_moto" : "kj_car")
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: .infinity)

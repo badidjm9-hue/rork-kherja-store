@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 70 560 178" width="560" height="178">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2F7BFF"/>
+      <stop offset="0.55" stop-color="#075BFF"/>
+      <stop offset="1" stop-color="#0043C7"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#27407F"/>
+      <stop offset="1" stop-color="#0D1B4C"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F7FF"/>
+      <stop offset="1" stop-color="#B9C4E4"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="290" cy="232" rx="236" ry="8" fill="#0D1B4C" fill-opacity="0.14"/>
+  <!-- body with wheel arches cut into the silhouette -->
+  <path fill="url(#body)" d="M52 178 C50 160 56 150 76 146 L140 138 C160 112 202 92 264 90 L328 90 C372 92 402 112 420 134 L482 144 C508 148 518 160 516 176 L516 188 C516 194 510 198 502 198 L462 198 A42 42 0 0 0 378 198 L192 198 A42 42 0 0 0 108 198 L66 198 C58 198 52 194 52 188 Z"/>
+  <!-- roof highlight and shoulder line -->
+  <path fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round" d="M150 132 C172 108 210 96 264 94 L326 94"/>
+  <path fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="2.5" stroke-linecap="round" d="M80 152 L478 148"/>
+  <!-- greenhouse -->
+  <path fill="url(#glass)" d="M152 134 C170 114 206 100 262 98 L326 98 C362 100 388 116 404 134 Z"/>
+  <path fill="#FFFFFF" fill-opacity="0.16" d="M262 98 L300 98 L282 134 L244 134 Z"/>
+  <path fill="#075BFF" d="M288 96 L296 96 L296 136 L288 136 Z"/>
+  <!-- door seams and handle -->
+  <path fill="none" stroke="#0043C7" stroke-opacity="0.55" stroke-width="2" d="M292 138 L292 190 M200 142 L202 190 M392 142 L388 190"/>
+  <rect x="306" y="152" width="22" height="5" rx="2.5" fill="#FFFFFF" fill-opacity="0.75"/>
+  <!-- accent stripe in the brand burgundy -->
+  <path fill="#C4145A" d="M70 168 L106 168 L106 173 L70 173 Z M194 168 L376 168 L376 173 L194 173 Z M464 168 L496 168 L496 173 L464 173 Z"/>
+  <!-- lamps -->
+  <path fill="#FFFFFF" d="M492 150 C504 152 512 158 514 166 L494 164 Z"/>
+  <path fill="#C4145A" d="M54 150 C52 156 52 164 54 170 L66 170 L68 150 Z"/>
+  <!-- wheels -->
+  <g>
+    <circle cx="150" cy="198" r="35" fill="#0D1B4C"/>
+    <circle cx="150" cy="198" r="23" fill="url(#rim)"/>
+    <circle cx="150" cy="198" r="8" fill="#0D1B4C"/>
+    <path stroke="#0D1B4C" stroke-width="4" stroke-linecap="round" d="M150 198 L150 178 M150 198 L169 192 M150 198 L162 214 M150 198 L138 214 M150 198 L131 192"/>
+  </g>
+  <g>
+    <circle cx="420" cy="198" r="35" fill="#0D1B4C"/>
+    <circle cx="420" cy="198" r="23" fill="url(#rim)"/>
+    <circle cx="420" cy="198" r="8" fill="#0D1B4C"/>
+    <path stroke="#0D1B4C" stroke-width="4" stroke-linecap="round" d="M420 198 L420 178 M420 198 L439 192 M420 198 L432 214 M420 198 L408 214 M420 198 L401 192"/>
+  </g>
+</svg>

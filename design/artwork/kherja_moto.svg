@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 66 360 182" width="360" height="182">
+  <defs>
+    <linearGradient id="fair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2F7BFF"/>
+      <stop offset="0.6" stop-color="#075BFF"/>
+      <stop offset="1" stop-color="#0043C7"/>
+    </linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A52E6"/>
+      <stop offset="1" stop-color="#0035A0"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F7FF"/>
+      <stop offset="1" stop-color="#B9C4E4"/>
+    </linearGradient>
+    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D4A73"/>
+      <stop offset="1" stop-color="#0D1B4C"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="180" cy="232" rx="150" ry="7" fill="#0D1B4C" fill-opacity="0.14"/>
+  <!-- exhaust can and swingarm -->
+  <path fill="url(#metal)" d="M164 190 L92 184 C70 182 54 176 44 168 C40 166 38 170 41 174 C52 186 74 194 98 196 L164 202 Z"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="7" stroke-linecap="round" d="M82 196 L164 168"/>
+  <!-- front fork -->
+  <path fill="none" stroke="#0D1B4C" stroke-width="8" stroke-linecap="round" d="M266 130 L282 196"/>
+  <path fill="none" stroke="url(#metal)" stroke-width="3" stroke-linecap="round" d="M270 156 L283 190"/>
+  <!-- engine block (peeks out under the belly pan) -->
+  <path fill="url(#engine)" d="M146 150 L222 146 L230 176 L222 204 L156 206 L142 178 Z"/>
+  <path fill="#FFFFFF" fill-opacity="0.14" d="M154 186 L218 184 L220 194 L156 196 Z"/>
+  <!-- rear shock -->
+  <path fill="none" stroke="#C4145A" stroke-width="5" stroke-linecap="round" d="M104 132 L120 176"/>
+  <!-- one continuous sculpted body: tail, seat, tank, screen, nose, belly pan -->
+  <path fill="url(#fair)" d="M44 112 C64 105 90 107 110 113 L142 118 C156 108 176 100 204 98 L232 98 C246 91 262 89 272 92 L296 118 C308 126 318 140 318 152 L304 157 C286 151 262 157 246 169 L232 178 L196 180 C176 176 150 172 132 160 L100 142 C80 134 56 132 42 125 Z"/>
+  <path fill="#0D1B4C" d="M96 111 C112 108 130 112 146 117 L141 124 C126 120 110 120 98 124 Z"/>
+  <path fill="#27407F" d="M268 93 L296 119 C282 121 270 119 258 112 Z"/>
+  <path fill="#FFFFFF" fill-opacity="0.22" d="M270 97 L284 109 L272 108 Z"/>
+  <path fill="#FFFFFF" d="M300 130 C310 134 316 142 317 150 L302 152 Z"/>
+  <path fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round" d="M150 116 C170 106 196 102 228 102"/>
+  <path fill="none" stroke="#C4145A" stroke-width="5" stroke-linecap="round" d="M112 132 C172 136 226 142 262 154"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="5" stroke-linecap="round" d="M246 94 L232 88"/>
+  <!-- wheels -->
+  <g>
+    <circle cx="82" cy="196" r="36" fill="#0D1B4C"/>
+    <circle cx="82" cy="196" r="24" fill="url(#metal)"/>
+    <circle cx="82" cy="196" r="7" fill="#0D1B4C"/>
+    <path stroke="#0D1B4C" stroke-width="3.5" stroke-linecap="round" d="M82 196 L82 178 M82 196 L99 190 M82 196 L92 211 M82 196 L72 211 M82 196 L65 190"/>
+  </g>
+  <g>
+    <circle cx="282" cy="196" r="36" fill="#0D1B4C"/>
+    <circle cx="282" cy="196" r="24" fill="url(#metal)"/>
+    <circle cx="282" cy="196" r="7" fill="#0D1B4C"/>
+    <path stroke="#0D1B4C" stroke-width="3.5" stroke-linecap="round" d="M282 196 L282 178 M282 196 L299 190 M282 196 L292 211 M282 196 L272 211 M282 196 L265 190"/>
+  </g>
+</svg>

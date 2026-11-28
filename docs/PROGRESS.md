@@ -253,3 +253,8 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Extended the delegated-permission regression case to cover revoking an elevated permission safely; the SQL test is registered in the disposable-Postgres runner but has not been executed.
 - Made both language welcome screens vertically scrollable so the language choices and continue action remain reachable on compact phones.
 - Static permission-catalog comparison found no missing frontend permission identifiers; `ride.adjust` in SQL is an audit action, not an authorization permission.
+
+## Premium visual redesign – vehicle artwork (branch feature/kherja-premium-motion)
+- Old raster car/moto images (`car_hero`, `car_moto`, `moto_art`) removed on both platforms. New original vector artwork lives in `design/artwork/` (`kherja_car.svg`, `kherja_moto.svg`, composed `kherja_duo.svg`), drawn in the KHERJA palette; `build_assets.py` generates Android VectorDrawables (`kj_car`, `kj_moto`, `kj_duo`) and iOS vector PDFs (asset catalog, vector preserved).
+- Used by: splash, language, role selection, sign-in hero, vehicle pickers, driver/ride history cards (replacing every previous reference).
+- Not yet built or rendered on a device here; SVG previews were rendered with rsvg-convert only.

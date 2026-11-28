@@ -97,7 +97,7 @@ fun SplashScreen(state: AppState) {
             Text(state.l("app_tagline"), color = KJ.inkSoft, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
             Spacer(Modifier.height(18.dp))
             Image(
-                painter = painterResource(R.drawable.car_moto),
+                painter = painterResource(R.drawable.kj_duo),
                 contentDescription = null,
                 modifier = Modifier.width(260.dp).height(180.dp),
             )
@@ -200,7 +200,7 @@ private fun LanguageStep(state: AppState, onNext: () -> Unit) {
         KJLogo(84.dp)
         Spacer(Modifier.height(12.dp))
         Image(
-            painter = painterResource(R.drawable.car_moto),
+            painter = painterResource(R.drawable.kj_duo),
             contentDescription = null,
             modifier = Modifier.width(210.dp).height(110.dp),
         )
@@ -250,8 +250,8 @@ private fun RoleStep(state: AppState, onBack: () -> Unit, onNext: () -> Unit) {
         Text(state.l("what_role"), color = KJ.muted, fontSize = 15.sp)
         Spacer(Modifier.height(26.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            RoleCard(Modifier.weight(1f), state.l("passenger"), Icons.Filled.Person, R.drawable.car_moto, state.role == "passenger") { state.setRole("passenger") }
-            RoleCard(Modifier.weight(1f), state.l("driver"), Icons.Filled.DirectionsCar, R.drawable.car_hero, state.role == "driver") { state.setRole("driver") }
+            RoleCard(Modifier.weight(1f), state.l("passenger"), Icons.Filled.Person, R.drawable.kj_duo, state.role == "passenger") { state.setRole("passenger") }
+            RoleCard(Modifier.weight(1f), state.l("driver"), Icons.Filled.DirectionsCar, R.drawable.kj_car, state.role == "driver") { state.setRole("driver") }
         }
         Spacer(Modifier.weight(1f))
         KJButton(state.l("continue"), onClick = onNext)

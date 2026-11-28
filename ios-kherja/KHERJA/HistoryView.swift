@@ -160,7 +160,7 @@ struct RideCard: View {
                         pointRow(color: KJ.burgundy, title: ride.destLabel)
                     }
 
-                    Image(ride.vehicle == .moto ? "moto_art" : "car_hero")
+                    Image(ride.vehicle == .moto ? "kj_moto" : "kj_car")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 110, height: ride.vehicle == .moto ? 70 : 54)

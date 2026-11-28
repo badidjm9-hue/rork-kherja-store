@@ -415,7 +415,7 @@ fun AuthStep(
             Text(L10n.string("app_tagline_ar", "ar"), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink, textAlign = TextAlign.Center)
             Text(L10n.string("app_tagline", "fr"), fontSize = 14.sp, color = KJ.inkSoft, textAlign = TextAlign.Center)
             Image(
-                painterResource(R.drawable.car_moto), null,
+                painterResource(R.drawable.kj_duo), null,
                 modifier = Modifier.fillMaxWidth().height(150.dp).padding(top = 6.dp),
             )
         }
@@ -425,8 +425,8 @@ fun AuthStep(
 
         if (register) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                RoleChoice(state, "passenger", R.drawable.car_hero, role == "passenger", Modifier.weight(1f)) { role = "passenger" }
-                RoleChoice(state, "driver", R.drawable.moto_art, role == "driver", Modifier.weight(1f)) { role = "driver" }
+                RoleChoice(state, "passenger", R.drawable.kj_car, role == "passenger", Modifier.weight(1f)) { role = "passenger" }
+                RoleChoice(state, "driver", R.drawable.kj_moto, role == "driver", Modifier.weight(1f)) { role = "driver" }
             }
             Spacer(Modifier.height(12.dp))
             GlassField(state, "auth_name", Icons.Filled.Person, name, { name = it.take(60); error = null })

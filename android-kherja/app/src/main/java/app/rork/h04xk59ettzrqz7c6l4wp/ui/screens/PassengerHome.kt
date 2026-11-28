@@ -329,8 +329,8 @@ private fun BookingScreen(state: AppState) {
                 Text(state.l("vehicle"), fontWeight = FontWeight.Bold, color = KJ.inkSoft)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    VehicleCard(Modifier.weight(1f), state.l("car"), R.drawable.car_hero, vehicle == "car") { vehicle = "car" }
-                    VehicleCard(Modifier.weight(1f), state.l("moto"), R.drawable.moto_art, vehicle == "moto") { vehicle = "moto" }
+                    VehicleCard(Modifier.weight(1f), state.l("car"), R.drawable.kj_car, vehicle == "car") { vehicle = "car" }
+                    VehicleCard(Modifier.weight(1f), state.l("moto"), R.drawable.kj_moto, vehicle == "moto") { vehicle = "moto" }
                 }
 
                 Spacer(Modifier.height(18.dp))

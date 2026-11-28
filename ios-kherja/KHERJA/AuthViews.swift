@@ -334,8 +334,8 @@ struct AuthView: View {
                 VStack(spacing: 12) {
                     if register {
                         HStack(spacing: 12) {
-                            RoleChoice(labelKey: "passenger", art: "car_hero", selected: role == "passenger") { role = "passenger" }
-                            RoleChoice(labelKey: "driver", art: "moto_art", selected: role == "driver") { role = "driver" }
+                            RoleChoice(labelKey: "passenger", art: "kj_car", selected: role == "passenger") { role = "passenger" }
+                            RoleChoice(labelKey: "driver", art: "kj_moto", selected: role == "driver") { role = "driver" }
                         }
                         GlassField(labelKey: "auth_name", icon: "person.fill", text: $name, contentType: .name)
                     }
@@ -392,7 +392,7 @@ struct AuthView: View {
             } else {
                 Text(L10n.string("app_tagline_ar", .ar)).font(.system(size: 17, weight: .heavy)).foregroundStyle(KJ.ink).padding(.top, 4)
                 Text(L10n.string("app_tagline", .fr)).font(.system(size: 14)).foregroundStyle(KJ.inkSoft)
-                Image("car_moto").resizable().scaledToFit().frame(height: 140).padding(.top, 4)
+                Image("kj_duo").resizable().scaledToFit().frame(height: 140).padding(.top, 4)
             }
         }
         .multilineTextAlignment(.center)
