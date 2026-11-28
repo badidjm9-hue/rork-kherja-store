@@ -10,6 +10,7 @@
 //
 
 import AuthenticationServices
+import Combine
 import CryptoKit
 import Foundation
 import UIKit
@@ -53,6 +54,10 @@ final class SocialAuthCoordinator: NSObject, ObservableObject,
     ASAuthorizationControllerPresentationContextProviding,
     ASWebAuthenticationPresentationContextProviding
 {
+    // No @Published properties are needed here; provide the publisher explicitly
+    // so ObservableObject conformance remains valid without changing auth behavior.
+    let objectWillChange = ObservableObjectPublisher()
+
     private var appleContinuation: CheckedContinuation<ASAuthorization, Error>?
     private var appleController: ASAuthorizationController?
     private var webSession: ASWebAuthenticationSession?
