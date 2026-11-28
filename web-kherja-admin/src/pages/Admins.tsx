@@ -206,7 +206,7 @@ export default function Admins() {
             </div>
             <div className={customEnabled?"space-y-2":"pointer-events-none space-y-2 opacity-40"}>
               {perms.data?.map(p=><label key={p.code} className="flex items-start gap-3 rounded-lg border p-2.5 text-sm">
-                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} disabled={!canGrant(p.code)} onChange={e=>toggle(p.code,e.target.checked)}/>
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={selectedSet.has(p.code)} disabled={!canGrant(p.code)&&!selectedSet.has(p.code)} onChange={e=>toggle(p.code,e.target.checked)}/>
                 <span className="min-w-0"><span className="block font-semibold">{p.code}</span><span className="block text-xs text-muted-foreground">{t(p.description,permissionArabic[p.code]??p.description)}</span></span>
               </label>)}
             </div>
