@@ -60,6 +60,7 @@ struct DriverStatusView: View {
     enum Kind { case pending, rejected, suspended }
 
     @EnvironmentObject var store: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let kind: Kind
     let reason: String?
     /// Full-screen use (suspended passenger): there is no tab bar, so offer a way out.
@@ -112,10 +113,11 @@ struct DriverStatusView: View {
                     Image(systemName: icon)
                         .font(.system(size: 40, weight: .bold))
                         .foregroundStyle(tint)
-                        .symbolEffect(.pulse, isActive: kind == .pending)
+                        .symbolEffect(.pulse, isActive: kind == .pending && !reduceMotion)
                 }
                 .padding(.top, 60)
                 .onAppear {
+                    guard !reduceMotion else { return }
                     withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { pulse = true }
                 }
 
