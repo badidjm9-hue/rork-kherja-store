@@ -356,15 +356,26 @@ private fun OfferCard(state: AppState, offer: Offer, isBest: Boolean, accepting:
 
 @Composable
 fun ChatBubble(text: String, mine: Boolean) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
-        Text(
-            text,
-            color = if (mine) Color.White else KJ.ink,
-            modifier = Modifier.widthIn(max = 280.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(if (mine) KJ.blue else Color.White)
-                .padding(horizontal = 14.dp, vertical = 9.dp),
-        )
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(tween(180)) + androidx.compose.animation.slideInVertically(
+            animationSpec = tween(220),
+            initialOffsetY = { it / 5 },
+        ),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 3.dp),
+            horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
+        ) {
+            Text(
+                text,
+                color = if (mine) Color.White else KJ.ink,
+                modifier = Modifier.widthIn(max = 280.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(if (mine) KJ.blue else Color.White)
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
+            )
+        }
     }
 }
 
