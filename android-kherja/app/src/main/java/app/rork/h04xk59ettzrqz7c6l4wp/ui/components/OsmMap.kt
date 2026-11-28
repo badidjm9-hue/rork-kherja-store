@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +67,16 @@ fun OsmMap(
     val tapHolder = remember { arrayOfNulls<((Double, Double) -> Unit)?>(1) }
     tapHolder[0] = onTap
 
+    // Reveal a new route progressively instead of flashing the complete line.
+    val routeProgress = remember { Animatable(0f) }
+    LaunchedEffect(route) {
+        routeProgress.snapTo(0f)
+        if (route.size >= 2) {
+            routeProgress.animateTo(1f, animationSpec = tween(durationMillis = 900))
+        }
+    }
+    val visibleRoute = revealRoute(route, routeProgress.value)
+
     DisposableEffect(Unit) {
         mapView.onResume()
         onDispose {
@@ -124,6 +136,27 @@ fun OsmMap(
             center != null -> mapView.controller.animateTo(center)
         }
     }
+}
+
+
+private fun revealRoute(
+    points: List<Pair<Double, Double>>,
+    progress: Float,
+): List<Pair<Double, Double>> {
+    if (points.size < 2) return points
+    val position = progress.coerceIn(0f, 1f) * (points.size - 1)
+    val completed = position.toInt()
+    val fraction = position - completed
+    val result = points.take(completed + 1).toMutableList()
+    if (completed < points.lastIndex) {
+        val start = points[completed]
+        val end = points[completed + 1]
+        result += Pair(
+            start.first + (end.first - start.first) * fraction,
+            start.second + (end.second - start.second) * fraction,
+        )
+    }
+    return result
 }
 
 private fun pinDrawable(context: Context, kind: PinKind): BitmapDrawable {
