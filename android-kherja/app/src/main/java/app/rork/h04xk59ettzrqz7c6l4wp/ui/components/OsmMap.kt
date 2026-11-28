@@ -142,9 +142,9 @@ fun OsmMap(
             // intermediate destinations or run a perpetual animation loop.
             if (driverPin != null) {
                 val target = GeoPoint(driverPin.lat, driverPin.lng)
-                val start = visibleDriverPosition
+                val startPosition = visibleDriverPosition
                 val marker = Marker(map).apply {
-                    position = start ?: target
+                    position = startPosition ?: target
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                     icon = pinDrawable(context, PinKind.Driver)
                     setInfoWindow(null)
@@ -154,8 +154,8 @@ fun OsmMap(
                 val motionScale = runCatching {
                     Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
                 }.getOrDefault(1f)
-                if (start != null && motionScale > 0f &&
-                    (start.latitude != target.latitude || start.longitude != target.longitude)
+                if (startPosition != null && motionScale > 0f &&
+                    (startPosition.latitude != target.latitude || startPosition.longitude != target.longitude)
                 ) {
                     driverAnimator[0] = ValueAnimator.ofFloat(0f, 1f).apply {
                         duration = (900L * motionScale).toLong().coerceIn(250L, 1400L)
@@ -163,8 +163,8 @@ fun OsmMap(
                         addUpdateListener { animation ->
                             val t = animation.animatedValue as Float
                             marker.position = GeoPoint(
-                                start.latitude + (target.latitude - start.latitude) * t,
-                                start.longitude + (target.longitude - start.longitude) * t,
+                                startPosition.latitude + (target.latitude - startPosition.latitude) * t,
+                                startPosition.longitude + (target.longitude - startPosition.longitude) * t,
                             )
                             map.invalidate()
                         }
