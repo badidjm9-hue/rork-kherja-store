@@ -160,7 +160,6 @@ struct NegotiationView: View {
                         Spacer()
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
                 } else {
                     ChatBubble(
                         text: message.body,
