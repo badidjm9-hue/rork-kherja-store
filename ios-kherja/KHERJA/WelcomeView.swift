@@ -2,9 +2,9 @@
 //  WelcomeView.swift
 //  KHERJA
 //
-//  Calm welcome scene. Same two characters as the splash (the supplied street scene), no vector
-//  stand-ins: the street slowly pushes in once, then the brand line and the start button settle in.
-//  Everything is one-shot (no endless loops). Reduce Motion shows the final state immediately.
+//  Welcome scene: the original car animation with its scenery removed, drawn straight on the screen
+//  background (no card). The brand line and the start button settle in once. Reduce Motion shows a
+//  single still frame and the final state.
 //
 
 import SwiftUI
@@ -15,7 +15,7 @@ struct WelcomeView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var push: CGFloat = 0          // 0 → 1 slow camera push-in
+    @State private var frameIndex = 0
     @State private var showText = false
     @State private var showButton = false
     @State private var scene: Task<Void, Never>?
@@ -23,22 +23,25 @@ struct WelcomeView: View {
     /// The brand line is shown in Arabic in every language; other languages add a translation below it.
     private let brandLine = "تنقّل بأمان مع خرجة"
 
+    /// Original animation timing: 9 frames, 180 ms each, looping.
+    private let frameCount = 9
+    private let frameDuration = Duration.milliseconds(180)
+    private let frameAspect: CGFloat = 438 / 388
+    /// Sharpest view of the whole front with both characters, shown with Reduce Motion.
+    private let stillFrame = 2
+
     var body: some View {
         VStack(spacing: 0) {
             KJLogo(height: 64)
                 .padding(.top, 16)
 
-            Spacer(minLength: 12)
-
-            street
-                .aspectRatio(438.0 / 388.0, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .shadow(color: KJ.blue.opacity(0.25), radius: 20, y: 12)
+            Image("welcome_drive_\(reduceMotion ? stillFrame : frameIndex)")
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(frameAspect, contentMode: .fit)
+                .frame(maxWidth: 460)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityLabel(Text(store.l("welcome_scene")))
-                // The scene is a picture: keep it left-to-right even in Arabic.
-                .environment(\.layoutDirection, .leftToRight)
-
-            Spacer(minLength: 12)
 
             VStack(spacing: 8) {
                 Text(brandLine)
@@ -75,28 +78,24 @@ struct WelcomeView: View {
         .contentShape(Rectangle())
         // Tap anywhere to jump to the end of the scene.
         .onTapGesture { if !showButton { finish() } }
+        .task(id: reduceMotion) { await animate() }
         .onAppear { play() }
         .onDisappear { scene?.cancel() }
     }
 
-    private var street: some View {
-        ZStack {
-            Image("kj_splash_a")
-                .resizable()
-                .scaledToFill()
-                .scaleEffect(1 + 0.08 * push, anchor: UnitPoint(x: 0.5, y: 0.6))
-                .offset(y: -6 * push)
-            // Brand wash: royal blue from below, a touch of burgundy at the horizon.
-            LinearGradient(colors: [.clear, KJ.blue.opacity(0.22)], startPoint: .top, endPoint: .bottom)
-            LinearGradient(colors: [KJ.burgundy.opacity(0.10), .clear], startPoint: .topLeading, endPoint: .center)
+    /// Loops the frames for as long as the screen is visible.
+    private func animate() async {
+        guard !reduceMotion else { return }
+        while !Task.isCancelled {
+            for index in 0..<frameCount {
+                frameIndex = index
+                do { try await Task.sleep(for: frameDuration) } catch { return }
+            }
         }
     }
 
     private func finish() {
         scene?.cancel()
-        var transaction = SwiftUI.Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) { push = 1 }
         withAnimation(.easeIn(duration: 0.15)) {
             showText = true
             showButton = true
@@ -108,7 +107,6 @@ struct WelcomeView: View {
         if reduceMotion { finish(); return }
         scene = Task { @MainActor in
             do {
-                withAnimation(.easeOut(duration: 6)) { push = 1 }
                 try await Task.sleep(for: .milliseconds(350))
                 withAnimation(KJMotion.reveal) { showText = true }
                 try await Task.sleep(for: .milliseconds(450))

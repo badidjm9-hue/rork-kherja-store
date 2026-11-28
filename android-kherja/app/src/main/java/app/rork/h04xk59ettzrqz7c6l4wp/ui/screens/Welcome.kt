@@ -10,9 +10,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,24 +23,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import app.rork.h04xk59ettzrqz7c6l4wp.AppState
 import app.rork.h04xk59ettzrqz7c6l4wp.R
@@ -51,29 +52,52 @@ import app.rork.h04xk59ettzrqz7c6l4wp.ui.theme.KJ
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Original animation timing: 9 frames, 180 ms each, looping. */
+private const val FRAME_MS = 180L
+private const val FRAME_ASPECT = 388f / 438f
+/** Sharpest view of the whole front with both characters, shown when animations are off. */
+private const val STILL_FRAME = 2
+
+private val FRAMES = intArrayOf(
+    R.drawable.welcome_drive_0, R.drawable.welcome_drive_1, R.drawable.welcome_drive_2,
+    R.drawable.welcome_drive_3, R.drawable.welcome_drive_4, R.drawable.welcome_drive_5,
+    R.drawable.welcome_drive_6, R.drawable.welcome_drive_7, R.drawable.welcome_drive_8,
+)
+
 /** The brand line is shown in Arabic in every language; other languages add a translation below it. */
 private const val BRAND_LINE = "تنقّل بأمان مع خرجة"
 
 /**
- * Calm welcome scene. Same two characters as the splash (the supplied street scene), no vector stand-ins:
- * the street slowly pushes in once, then the brand line and the start button settle in.
- * Everything is one-shot (no endless loops). With animations disabled the final state is shown.
+ * Welcome scene: the original car animation with its scenery removed, drawn straight on the screen
+ * background (no card). The brand line and the start button settle in once. With animations
+ * disabled a single still frame and the final state are shown.
  */
 @Composable
 fun WelcomeScreen(state: AppState, onStart: () -> Unit) {
     val reduce = rememberReduceMotion()
     val haptic = LocalHapticFeedback.current
-    val push = remember { Animatable(if (reduce) 1f else 0f) }
+    // Decoded up front so frame changes never stall on the main thread.
+    val resources = LocalContext.current.resources
+    val frames = remember(resources) { FRAMES.map { ImageBitmap.imageResource(resources, it) } }
+    var frame by remember { mutableIntStateOf(0) }
     val text = remember { Animatable(if (reduce) 1f else 0f) }
     val button = remember { Animatable(if (reduce) 1f else 0f) }
     var skipped by remember { mutableStateOf(false) }
 
+    LaunchedEffect(reduce) {
+        while (!reduce) {
+            for (i in frames.indices) {
+                frame = i
+                delay(FRAME_MS)
+            }
+        }
+    }
+
     LaunchedEffect(skipped) {
         if (reduce || skipped) {
-            push.snapTo(1f); text.snapTo(1f); button.snapTo(1f)
+            text.snapTo(1f); button.snapTo(1f)
             return@LaunchedEffect
         }
-        launch { push.animateTo(1f, tween(6000, easing = LinearOutSlowInEasing)) }
         delay(350)
         launch { text.animateTo(1f, tween(450, easing = LinearOutSlowInEasing)) }
         delay(450)
@@ -90,32 +114,15 @@ fun WelcomeScreen(state: AppState, onStart: () -> Unit) {
     ) {
         Spacer(Modifier.height(20.dp))
         KJLogo(64.dp)
-        Spacer(Modifier.weight(1f))
-
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(438f / 388f)
-                .shadow(20.dp, RoundedCornerShape(28.dp), ambientColor = KJ.blue.copy(alpha = 0.25f), spotColor = KJ.blue.copy(alpha = 0.2f))
-                .clip(RoundedCornerShape(28.dp)),
-        ) {
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val artWidth = min(min(maxWidth, 460.dp), maxHeight / FRAME_ASPECT)
             Image(
-                painterResource(R.drawable.kj_splash_a),
+                frames[if (reduce) STILL_FRAME else frame],
                 contentDescription = state.l("welcome_scene"),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().graphicsLayer {
-                    val s = 1f + 0.08f * push.value
-                    scaleX = s; scaleY = s
-                    transformOrigin = TransformOrigin(0.5f, 0.6f)
-                    translationY = -6.dp.toPx() * push.value
-                },
+                modifier = Modifier.width(artWidth).height(artWidth * FRAME_ASPECT),
+                filterQuality = FilterQuality.High,
             )
-            // Brand wash: royal blue from below, a touch of burgundy at the horizon.
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, KJ.blue.copy(alpha = 0.22f)))))
-            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(KJ.burgundy.copy(alpha = 0.10f), Color.Transparent), end = androidx.compose.ui.geometry.Offset(400f, 400f))))
         }
-
-        Spacer(Modifier.weight(1f))
 
         Column(
             Modifier.graphicsLayer { alpha = text.value; translationY = (1f - text.value) * 20.dp.toPx() },

@@ -299,3 +299,20 @@ Research conclusion: native SwiftUI / Compose animation; no Lottie or Rive (no n
 Verified: admin `tsc -p tsconfig.app.json` exit 0, vitest 12/12, vite build OK. Bracket balance of new Swift/Kotlin files.
 NOT verified: no Android build, no iOS build, nothing ever run on a device; video playback, blur, crack and shake have never been seen. Limit of the source art: the characters exist only as raster frames, so they cannot be animated as separate layers (blinking, head turn); the clip's own motion is all there is.
 Not done: shared-element transitions, floating-label inputs, animated route drawing, per-service icon animation, interactive bottom sheets.
+
+## Welcome scene: original animation, scenery removed (2026-11-28)
+
+Replaces the street-image card on the welcome screen (`kj_splash_a` with push-in and colour washes). The splash sequence is unchanged and still shows the scenery.
+- The 9 frames of the supplied GIF (`design/artwork/welcome_source.gif`) are shown at their original 180 ms timing, looping, directly on the screen background with no card or frame. Nothing is redrawn: `design/artwork/cut_welcome_frames.py` only creates the alpha channel.
+- Logo, brand line, accent, button and their timing are unchanged. Reduce Motion shows still frame 3 of 9.
+
+Verified: for every frame, all non-transparent pixels equal the source GIF's pixels; Android WebP and iOS PNG are identical; composites on the app background were inspected; Kotlin parse of `Welcome.kt` and `L10n.kt` shows no syntax errors (types not checked).
+
+NOT verified: Android and iOS builds, device or simulator run.
+
+Known limits
+- The source is 438x388 px and soft, so it is upscaled on phones. A higher-resolution original would fix this.
+- The animation includes the cracked-windscreen and blurred close-up frames, as in the original.
+- From frame 3 on, the source canvas cuts off the car, so those edges are faded to transparent.
+- Scenery seen through the car windows is kept as part of the glass.
+- Outlines were traced by hand and refined automatically; small edge imperfections are possible.
