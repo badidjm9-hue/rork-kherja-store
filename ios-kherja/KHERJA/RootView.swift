@@ -22,11 +22,10 @@ struct RootView: View {
         Group {
             if minSplash {
                 SplashView { withAnimation(.easeInOut(duration: 0.45)) { minSplash = false } }
-            } else if !store.bootstrapDone {
-                // Show Welcome immediately after the intro, while session bootstrap finishes.
-                WelcomeView { withAnimation(.easeInOut(duration: 0.3)) { welcomed = true } }
-                    .transition(.opacity)
-            } else if !store.session.isSignedIn && !welcomed {
+            } else if !store.bootstrapDone || (!store.session.isSignedIn && !welcomed) {
+                // One Welcome branch: it is shown right after the intro while the session bootstrap
+                // finishes, and stays the same view afterwards. Two separate branches made SwiftUI
+                // rebuild Welcome when bootstrap completed, replaying its reveal (visible flicker).
                 WelcomeView { withAnimation(.easeInOut(duration: 0.3)) { welcomed = true } }
                     .transition(.opacity)
             } else if !store.session.isSignedIn {
