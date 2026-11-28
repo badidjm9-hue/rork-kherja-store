@@ -25,7 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -57,9 +59,14 @@ private enum class RootScreen { Splash, Onboarding, Profile, LinkPhone, Driver, 
 @Composable
 fun AppNavigation() {
     val state: AppState = viewModel()
+    var minSplashDone by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1_500)
+        minSplashDone = true
+    }
     val dir = if (state.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     val root = when {
-        !state.bootstrapDone -> RootScreen.Splash
+        !state.bootstrapDone || !minSplashDone -> RootScreen.Splash
         !state.signedIn -> RootScreen.Onboarding
         state.profile == null -> RootScreen.Profile
         // Driver services need a verified phone (also enforced by the database).
