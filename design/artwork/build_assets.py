@@ -102,6 +102,14 @@ def to_vector_drawable(svg_path, out_path):
         sa = float(el.get("stroke-opacity", "1"))
         attrs = [f'android:pathData="{d}"']
         if stroke:
+            # VectorDrawable's strokeColor does not accept the SVG url(#gradient) form
+            # used for the motorcycle's metallic fork highlight. Resolve it to the
+            # final gradient stop as a stable solid-color approximation on Android.
+            if stroke.startswith("url("):
+                gid = stroke[5:-1]
+                if gid not in grads or not grads[gid][4]:
+                    raise SystemExit(f"unknown stroke gradient {gid!r} in {svg_path}")
+                stroke = grads[gid][4][-1][1]
             attrs.append(f'android:strokeColor="{argb(stroke, sa)}"')
             attrs.append(f'android:strokeWidth="{sw}"')
             if el.get("stroke-linecap"):
