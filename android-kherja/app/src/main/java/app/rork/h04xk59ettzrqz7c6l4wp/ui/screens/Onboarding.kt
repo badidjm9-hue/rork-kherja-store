@@ -2,6 +2,7 @@ package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -417,13 +418,27 @@ private fun OtpStep(state: AppState, phone: String, devCode: String?, ctx: OtpCo
             Row(Modifier.fillMaxWidth().clickable { runCatching { focus.requestFocus() } }, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(6) { i ->
                     val ch = code.getOrNull(i)?.toString() ?: ""
-                    val active = i == code.length
+                    val active = i == code.length && !loading
+                    val borderColor by animateColorAsState(
+                        targetValue = if (active) KJ.blue else KJ.softBlueMid,
+                        animationSpec = tween(220),
+                        label = "otp-border-$i",
+                    )
                     Box(
                         Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(14.dp)).background(Color.White)
-                            .border(2.dp, if (active) KJ.blue else KJ.softBlueMid, RoundedCornerShape(14.dp)),
+                            .border(if (active) 2.dp else 1.dp, borderColor, RoundedCornerShape(14.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(ch, fontSize = 24.sp, fontWeight = FontWeight.Black, color = KJ.ink)
+                        AnimatedContent(
+                            targetState = ch,
+                            transitionSpec = {
+                                (fadeIn(tween(140)) + androidx.compose.animation.scaleIn(initialScale = 0.72f, animationSpec = tween(180))) togetherWith
+                                    fadeOut(tween(90))
+                            },
+                            label = "otp-digit-$i",
+                        ) { digit ->
+                            Text(digit, fontSize = 24.sp, fontWeight = FontWeight.Black, color = KJ.ink)
+                        }
                     }
                 }
             }
