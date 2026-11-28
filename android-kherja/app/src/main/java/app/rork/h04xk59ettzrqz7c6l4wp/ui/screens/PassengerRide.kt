@@ -1,6 +1,10 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -517,11 +521,22 @@ fun StatusSteps(state: AppState, status: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         steps.forEachIndexed { i, _ ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                val reached = i <= idx
+                val active = i == idx
+                val stepColor by animateColorAsState(
+                    if (reached) KJ.blue else KJ.softBlueMid,
+                    animationSpec = tween(320),
+                    label = "ride-step-color-$i",
+                )
+                val dotSize by animateDpAsState(
+                    if (active) 22.dp else 16.dp,
+                    animationSpec = tween(320),
+                    label = "ride-step-size-$i",
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f).height(3.dp).background(if (i == 0) Color.Transparent else if (i <= idx) KJ.blue else KJ.softBlueMid))
                     Box(
-                        Modifier.size(if (i == idx) 22.dp else 16.dp).clip(CircleShape)
-                            .background(if (i <= idx) KJ.blue else KJ.softBlueMid),
+                        Modifier.size(dotSize).clip(CircleShape).background(stepColor),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (i < idx) Icon(Icons.Filled.CheckCircle, null, tint = Color.White, modifier = Modifier.size(12.dp))
@@ -530,8 +545,8 @@ fun StatusSteps(state: AppState, status: String) {
                     Box(Modifier.weight(1f).height(3.dp).background(if (i == steps.lastIndex) Color.Transparent else if (i < idx) KJ.blue else KJ.softBlueMid))
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(labels[i], fontSize = 11.sp, color = if (i <= idx) KJ.ink else KJ.muted, textAlign = TextAlign.Center,
-                    fontWeight = if (i == idx) FontWeight.Bold else FontWeight.Normal, maxLines = 2)
+                Text(labels[i], fontSize = 11.sp, color = if (reached) KJ.ink else KJ.muted, textAlign = TextAlign.Center,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal, maxLines = 2)
             }
         }
     }
