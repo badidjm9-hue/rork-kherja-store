@@ -91,13 +91,25 @@ if (!localConfigKt.exists()) {
     val supabaseAnonKey = providers.environmentVariable("EXPO_PUBLIC_SUPABASE_ANON_KEY")
     val generatedConfigDir = layout.buildDirectory.dir("generated/config/kotlin")
 
+    // Unit-test tasks compile the app but must not need production Supabase
+    // credentials. Use deliberately non-routable placeholders only when the
+    // requested Gradle tasks are exclusively unit tests. Real builds still
+    // require both environment variables.
+    val requestedTasks = gradle.startParameter.taskNames
+    val unitTestOnlyInvocation = requestedTasks.isNotEmpty() &&
+        requestedTasks.all { it.substringAfterLast(":").startsWith("test") }
+    val ciTestUrl = "https://unit-tests-only.invalid"
+    val ciTestAnonKey = "unit-tests-only-placeholder"
+
     val generateConfig = tasks.register("generateConfig") {
-        inputs.property("supabaseUrl", supabaseUrl.orElse(""))
-        inputs.property("supabaseAnonKey", supabaseAnonKey.orElse(""))
+        inputs.property("supabaseUrl", supabaseUrl.orElse(if (unitTestOnlyInvocation) ciTestUrl else ""))
+        inputs.property("supabaseAnonKey", supabaseAnonKey.orElse(if (unitTestOnlyInvocation) ciTestAnonKey else ""))
         outputs.dir(generatedConfigDir)
         doLast {
-            val url = supabaseUrl.orNull?.trim().orEmpty()
-            val key = supabaseAnonKey.orNull?.trim().orEmpty()
+            val url = supabaseUrl.orNull?.trim().takeUnless { it.isNullOrEmpty() }
+                ?: ciTestUrl.takeIf { unitTestOnlyInvocation }.orEmpty()
+            val key = supabaseAnonKey.orNull?.trim().takeUnless { it.isNullOrEmpty() }
+                ?: ciTestAnonKey.takeIf { unitTestOnlyInvocation }.orEmpty()
             val missing = listOfNotNull(
                 "EXPO_PUBLIC_SUPABASE_URL".takeIf { url.isEmpty() },
                 "EXPO_PUBLIC_SUPABASE_ANON_KEY".takeIf { key.isEmpty() },
@@ -105,7 +117,7 @@ if (!localConfigKt.exists()) {
             if (missing.isNotEmpty()) {
                 throw GradleException(
                     "Missing environment variable(s): ${missing.joinToString()}. " +
-                        "Set them in the build environment (e.g. Codemagic secure variables)."
+                        "Set them in the Bitrise/CI build environment for app builds."
                 )
             }
             fun esc(s: String) = s.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
