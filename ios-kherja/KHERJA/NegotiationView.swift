@@ -53,6 +53,11 @@ struct NegotiationView: View {
                             accepted: false,
                             accepting: acceptingOfferId == offer.id
                         ) { accept(offer) }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(
+                            reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.88),
+                            value: bestOffer?.id
+                        )
                     }
 
                     if !messages.isEmpty {
