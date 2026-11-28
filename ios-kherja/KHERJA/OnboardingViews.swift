@@ -425,6 +425,7 @@ struct OtpVerifyView: View {
     @State private var errorMessage: String?
     @State private var countdown = 45
     @State private var timer: Timer?
+    @FocusState private var otpFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -459,19 +460,53 @@ struct OtpVerifyView: View {
                 .padding(.horizontal, 30)
             }
 
-            TextField("••••••", text: $code)
+            ZStack {
+                HStack(spacing: 9) {
+                    ForEach(0..<6, id: \.self) { index in
+                        let digit = index < code.count ? String(Array(code)[index]) : ""
+                        let active = index == min(code.count, 5) && !loading
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(.white)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .strokeBorder(active ? KJ.blue : KJ.muted.opacity(0.22), lineWidth: active ? 2 : 1)
+                            }
+                            .overlay {
+                                Text(digit)
+                                    .font(.system(size: 25, weight: .heavy, design: .rounded))
+                                    .foregroundStyle(KJ.ink)
+                                    .contentTransition(.numericText())
+                                    .transition(.scale(scale: 0.72).combined(with: .opacity))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 62)
+                            .shadow(color: active ? KJ.blue.opacity(0.12) : .black.opacity(0.035), radius: active ? 10 : 5, y: 3)
+                            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: code)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { otpFocused = true }
+
+                TextField("", text: Binding(
+                    get: { code },
+                    set: { value in
+                        let digits = String(value.filter { $0.isNumber }.prefix(6))
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                            code = digits
+                        }
+                    }
+                ))
                 .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .font(.system(size: 30, weight: .heavy, design: .monospaced))
-                .foregroundStyle(KJ.ink)
-                .frame(height: 66)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(.white)
-                        .shadow(color: Color(hex: 0x075BFF).opacity(0.10), radius: 14, x: 0, y: 6)
-                )
-                .padding(.top, 24)
-                .padding(.horizontal, 40)
+                .textContentType(.oneTimeCode)
+                .focused($otpFocused)
+                .accessibilityLabel(store.l("verify_title"))
+                .frame(width: 1, height: 1)
+                .opacity(0.02)
+            }
+            .frame(height: 66)
+            .padding(.top, 24)
+            .padding(.horizontal, 30)
+            .onTapGesture { otpFocused = true }
 
             if let errorMessage {
                 Text(errorMessage)
