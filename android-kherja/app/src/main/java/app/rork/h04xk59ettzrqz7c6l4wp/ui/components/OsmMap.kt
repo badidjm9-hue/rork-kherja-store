@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
+import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -69,12 +70,19 @@ fun OsmMap(
 
     // Animate the native map overlay without forcing Compose to redraw every frame.
     val routeAnimator = remember { arrayOfNulls<ValueAnimator>(1) }
+    val driverAnimator = remember { arrayOfNulls<ValueAnimator>(1) }
+    val lastDriverPosition = remember { arrayOfNulls<GeoPoint>(1) }
+    val driverMarker = remember { arrayOfNulls<Marker>(1) }
 
     DisposableEffect(Unit) {
         mapView.onResume()
         onDispose {
             routeAnimator[0]?.cancel()
             routeAnimator[0] = null
+            driverAnimator[0]?.cancel()
+            driverAnimator[0] = null
+            driverMarker[0] = null
+            lastDriverPosition[0] = null
             mapView.onPause()
             mapView.onDetach()
         }
@@ -84,6 +92,11 @@ fun OsmMap(
         modifier = modifier,
         factory = { mapView },
         update = { map ->
+            // Keep the currently rendered GPS position as the next animation's origin.
+            val visibleDriverPosition = driverMarker[0]?.position ?: lastDriverPosition[0]
+            driverAnimator[0]?.cancel()
+            driverAnimator[0] = null
+            driverMarker[0] = null
             routeAnimator[0]?.cancel()
             routeAnimator[0] = null
             map.overlays.clear()
@@ -114,7 +127,8 @@ fun OsmMap(
                     start()
                 }
             }
-            pins.forEach { pin ->
+            val driverPin = pins.firstOrNull { it.kind == PinKind.Driver }
+            pins.filterNot { it.kind == PinKind.Driver }.forEach { pin ->
                 val m = Marker(map).apply {
                     position = GeoPoint(pin.lat, pin.lng)
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
@@ -122,6 +136,46 @@ fun OsmMap(
                     setInfoWindow(null)
                 }
                 map.overlays.add(m)
+            }
+
+            // Interpolate only between consecutive real driver GPS fixes. Never invent
+            // intermediate destinations or run a perpetual animation loop.
+            if (driverPin != null) {
+                val target = GeoPoint(driverPin.lat, driverPin.lng)
+                val start = visibleDriverPosition
+                val marker = Marker(map).apply {
+                    position = start ?: target
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                    icon = pinDrawable(context, PinKind.Driver)
+                    setInfoWindow(null)
+                }
+                map.overlays.add(marker)
+                driverMarker[0] = marker
+                val motionScale = runCatching {
+                    Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+                }.getOrDefault(1f)
+                if (start != null && motionScale > 0f &&
+                    (start.latitude != target.latitude || start.longitude != target.longitude)
+                ) {
+                    driverAnimator[0] = ValueAnimator.ofFloat(0f, 1f).apply {
+                        duration = (900L * motionScale).toLong().coerceIn(250L, 1400L)
+                        interpolator = DecelerateInterpolator()
+                        addUpdateListener { animation ->
+                            val t = animation.animatedValue as Float
+                            marker.position = GeoPoint(
+                                start.latitude + (target.latitude - start.latitude) * t,
+                                start.longitude + (target.longitude - start.longitude) * t,
+                            )
+                            map.invalidate()
+                        }
+                        start()
+                    }
+                } else {
+                    marker.position = target
+                }
+                lastDriverPosition[0] = target
+            } else {
+                lastDriverPosition[0] = null
             }
             map.invalidate()
         },
