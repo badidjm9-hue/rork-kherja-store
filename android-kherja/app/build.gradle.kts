@@ -91,25 +91,28 @@ if (!localConfigKt.exists()) {
     val supabaseAnonKey = providers.environmentVariable("EXPO_PUBLIC_SUPABASE_ANON_KEY")
     val generatedConfigDir = layout.buildDirectory.dir("generated/config/kotlin")
 
-    // Unit-test tasks compile the app but must not need production Supabase
-    // credentials. Use deliberately non-routable placeholders only when the
-    // requested Gradle tasks are exclusively unit tests. Real builds still
-    // require both environment variables.
+    // Static-analysis and unit-test tasks compile sources but do not run the
+    // application. They may use deliberately non-routable placeholders when
+    // CI has not injected production Supabase credentials. Any installable
+    // app build still requires the real URL and anon key.
     val requestedTasks = gradle.startParameter.taskNames
-    val unitTestOnlyInvocation = requestedTasks.isNotEmpty() &&
-        requestedTasks.all { it.substringAfterLast(":").startsWith("test") }
-    val ciTestUrl = "https://unit-tests-only.invalid"
-    val ciTestAnonKey = "unit-tests-only-placeholder"
+    val ciOnlyInvocation = requestedTasks.isNotEmpty() &&
+        requestedTasks.all {
+            val task = it.substringAfterLast(":")
+            task.startsWith("test") || task.startsWith("lint")
+        }
+    val ciTestUrl = "https://ci-only.invalid"
+    val ciTestAnonKey = "ci-only-placeholder"
 
     val generateConfig = tasks.register("generateConfig") {
-        inputs.property("supabaseUrl", supabaseUrl.orElse(if (unitTestOnlyInvocation) ciTestUrl else ""))
-        inputs.property("supabaseAnonKey", supabaseAnonKey.orElse(if (unitTestOnlyInvocation) ciTestAnonKey else ""))
+        inputs.property("supabaseUrl", supabaseUrl.orElse(if (ciOnlyInvocation) ciTestUrl else ""))
+        inputs.property("supabaseAnonKey", supabaseAnonKey.orElse(if (ciOnlyInvocation) ciTestAnonKey else ""))
         outputs.dir(generatedConfigDir)
         doLast {
             val url = supabaseUrl.orNull?.trim().takeUnless { it.isNullOrEmpty() }
-                ?: ciTestUrl.takeIf { unitTestOnlyInvocation }.orEmpty()
+                ?: ciTestUrl.takeIf { ciOnlyInvocation }.orEmpty()
             val key = supabaseAnonKey.orNull?.trim().takeUnless { it.isNullOrEmpty() }
-                ?: ciTestAnonKey.takeIf { unitTestOnlyInvocation }.orEmpty()
+                ?: ciTestAnonKey.takeIf { ciOnlyInvocation }.orEmpty()
             val missing = listOfNotNull(
                 "EXPO_PUBLIC_SUPABASE_URL".takeIf { url.isEmpty() },
                 "EXPO_PUBLIC_SUPABASE_ANON_KEY".takeIf { key.isEmpty() },
