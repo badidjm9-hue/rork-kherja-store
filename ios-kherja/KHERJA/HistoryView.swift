@@ -256,12 +256,7 @@ struct RideDetailView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     VStack(spacing: 6) {
-                        ZStack {
-                            Circle().fill(KJ.success).frame(width: 60, height: 60)
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 26, weight: .heavy))
-                                .foregroundStyle(.white)
-                        }
+                        KJSuccessCheck(size: 60)
                         Text(store.l("ride_done_success"))
                             .font(.system(size: 22, weight: .heavy))
                             .foregroundStyle(KJ.success)

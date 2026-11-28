@@ -162,3 +162,41 @@ struct KJPressableStyle: ButtonStyle {
             .animation(KJMotion.press, value: configuration.isPressed)
     }
 }
+
+// MARK: - Success check
+
+/// Check mark that pops in and draws itself once, with a success haptic. Static under Reduce Motion.
+struct KJSuccessCheck: View {
+    var size: CGFloat = 60
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var popped = false
+    @State private var drawn = false
+
+    var body: some View {
+        ZStack {
+            Circle().fill(KJ.success).scaleEffect(popped ? 1 : 0.5)
+            KJCheckShape()
+                .trim(from: 0, to: drawn ? 1 : 0)
+                .stroke(.white, style: StrokeStyle(lineWidth: size * 0.09, lineCap: .round, lineJoin: .round))
+                .padding(size * 0.27)
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            if reduceMotion { popped = true; drawn = true; return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { popped = true }
+            withAnimation(.easeOut(duration: 0.35).delay(0.15)) { drawn = true }
+            KJHaptics.success()
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+struct KJCheckShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + rect.width * 0.05, y: rect.minY + rect.height * 0.52))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.38, y: rect.minY + rect.height * 0.82))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.95, y: rect.minY + rect.height * 0.18))
+        return p
+    }
+}

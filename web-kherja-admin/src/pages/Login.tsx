@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Loader2, Lock, Mail, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { supabaseConfigured } from "@/lib/supabase";
+import { supabase, supabaseConfigured } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

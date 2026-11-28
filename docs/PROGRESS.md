@@ -283,3 +283,19 @@ Open
 - `kherja-test` has migrations 0001-0012 only; 0013-0029 (account deletion, push devices, admin permissions) are not applied.
 - Any account, including the passenger demo, may switch role to driver, but stays `pending` until an admin approves it.
 - The React admin dashboard was not changed.
+
+## Cinematic splash, calm welcome, motion research (2026-11-28, branch feature/kherja-premium-motion)
+
+Source: the user's GIF (`design/splash/kherja_splash_source.gif`, 9 frames, 438x388). The characters are used as supplied; no vector stand-ins.
+- Frames 0-5 (car approaches, windscreen cracks) were encoded to `kj_splash.mp4` (H.264, 63 frames, 2.1 s, 0.85 MB, blend-interpolated so faces stay intact). Frames 6-8 (extreme close-up) are not used.
+- Splash (iOS `SplashIntro.swift`, Android `SplashIntro.kt`): clip plays once (AVPlayer / MediaPlayer+TextureView), then native camera shake, motion blur (Android 12+), glass-crack drawn over the whole screen, white flash, heavy haptic, card dissolve, logo + tagline reveal. Reduce Motion / animation scale 0 skip straight to the logo.
+- Minimum splash raised 1.5 s -> 3.2 s on both platforms; iOS bootstrap now runs concurrently with the splash instead of after it.
+- Welcome (iOS `WelcomeView.swift`, Android `Welcome.kt`): upstream vector-car scene replaced by the same street image with one slow push-in, royal-blue wash, burgundy accent; brand line, start button, tap-to-skip and Reduce Motion behaviour kept. `kj_front` asset is no longer referenced.
+- New: `KJSuccessCheck` (iOS, used on ride detail), admin CSS motion (`.kj-reveal`, `.kj-skeleton`, global button press, prefers-reduced-motion).
+- Fix found by `tsc`: `Login.tsx` used `supabase` without importing it (password-reset would throw at runtime).
+
+Research conclusion: native SwiftUI / Compose animation; no Lottie or Rive (no new dependencies). Compose BOM 2026.02.01 includes `SharedTransitionLayout`; not adopted yet. Apple HIG: purposeful, brief, cancellable, avoid animating frequent interactions.
+
+Verified: admin `tsc -p tsconfig.app.json` exit 0, vitest 12/12, vite build OK. Bracket balance of new Swift/Kotlin files.
+NOT verified: no Android build, no iOS build, nothing ever run on a device; video playback, blur, crack and shake have never been seen. Limit of the source art: the characters exist only as raster frames, so they cannot be animated as separate layers (blinking, head turn); the clip's own motion is all there is.
+Not done: shared-element transitions, floating-label inputs, animated route drawing, per-service icon animation, interactive bottom sheets.

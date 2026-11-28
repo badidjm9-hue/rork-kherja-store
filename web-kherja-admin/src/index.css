@@ -96,3 +96,42 @@
   font-family: inherit;
   background: hsl(228 45% 95%);
 }
+
+/* ---- KHERJA motion (admin): short, purposeful, off under prefers-reduced-motion ---- */
+@keyframes kj-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes kj-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@layer utilities {
+  /* Staggered entrance: set style={{ "--i": index }} on each row/card. */
+  .kj-reveal {
+    animation: kj-reveal 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+  }
+  .kj-skeleton {
+    background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--background)) 50%, hsl(var(--muted)) 75%);
+    background-size: 200% 100%;
+    animation: kj-shimmer 1.3s linear infinite;
+  }
+}
+/* Press feedback for every enabled button / link-button. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background-color 0.18s ease;
+}
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kj-reveal { animation: none; }
+  .kj-skeleton { animation: none; }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) { transition: none; }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active { transform: none; }
+}
