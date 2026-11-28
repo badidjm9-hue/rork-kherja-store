@@ -1,6 +1,11 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,6 +59,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -215,18 +221,26 @@ fun RequestScreen(state: AppState, requestId: String) {
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.animateContentSize()) {
                     offers.forEach { offer ->
-                        OfferCard(state, offer, isBest = offer.id == best?.id && offers.size > 1, accepting = accepting == offer.id) {
-                            accepting = offer.id
-                            error = null
-                            scope.launch {
-                                try {
-                                    val rideId = state.api.acceptOffer(offer.id)
-                                    state.setActiveRide(rideId)
-                                    state.setActiveRequest(null)
-                                } catch (e: Exception) {
-                                    error = state.serverError(e)
+                        key(offer.id) {
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(tween(220)) + expandVertically(tween(280)),
+                                exit = fadeOut(tween(140)) + shrinkVertically(tween(180)),
+                            ) {
+                                OfferCard(state, offer, isBest = offer.id == best?.id && offers.size > 1, accepting = accepting == offer.id) {
+                                    accepting = offer.id
+                                    error = null
+                                    scope.launch {
+                                        try {
+                                            val rideId = state.api.acceptOffer(offer.id)
+                                            state.setActiveRide(rideId)
+                                            state.setActiveRequest(null)
+                                        } catch (e: Exception) {
+                                            error = state.serverError(e)
+                                        }
+                                        accepting = null
+                                    }
                                 }
-                                accepting = null
                             }
                         }
                     }
