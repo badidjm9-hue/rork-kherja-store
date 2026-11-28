@@ -21,7 +21,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if !store.bootstrapDone || minSplash {
-                SplashView()
+                SplashView { minSplash = false }
             } else if !store.session.isSignedIn && !welcomed {
                 WelcomeView { withAnimation(.easeInOut(duration: 0.3)) { welcomed = true } }
                     .transition(.opacity)
@@ -91,10 +91,8 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.25), value: store.bootstrapDone)
         .animation(.easeInOut(duration: 0.25), value: store.session.isSignedIn)
         .task {
-            // Bootstrap runs while the opening sequence plays (it used to start only after the splash).
+            // Bootstrap and the one-shot intro run in parallel. Routing waits for both.
             async let boot: Void = store.bootstrap()
-            try? await Task.sleep(nanoseconds: 3_200_000_000)
-            minSplash = false
             await boot
             if store.session.isSignedIn { await KHERJAPushRegistration.requestIfNeeded() }
         }
