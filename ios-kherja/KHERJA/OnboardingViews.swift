@@ -67,7 +67,8 @@ struct LanguageSelectView: View {
     var onContinue: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 0) {
+        ScrollView {
+            VStack(spacing: 0) {
             Spacer(minLength: 32)
             KJLogo(height: 84)
 
@@ -110,7 +111,8 @@ struct LanguageSelectView: View {
 
             Spacer(minLength: 24)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+        }
         .background(KJ.canvasGradient.ignoresSafeArea())
         .overlay(alignment: .top) { CornerBlobs().frame(height: 240) }
         .clipShape(.rect)

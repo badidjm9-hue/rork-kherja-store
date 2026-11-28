@@ -194,7 +194,7 @@ private fun BackButton(onClick: () -> Unit) {
 
 @Composable
 private fun LanguageStep(state: AppState, onNext: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(48.dp))
         KJLogo(84.dp)
         Spacer(Modifier.height(12.dp))
@@ -209,7 +209,7 @@ private fun LanguageStep(state: AppState, onNext: () -> Unit) {
         LanguageCard("العربية", "Arabic", "ع", state.language == "ar") { state.setLanguage("ar") }
         Spacer(Modifier.height(14.dp))
         LanguageCard("Français", "French", "Fr", state.language == "fr") { state.setLanguage("fr") }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
         KJButton(state.l("continue")) {
             state.setLanguage(state.language)
             onNext()
