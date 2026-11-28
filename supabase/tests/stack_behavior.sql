@@ -182,7 +182,7 @@ SELECT t.fails($$SELECT public.admin_send_broadcast('everyone','system','Hello',
 SELECT t.fails($$SELECT public.admin_send_broadcast('all','system','','Body')$$,'Invalid title','empty title refused');
 SELECT t.works($$SELECT public.admin_send_broadcast('passengers','promo','Promo','-20% cette semaine')$$,'admin sends promo to passengers');
 SELECT t.eq((SELECT recipients::text FROM public.notification_broadcasts ORDER BY created_at DESC LIMIT 1),
-            (SELECT (count(*))::text FROM public.profiles p WHERE p.role='passenger' AND NOT EXISTS (SELECT 1 FROM public.notification_prefs n WHERE n.user_id=p.id AND NOT n.promotions)),'promo recipients = passengers who allow promotions');
+            (SELECT (count(*))::text FROM public.profiles p WHERE p.role='passenger' AND p.account_status<>'deleted' AND NOT EXISTS (SELECT 1 FROM public.admin_users a WHERE a.user_id=p.id) AND NOT EXISTS (SELECT 1 FROM public.notification_prefs n WHERE n.user_id=p.id AND NOT n.promotions)),'promo recipients = non-staff, non-deleted passengers who allow promotions (0018)');
 SELECT t.eq((SELECT count(*) FROM public.audit_logs WHERE action='notification.broadcast')::text,'1','broadcast is audited');
 RESET ROLE;
 SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','aaaaaaaa-0000-0000-0000-000000000006',false);

@@ -20,7 +20,7 @@ BEGIN
 
   PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
   -- The manager may preserve an existing elevated permission, but cannot create a new grant.
-  PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.manage','drivers.read']::text[],true);
+  PERFORM public.admin_set_user_permissions(v_target,ARRAY['pricing.read','pricing.manage','drivers.read']::text[],true);
   PERFORM set_config('request.jwt.claim.sub',v_target::text,false);
   IF NOT public.has_perm('pricing.manage') OR NOT public.has_perm('drivers.read') THEN
     RAISE EXCEPTION 'existing permission preservation or manager-held permission failed';

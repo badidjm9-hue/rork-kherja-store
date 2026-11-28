@@ -5,6 +5,8 @@ INSERT INTO auth.users(id,email) VALUES
  ('eeeeeeee-0000-0000-0000-000000000042','profile-passenger@kherja.test'),
  ('eeeeeeee-0000-0000-0000-000000000043','profile-normal@kherja.test')
 ON CONFLICT(id) DO NOTHING;
+-- Migration 0006 requires a verified phone for the passenger->driver role change.
+INSERT INTO public.verified_phones(phone,user_id) VALUES ('+213550000041','eeeeeeee-0000-0000-0000-000000000041') ON CONFLICT DO NOTHING;
 UPDATE public.profiles SET role='driver' WHERE id='eeeeeeee-0000-0000-0000-000000000041';
 UPDATE public.profiles SET role='passenger' WHERE id='eeeeeeee-0000-0000-0000-000000000042';
 INSERT INTO public.admin_users(user_id,role_code,display_name,email,active,custom_permissions_enabled)

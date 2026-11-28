@@ -19,6 +19,8 @@ BEGIN
   VALUES(v_admin,'super_admin','Admin 0018','admin0018@example.test');
   UPDATE public.profiles SET account_status='deleted', name='Compte supprimé', phone=NULL
     WHERE id=v_deleted_passenger;
+  -- Migration 0006 gates the passenger->driver role change on a verified phone; give the fixture one.
+  INSERT INTO public.verified_phones(phone,user_id) VALUES ('+213550000030',v_deleted_driver);
   UPDATE public.profiles SET role='driver', driver_status='pending', account_status='deleted', name='Compte supprimé', phone=NULL
     WHERE id=v_deleted_driver;
 

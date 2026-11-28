@@ -25,7 +25,7 @@ ON CONFLICT DO NOTHING;
 
 -- Preserve existing management access while making its read dependency explicit.
 INSERT INTO public.admin_user_permissions(user_id,permission_code,granted_by)
-SELECT DISTINCT up.user_id, d.required_code, NULL
+SELECT DISTINCT up.user_id, d.required_code, NULL::uuid
 FROM public.admin_user_permissions up
 JOIN (VALUES
   ('users.manage','users.read'),
