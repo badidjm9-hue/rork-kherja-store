@@ -30,10 +30,10 @@ struct SplashView: View {
 
                 Spacer()
 
-                Image("kj_duo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
+                SplashHero()
+                    .padding(.horizontal, 24)
+
+                Spacer()
 
                 VStack(spacing: 16) {
                     ProgressView()
@@ -56,6 +56,37 @@ struct SplashView: View {
                 }
                 .padding(.bottom, 50)
             }
+        }
+    }
+}
+
+/// Splash hero: slow push-in on the wide street shot cross-fades to the close shot of the car
+/// (characters untouched). Plays once and holds; static close shot under Reduce Motion.
+private struct SplashHero: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var zoom: CGFloat = 1
+    @State private var closeUp = false
+
+    var body: some View {
+        ZStack {
+            Image("kj_splash_a")
+                .resizable().scaledToFill()
+                .scaleEffect(zoom)
+                .opacity(closeUp ? 0 : 1)
+            Image("kj_splash_b")
+                .resizable().scaledToFill()
+                .scaleEffect(closeUp ? 1 : 1.07)
+                .opacity(closeUp ? 1 : 0)
+            LinearGradient(colors: [.clear, KJ.blue.opacity(0.18)], startPoint: .top, endPoint: .bottom)
+        }
+        .aspectRatio(438.0 / 388.0, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: KJ.blue.opacity(0.28), radius: 18, y: 10)
+        .accessibilityHidden(true)
+        .onAppear {
+            if reduceMotion { zoom = 1.16; closeUp = true; return }
+            withAnimation(.easeInOut(duration: 2.4)) { zoom = 1.16 }
+            withAnimation(.easeInOut(duration: 1.0).delay(1.1)) { closeUp = true }
         }
     }
 }
