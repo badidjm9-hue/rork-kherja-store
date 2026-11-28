@@ -10,6 +10,7 @@ import SwiftUI
 
 struct NegotiationView: View {
     @EnvironmentObject var store: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let request: RideRequest
     var onAccepted: () -> Void
 
@@ -158,12 +159,15 @@ struct NegotiationView: View {
                             .background(Capsule().fill(KJ.successBg))
                         Spacer()
                     }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 } else {
                     ChatBubble(
                         text: message.body,
                         time: message.createdAt,
                         mine: mine
                     )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }
@@ -262,7 +266,14 @@ struct NegotiationView: View {
                 .execute()
                 .decoded(SupabaseService.decoder())
             offers = fetchedOffers
-            messages = try await SupabaseService.shared.messages(requestId: request.id)
+            let fetchedMessages = try await SupabaseService.shared.messages(requestId: request.id)
+            if reduceMotion {
+                messages = fetchedMessages
+            } else {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+                    messages = fetchedMessages
+                }
+            }
             errorText = nil
         } catch {
             print("KHERJA negotiation poll error: \(error)")
