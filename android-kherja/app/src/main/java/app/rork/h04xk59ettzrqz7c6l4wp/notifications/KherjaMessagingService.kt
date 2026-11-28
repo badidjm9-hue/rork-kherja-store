@@ -3,6 +3,8 @@ package app.rork.h04xk59ettzrqz7c6l4wp.notifications
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -48,10 +50,23 @@ class KherjaMessagingService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pending)
             .build()
-        runCatching {
-            NotificationManagerCompat.from(this).notify(
+        // Android 13+ requires the runtime notification permission. FCM may
+        // deliver messages before the user grants it, so safely skip display.
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        val notificationManager = NotificationManagerCompat.from(this)
+        if (!notificationManager.areNotificationsEnabled()) return
+
+        try {
+            notificationManager.notify(
                 message.messageId?.hashCode() ?: System.currentTimeMillis().toInt(), notification
             )
+        } catch (_: SecurityException) {
+            // Permission may be revoked between the check and notify().
         }
     }
 }
