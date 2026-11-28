@@ -2,7 +2,8 @@
 """Builds the KHERJA vehicle artwork for every platform from the SVG sources in this folder.
 
   kherja_car.svg + kherja_moto.svg  ->  kherja_duo.svg
-  Android: VectorDrawable XML in res/drawable (kj_car / kj_moto / kj_duo)
+  kherja_front.svg: front view with driver and passenger (welcome scene)
+  Android: VectorDrawable XML in res/drawable (kj_car / kj_moto / kj_duo / kj_front)
   iOS:     vector PDFs in Assets.xcassets (preserves vector data)
 
 Only the SVG subset used by these files is supported (path, circle, ellipse, rect, g with
@@ -193,7 +194,8 @@ def to_ios_pdf(svg_path, name):
 if __name__ == "__main__":
     build_duo()
     os.makedirs(ANDROID_DRAWABLE, exist_ok=True)
-    for key, src in (("kj_car", "kherja_car.svg"), ("kj_moto", "kherja_moto.svg"), ("kj_duo", "kherja_duo.svg")):
+    for key, src in (("kj_car", "kherja_car.svg"), ("kj_moto", "kherja_moto.svg"), ("kj_duo", "kherja_duo.svg"),
+                     ("kj_front", "kherja_front.svg")):
         to_vector_drawable(os.path.join(HERE, src), os.path.join(ANDROID_DRAWABLE, f"{key}.xml"))
         to_ios_pdf(os.path.join(HERE, src), key)
     print("ok")

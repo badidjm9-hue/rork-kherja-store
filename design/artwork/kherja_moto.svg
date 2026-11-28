@@ -1,55 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 66 360 182" width="360" height="182">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 360 182" width="360" height="182">
   <defs>
-    <linearGradient id="fair" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2F7BFF"/>
-      <stop offset="0.6" stop-color="#075BFF"/>
-      <stop offset="1" stop-color="#0043C7"/>
-    </linearGradient>
-    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0A52E6"/>
-      <stop offset="1" stop-color="#0035A0"/>
-    </linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F4F7FF"/>
-      <stop offset="1" stop-color="#B9C4E4"/>
-    </linearGradient>
-    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3D4A73"/>
-      <stop offset="1" stop-color="#0D1B4C"/>
-    </linearGradient>
+    <linearGradient id="fair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A8DFF"/><stop offset="0.5" stop-color="#075BFF"/><stop offset="1" stop-color="#003FB8"/></linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A52E6"/><stop offset="1" stop-color="#00308F"/></linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FC0FF"/><stop offset="1" stop-color="#27407F"/></linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#A9B6DC"/></linearGradient>
+    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3D4A73"/><stop offset="1" stop-color="#0D1B4C"/></linearGradient>
   </defs>
-  <ellipse cx="180" cy="232" rx="150" ry="7" fill="#0D1B4C" fill-opacity="0.14"/>
-  <!-- exhaust can and swingarm -->
-  <path fill="url(#metal)" d="M164 190 L92 184 C70 182 54 176 44 168 C40 166 38 170 41 174 C52 186 74 194 98 196 L164 202 Z"/>
-  <path fill="none" stroke="#0D1B4C" stroke-width="7" stroke-linecap="round" d="M82 196 L164 168"/>
-  <!-- front fork -->
-  <path fill="none" stroke="#0D1B4C" stroke-width="8" stroke-linecap="round" d="M266 130 L282 196"/>
-  <path fill="none" stroke="url(#metal)" stroke-width="3" stroke-linecap="round" d="M270 156 L283 190"/>
-  <!-- engine block (peeks out under the belly pan) -->
-  <path fill="url(#engine)" d="M146 150 L222 146 L230 176 L222 204 L156 206 L142 178 Z"/>
-  <path fill="#FFFFFF" fill-opacity="0.14" d="M154 186 L218 184 L220 194 L156 196 Z"/>
-  <!-- rear shock -->
-  <path fill="none" stroke="#C4145A" stroke-width="5" stroke-linecap="round" d="M104 132 L120 176"/>
-  <!-- one continuous sculpted body: tail, seat, tank, screen, nose, belly pan -->
-  <path fill="url(#fair)" d="M44 112 C64 105 90 107 110 113 L142 118 C156 108 176 100 204 98 L232 98 C246 91 262 89 272 92 L296 118 C308 126 318 140 318 152 L304 157 C286 151 262 157 246 169 L232 178 L196 180 C176 176 150 172 132 160 L100 142 C80 134 56 132 42 125 Z"/>
-  <path fill="#0D1B4C" d="M96 111 C112 108 130 112 146 117 L141 124 C126 120 110 120 98 124 Z"/>
-  <path fill="#27407F" d="M268 93 L296 119 C282 121 270 119 258 112 Z"/>
-  <path fill="#FFFFFF" fill-opacity="0.22" d="M270 97 L284 109 L272 108 Z"/>
-  <path fill="#FFFFFF" d="M300 130 C310 134 316 142 317 150 L302 152 Z"/>
-  <path fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round" d="M150 116 C170 106 196 102 228 102"/>
-  <path fill="none" stroke="#C4145A" stroke-width="5" stroke-linecap="round" d="M112 132 C172 136 226 142 262 154"/>
-  <path fill="none" stroke="#0D1B4C" stroke-width="5" stroke-linecap="round" d="M246 94 L232 88"/>
-  <!-- wheels -->
-  <g>
-    <circle cx="82" cy="196" r="36" fill="#0D1B4C"/>
-    <circle cx="82" cy="196" r="24" fill="url(#metal)"/>
-    <circle cx="82" cy="196" r="7" fill="#0D1B4C"/>
-    <path stroke="#0D1B4C" stroke-width="3.5" stroke-linecap="round" d="M82 196 L82 178 M82 196 L99 190 M82 196 L92 211 M82 196 L72 211 M82 196 L65 190"/>
-  </g>
-  <g>
-    <circle cx="282" cy="196" r="36" fill="#0D1B4C"/>
-    <circle cx="282" cy="196" r="24" fill="url(#metal)"/>
-    <circle cx="282" cy="196" r="7" fill="#0D1B4C"/>
-    <path stroke="#0D1B4C" stroke-width="3.5" stroke-linecap="round" d="M282 196 L282 178 M282 196 L299 190 M282 196 L292 211 M282 196 L272 211 M282 196 L265 190"/>
-  </g>
+  <ellipse cx="180" cy="233" rx="158" ry="6" fill="#0D1B4C" fill-opacity="0.14"/>
+  <circle cx="76" cy="192" r="40" fill="#0A1233"/>
+  <circle cx="76" cy="192" r="34" fill="none" stroke="#27407F" stroke-width="1.5"/>
+  <circle cx="76" cy="192" r="29" fill="url(#metal)"/>
+  <circle cx="76" cy="192" r="25" fill="#FFFFFF"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="3.6" stroke-linecap="round" d="M76.0 186.0 L86.6 168.3 M81.2 189.0 L101.9 189.3 M81.2 195.0 L91.3 213.1 M76.0 198.0 L65.4 215.7 M70.8 195.0 L50.1 194.7 M70.8 189.0 L60.7 170.9"/>
+  <circle cx="76" cy="192" r="15" fill="none" stroke="#8E9BC4" stroke-width="3"/>
+  <circle cx="76" cy="192" r="7" fill="#0D1B4C"/>
+  <circle cx="76" cy="192" r="2.8" fill="url(#metal)"/>
+  <circle cx="286" cy="192" r="40" fill="#0A1233"/>
+  <circle cx="286" cy="192" r="34" fill="none" stroke="#27407F" stroke-width="1.5"/>
+  <circle cx="286" cy="192" r="29" fill="url(#metal)"/>
+  <circle cx="286" cy="192" r="25" fill="#FFFFFF"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="3.6" stroke-linecap="round" d="M286.0 186.0 L296.6 168.3 M291.2 189.0 L311.9 189.3 M291.2 195.0 L301.3 213.1 M286.0 198.0 L275.4 215.7 M280.8 195.0 L260.1 194.7 M280.8 189.0 L270.7 170.9"/>
+  <circle cx="286" cy="192" r="15" fill="none" stroke="#8E9BC4" stroke-width="3"/>
+  <circle cx="286" cy="192" r="7" fill="#0D1B4C"/>
+  <circle cx="286" cy="192" r="2.8" fill="url(#metal)"/>
+  <path fill="url(#fair)" d="M248 168 C258 148 286 140 316 156 C320 158 318 163 313 162 C292 155 270 159 256 174 Z"/>
+  <path fill="url(#engine)" d="M76 186 L158 170 L166 184 L80 198 Z"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="11" stroke-linecap="round" d="M258 118 L286 192"/>
+  <path fill="none" stroke="#F0A52D" stroke-width="6" stroke-linecap="round" d="M263 132 L274 161"/>
+  <path fill="none" stroke="#DCE4F8" stroke-width="4" stroke-linecap="round" d="M274 161 L285 189"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="6" stroke-linecap="round" d="M258 108 L246 92 L229 90"/>
+  <path fill="none" stroke="#0A1233" stroke-width="8" stroke-linecap="round" d="M230 90 L216 91"/>
+  <path fill="url(#engine)" d="M142 146 L226 142 C234 156 232 178 218 196 L170 202 C152 196 140 176 142 146 Z"/>
+  <circle cx="176" cy="178" r="17" fill="#27407F"/>
+  <circle cx="176" cy="178" r="11" fill="url(#metal)"/>
+  <circle cx="176" cy="178" r="4" fill="#0D1B4C"/>
+  <path fill="none" stroke="#8E9BC4" stroke-width="2.5" stroke-linecap="round" d="M200 154 L222 152 M201 163 L222 161 M202 172 L219 170"/>
+  <path fill="none" stroke="#8E9BC4" stroke-width="6" stroke-linecap="round" d="M212 190 C196 212 160 208 128 196"/>
+  <path fill="url(#metal)" d="M138 192 L58 164 C52 162 48 166 49 172 C50 176 53 178 57 180 L128 204 C136 206 144 196 138 192 Z"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-opacity="0.8" d="M66 172 L118 190"/>
+  <ellipse cx="54" cy="172" rx="4" ry="8" fill="#0D1B4C"/>
+  <path fill="none" stroke="#C4145A" stroke-width="6" stroke-linecap="round" d="M112 136 L128 172"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="5" stroke-linecap="round" d="M146 190 L134 196"/>
+  <path fill="url(#fair)" d="M34 100 C60 104 92 114 122 118 L156 130 L132 146 C108 132 82 126 62 120 C50 116 40 110 34 100 Z"/>
+  <path fill="#C4145A" d="M36 101 L52 106 L56 114 C48 111 41 107 36 101 Z"/>
+  <path fill="#0A1233" d="M72 108 C86 103 100 112 118 112 C132 112 142 108 152 112 L160 124 C140 128 118 122 100 119 C90 117 80 113 72 108 Z"/>
+  <path fill="url(#fair)" d="M146 120 C158 96 188 88 214 94 C230 98 240 108 244 122 L226 142 L150 146 C142 138 142 128 146 120 Z"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-opacity="0.55" d="M162 108 C176 98 194 96 210 100"/>
+  <path fill="url(#fair)" d="M222 112 C236 98 256 92 270 96 C292 104 308 118 316 134 C304 142 290 142 280 138 L252 172 L214 190 L194 186 L224 142 Z"/>
+  <path fill="url(#deep)" d="M214 190 L252 172 L244 188 C236 196 220 200 204 198 L194 186 Z"/>
+  <path fill="url(#screen)" fill-opacity="0.92" d="M250 96 C256 78 270 70 284 72 C284 86 282 96 278 101 C269 97 259 95 250 96 Z"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-opacity="0.6" d="M262 86 C266 80 272 77 278 77"/>
+  <path fill="#EAF3FF" d="M290 117 C302 121 311 128 315 135 C305 138 296 136 290 130 Z"/>
+  <path fill="none" stroke="#8FC0FF" stroke-width="2" stroke-linecap="round" d="M297 124 L309 132"/>
+  <path fill="none" stroke="#C4145A" stroke-width="5" stroke-linecap="round" d="M232 134 C252 124 270 122 288 130"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-opacity="0.85" d="M222 154 L208 174"/>
+  <path fill="none" stroke="#0D1B4C" stroke-width="4" stroke-linecap="round" d="M248 90 L240 74"/>
+  <ellipse cx="237" cy="71" rx="9" ry="5.5" fill="#0D1B4C"/>
 </svg>
