@@ -420,6 +420,7 @@ struct PhoneEntryView: View {
 
 struct OtpVerifyView: View {
     @EnvironmentObject var store: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var code = ""
     @State private var loading = false
     @State private var errorMessage: String?
@@ -481,7 +482,7 @@ struct OtpVerifyView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 62)
                             .shadow(color: active ? KJ.blue.opacity(0.12) : .black.opacity(0.035), radius: active ? 10 : 5, y: 3)
-                            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: code)
+                            .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.72), value: code)
                     }
                 }
                 .contentShape(Rectangle())
@@ -491,7 +492,7 @@ struct OtpVerifyView: View {
                     get: { code },
                     set: { value in
                         let digits = String(value.filter { $0.isNumber }.prefix(6))
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.72)) {
                             code = digits
                         }
                     }
