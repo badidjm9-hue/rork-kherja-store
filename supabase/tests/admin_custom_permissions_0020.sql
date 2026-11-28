@@ -74,7 +74,7 @@ DECLARE v_super uuid := 'eeeeeeee-0000-0000-0000-000000000020';
         v_staff uuid := 'eeeeeeee-0000-0000-0000-000000000021';
 BEGIN
   PERFORM set_config('request.jwt.claim.sub',v_super::text,false);
-  PERFORM public.admin_set_user_permissions(v_staff,ARRAY['pricing.manage']::text[],true);
+  PERFORM public.admin_set_user_permissions(v_staff,ARRAY['pricing.read','pricing.manage']::text[],true);
   PERFORM public.admin_set_admin('staff0020@kherja.test','operations_manager',true,'Staff Test');
   PERFORM set_config('request.jwt.claim.sub',v_staff::text,false);
   IF (SELECT custom_permissions_enabled FROM public.admin_users WHERE user_id=v_staff) THEN
