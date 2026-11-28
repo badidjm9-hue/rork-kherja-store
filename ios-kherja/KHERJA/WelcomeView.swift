@@ -15,7 +15,6 @@ struct WelcomeView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var frameIndex = 0
     @State private var showText = false
     @State private var showButton = false
     @State private var scene: Task<Void, Never>?
@@ -23,9 +22,6 @@ struct WelcomeView: View {
     /// The brand line is shown in Arabic in every language; other languages add a translation below it.
     private let brandLine = "تنقّل بأمان مع خرجة"
 
-    /// Original animation timing: 9 frames, 180 ms each, looping.
-    private let frameCount = 9
-    private let frameDuration = Duration.milliseconds(180)
     private let frameAspect: CGFloat = 438 / 388
     /// Sharpest view of the whole front with both characters, shown with Reduce Motion.
     private let stillFrame = 2
@@ -35,7 +31,7 @@ struct WelcomeView: View {
             KJLogo(height: 64)
                 .padding(.top, 16)
 
-            Image("welcome_drive_\(reduceMotion ? stillFrame : frameIndex)")
+            Image("welcome_drive_\(stillFrame)")
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(frameAspect, contentMode: .fit)
@@ -78,20 +74,8 @@ struct WelcomeView: View {
         .contentShape(Rectangle())
         // Tap anywhere to jump to the end of the scene.
         .onTapGesture { if !showButton { finish() } }
-        .task(id: reduceMotion) { await animate() }
         .onAppear { play() }
         .onDisappear { scene?.cancel() }
-    }
-
-    /// Loops the frames for as long as the screen is visible.
-    private func animate() async {
-        guard !reduceMotion else { return }
-        while !Task.isCancelled {
-            for index in 0..<frameCount {
-                frameIndex = index
-                do { try await Task.sleep(for: frameDuration) } catch { return }
-            }
-        }
     }
 
     private func finish() {
