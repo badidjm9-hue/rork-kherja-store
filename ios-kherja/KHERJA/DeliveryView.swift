@@ -291,14 +291,14 @@ struct DeliveryView: View {
     }
 
     private func createOrder() async {
-        guard let pickup, let destination else { return }
+        guard let pickup, let selectedDestination = destination else { return }
         busy = true
         errorText = nil
         do {
-            let km = Geo.roadDistanceKm(from: pickup.coordinate, to: destination.coordinate)
+            let km = Geo.roadDistanceKm(from: pickup.coordinate, to: selectedDestination.coordinate)
             _ = try await SupabaseService.shared.createDeliveryOrder(CreateDeliveryParams(
                 p_pickup_label: pickup.label, p_pickup_lat: pickup.coordinate.latitude, p_pickup_lng: pickup.coordinate.longitude,
-                p_dest_label: destination.label, p_dest_lat: destination.coordinate.latitude, p_dest_lng: destination.coordinate.longitude,
+                p_dest_label: selectedDestination.label, p_dest_lat: selectedDestination.coordinate.latitude, p_dest_lng: selectedDestination.coordinate.longitude,
                 p_distance_km: km, p_vehicle: vehicle,
                 p_package_description: packageDescription.trimmingCharacters(in: .whitespacesAndNewlines),
                 p_recipient_name: recipientName.trimmingCharacters(in: .whitespacesAndNewlines),
