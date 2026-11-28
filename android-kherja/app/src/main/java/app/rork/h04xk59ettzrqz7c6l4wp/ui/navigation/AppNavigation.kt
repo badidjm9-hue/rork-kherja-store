@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -144,7 +146,22 @@ private fun TabScaffold(tabs: List<Tab>, selected: Int, onSelect: (Int) -> Unit,
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            content(selected)
+            AnimatedContent(
+                targetState = selected,
+                transitionSpec = {
+                    (fadeIn(tween(190)) + slideInVertically(
+                        animationSpec = tween(230),
+                        initialOffsetY = { fullHeight -> fullHeight / 18 },
+                    )) togetherWith
+                        (fadeOut(tween(130)) + slideOutVertically(
+                            animationSpec = tween(180),
+                            targetOffsetY = { fullHeight -> -fullHeight / 28 },
+                        ))
+                },
+                label = "tab-transition",
+            ) { targetTab ->
+                content(targetTab)
+            }
         }
     }
 }
