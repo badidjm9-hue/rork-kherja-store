@@ -300,10 +300,15 @@ struct DriverHomeView: View {
                             DriverRequestCard(request: request) {
                                 selectedRequest = request
                             }
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .opacity
+                            ))
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
+                    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: requests.map(\.id))
                 }
                 .refreshable { await refreshFeed() }
             }
