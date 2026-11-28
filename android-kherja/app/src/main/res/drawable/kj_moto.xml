@@ -16,7 +16,7 @@
         </path>
         <path android:pathData="M82 196 L164 168" android:strokeColor="#FF0D1B4C" android:strokeWidth="7" android:strokeLineCap="round"/>
         <path android:pathData="M266 130 L282 196" android:strokeColor="#FF0D1B4C" android:strokeWidth="8" android:strokeLineCap="round"/>
-        <path android:pathData="M270 156 L283 190" android:strokeColor="#FFURL(#METAL)" android:strokeWidth="3" android:strokeLineCap="round"/>
+        <path android:pathData="M270 156 L283 190" android:strokeColor="#FFB9C4E4" android:strokeWidth="3" android:strokeLineCap="round"/>
         <path android:pathData="M146 150 L222 146 L230 176 L222 204 L156 206 L142 178 Z">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="142.00" android:startY="146.00" android:endX="230.00" android:endY="206.00">
