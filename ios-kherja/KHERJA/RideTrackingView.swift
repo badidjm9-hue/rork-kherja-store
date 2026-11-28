@@ -11,6 +11,7 @@ import SwiftUI
 
 struct RideTrackingView: View {
     @EnvironmentObject var store: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let rideId: UUID
 
     @State private var ride: Ride?
@@ -29,8 +30,10 @@ struct RideTrackingView: View {
                     VStack(spacing: 16) {
                         if ride.status == "completed" {
                             completedView(ride)
+                                .transition(.opacity.combined(with: .scale(scale: 0.97)))
                         } else {
                             activeView(ride)
+                                .transition(.opacity)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -43,6 +46,7 @@ struct RideTrackingView: View {
                     .foregroundStyle(KJ.muted)
             }
         }
+        .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.88), value: ride?.status)
         .sheet(isPresented: $showRating, onDismiss: { if finished { store.setActiveRide(nil) } }) {
             RatingSheet(ride: ride) { store.setActiveRide(nil) }
                 .environmentObject(store)
@@ -170,6 +174,7 @@ struct RideTrackingView: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 40, weight: .heavy))
                         .foregroundStyle(.white)
+                        .symbolEffect(.bounce, value: ride.status == "completed")
                 }
                 Text(store.l("arrived_destination"))
                     .font(.system(size: 26, weight: .heavy))
@@ -393,7 +398,7 @@ struct RatingSheet: View {
             HStack(spacing: 14) {
                 ForEach(1...5, id: \.self) { i in
                     Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { stars = i }
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.6)) { stars = i }
                     } label: {
                         Image(systemName: "star.fill")
                             .font(.system(size: 32, weight: .semibold))
