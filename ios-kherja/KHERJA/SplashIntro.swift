@@ -2,56 +2,47 @@
 //  SplashIntro.swift
 //  KHERJA
 //
-//  Opening sequence. The supplied street clip (same two characters, untouched) plays once: the car
-//  rushes at the camera. Native effects are layered on top at the moment of impact: camera shake,
-//  motion blur, a glass crack across the whole screen and a flash, then the card dissolves and the
-//  KHERJA logo is revealed. Reduce Motion skips straight to the logo.
-//
-//  The clip is a plain H.264 file played with AVPlayer (no third-party player or Lottie/Rive).
+//  One-shot launch sequence: white logo hold → original transparent car frames → impact → Welcome.
+//  The original car and both characters are reused without redrawing or changing their appearance.
 //
 
-import AVFoundation
 import SwiftUI
 import UIKit
 
 struct SplashView: View {
-    @EnvironmentObject var store: AppState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let onFinished: () -> Void
 
-    @State private var playVideo = false
+    @State private var frameIndex = 0
+    @State private var carVisible = false
+    @State private var carScale: CGFloat = 0.62
     @State private var shake: CGFloat = 0
-    @State private var flash = 0.0
     @State private var crack: CGFloat = 0
     @State private var crackOpacity = 1.0
-    @State private var blur: CGFloat = 0
-    @State private var cardOpacity = 1.0
-    @State private var cardScale: CGFloat = 1
-    @State private var logoShown = false
+    @State private var flash = 0.0
+    @State private var didFinish = false
+
+    private let frameCount = 9
+    private let frameDelay = Duration.milliseconds(180)
 
     var body: some View {
         ZStack {
-            KJ.canvasGradient.ignoresSafeArea()
-            CornerBlobs().opacity(logoShown ? 1 : 0)
+            Color.white.ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                KJLogo(height: 120)
-                Text(store.l("app_tagline"))
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(KJ.burgundy)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-                ProgressView()
-                    .tint(KJ.blue)
-                    .padding(.top, 12)
+            if carVisible {
+                Image("welcome_drive_\(frameIndex)")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(maxWidth: 460)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .scaleEffect(carScale)
+                    .accessibilityHidden(true)
+            } else {
+                KJLogo(height: 48)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityLabel("KHERJA")
             }
-            .scaleEffect(logoShown ? 1 : 0.82)
-            .opacity(logoShown ? 1 : 0)
-
-            card
-                .padding(.horizontal, 16)
-                .scaleEffect(cardScale)
-                .blur(radius: blur)
-                .opacity(cardOpacity)
 
             CrackShape(progress: crack)
                 .stroke(KJ.ink.opacity(0.35), style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
@@ -67,56 +58,58 @@ struct SplashView: View {
             Color.white.opacity(flash).ignoresSafeArea().allowsHitTesting(false)
         }
         .modifier(KJCameraShake(t: shake))
-        .task { await run() }
-    }
-
-    private var card: some View {
-        ZStack {
-            if playVideo, let url = Bundle.main.url(forResource: "kj_splash", withExtension: "mp4") {
-                SplashVideo(url: url)
-            } else {
-                // First frame of the clip, so the hand-over to video is seamless.
-                Image("kj_splash_a").resizable().scaledToFill()
-            }
-        }
-        .aspectRatio(438.0 / 388.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .shadow(color: KJ.blue.opacity(0.28), radius: 18, y: 10)
-        .accessibilityHidden(true)
+        .task { await runOpeningSequence() }
     }
 
     @MainActor
-    private func run() async {
-        if reduceMotion {
-            cardOpacity = 0
-            logoShown = true
-            return
-        }
+    private func runOpeningSequence() async {
         do {
-            playVideo = true
-            // The clip is 2.1 s; the car fills the windscreen around 1.75 s.
-            try await Task.sleep(for: .milliseconds(1750))
-            withAnimation(.linear(duration: 1.15)) { shake = 1 }
-            try await Task.sleep(for: .milliseconds(350))
-            // Impact.
+            // Minimal splash: the logo is the only visible element for exactly one second.
+            try await Task.sleep(for: .seconds(1))
+
+            if reduceMotion {
+                finishOnce()
+                return
+            }
+
+            carVisible = true
+            withAnimation(.timingCurve(0.42, 0, 1, 1, duration: 1.62)) {
+                carScale = 1.12
+            }
+
+            // Play the original transparent frames once, in order. Never loop or replay on Welcome.
+            for index in 0..<frameCount {
+                frameIndex = index
+                try await Task.sleep(for: frameDelay)
+            }
+
+            withAnimation(.linear(duration: 0.65)) { shake = 1 }
+            try await Task.sleep(for: .milliseconds(180))
+
             KJHaptics.impact()
-            withAnimation(.easeOut(duration: 0.14)) { crack = 1; flash = 0.9 }
-            withAnimation(.easeOut(duration: 0.35)) { blur = 14 }
-            try await Task.sleep(for: .milliseconds(150))
-            withAnimation(.easeIn(duration: 0.25)) { flash = 0 }
-            try await Task.sleep(for: .milliseconds(300))
-            // Dissolve the scene and reveal the brand.
-            withAnimation(.easeInOut(duration: 0.5)) { cardOpacity = 0; cardScale = 1.12; crackOpacity = 0 }
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.78).delay(0.2)) { logoShown = true }
+            withAnimation(.easeOut(duration: 0.16)) {
+                crack = 1
+                flash = 0.78
+            }
+            try await Task.sleep(for: .milliseconds(120))
+            withAnimation(.easeOut(duration: 0.24)) { flash = 0 }
+            try await Task.sleep(for: .milliseconds(320))
+            withAnimation(.easeInOut(duration: 0.35)) { crackOpacity = 0 }
+            finishOnce()
         } catch {
-            // Cancelled: the splash left the screen.
+            // Cancellation means the launch view is leaving; do not restart the sequence.
         }
+    }
+
+    @MainActor
+    private func finishOnce() {
+        guard !didFinish else { return }
+        didFinish = true
+        onFinished()
     }
 }
 
-// MARK: - Effects
-
-/// Camera shake: builds up as the car arrives, jolts at the impact (t ≈ 0.30), then dies out.
+/// Camera shake is limited to the impact and decays smoothly.
 struct KJCameraShake: GeometryEffect {
     var t: CGFloat
     var animatableData: CGFloat {
@@ -132,7 +125,7 @@ struct KJCameraShake: GeometryEffect {
     }
 }
 
-/// Glass crack radiating from just above the screen centre. Deterministic (no randomness between runs).
+/// Deterministic glass fracture, drawn over the entire screen.
 struct CrackShape: Shape {
     var progress: CGFloat
     var animatableData: CGFloat {
@@ -167,7 +160,6 @@ struct CrackShape: Shape {
                 }
             }
         }
-        // Two irregular rings connect the rays, like real laminated glass.
         for ring in [0.16, 0.34] as [CGFloat] {
             let radius = reach * ring
             for k in 0...rays {
@@ -178,36 +170,5 @@ struct CrackShape: Shape {
             }
         }
         return path
-    }
-}
-
-// MARK: - Video
-
-private final class SplashPlayerView: UIView {
-    override class var layerClass: AnyClass { AVPlayerLayer.self }
-    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
-}
-
-/// Muted, play-once clip. Needs no audio session and releases the player when it leaves the screen.
-private struct SplashVideo: UIViewRepresentable {
-    let url: URL
-
-    func makeUIView(context: Context) -> SplashPlayerView {
-        let view = SplashPlayerView()
-        view.backgroundColor = .clear
-        let player = AVPlayer(url: url)
-        player.isMuted = true
-        player.actionAtItemEnd = .pause
-        view.playerLayer.player = player
-        view.playerLayer.videoGravity = .resizeAspectFill
-        player.play()
-        return view
-    }
-
-    func updateUIView(_ uiView: SplashPlayerView, context: Context) {}
-
-    static func dismantleUIView(_ uiView: SplashPlayerView, coordinator: ()) {
-        uiView.playerLayer.player?.pause()
-        uiView.playerLayer.player = nil
     }
 }
