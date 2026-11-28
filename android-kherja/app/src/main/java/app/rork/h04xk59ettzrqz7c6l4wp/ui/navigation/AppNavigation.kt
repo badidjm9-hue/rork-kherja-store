@@ -63,7 +63,7 @@ fun AppNavigation() {
     val state: AppState = viewModel()
     var minSplashDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1_500)
+        kotlinx.coroutines.delay(3_200)
         minSplashDone = true
     }
     val dir = if (state.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr

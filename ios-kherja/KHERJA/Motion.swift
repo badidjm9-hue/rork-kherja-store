@@ -148,6 +148,7 @@ enum KJHaptics {
     static func success() { UINotificationFeedbackGenerator().notificationOccurred(.success) }
     static func error() { UINotificationFeedbackGenerator().notificationOccurred(.error) }
     static func selection() { UISelectionFeedbackGenerator().selectionChanged() }
+    static func impact() { UIImpactFeedbackGenerator(style: .heavy).impactOccurred() }
 }
 
 // MARK: - Pressable cards

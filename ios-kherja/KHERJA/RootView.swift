@@ -91,9 +91,11 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.25), value: store.bootstrapDone)
         .animation(.easeInOut(duration: 0.25), value: store.session.isSignedIn)
         .task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            // Bootstrap runs while the opening sequence plays (it used to start only after the splash).
+            async let boot: Void = store.bootstrap()
+            try? await Task.sleep(nanoseconds: 3_200_000_000)
             minSplash = false
-            await store.bootstrap()
+            await boot
             if store.session.isSignedIn { await KHERJAPushRegistration.requestIfNeeded() }
         }
         .onChange(of: store.session.isSignedIn) { _, signedIn in
