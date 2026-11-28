@@ -21,7 +21,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if minSplash {
-                SplashView { minSplash = false }
+                SplashView { withAnimation(.easeInOut(duration: 0.45)) { minSplash = false } }
             } else if !store.bootstrapDone {
                 // Show Welcome immediately after the intro, while session bootstrap finishes.
                 WelcomeView { withAnimation(.easeInOut(duration: 0.3)) { welcomed = true } }
