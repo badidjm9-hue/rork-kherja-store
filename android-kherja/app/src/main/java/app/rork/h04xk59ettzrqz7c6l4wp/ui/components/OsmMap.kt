@@ -101,8 +101,18 @@ fun OsmMap(
                     outlinePaint.color = KJ.blue.toArgb()
                     outlinePaint.strokeWidth = 12f
                     outlinePaint.strokeCap = Paint.Cap.ROUND
+                    outlinePaint.alpha = 0
                 }
                 map.overlays.add(line)
+                routeAnimator[0] = ValueAnimator.ofInt(0, 255).apply {
+                    duration = 850L
+                    interpolator = DecelerateInterpolator()
+                    addUpdateListener { animation ->
+                        line.outlinePaint.alpha = animation.animatedValue as Int
+                        map.invalidate()
+                    }
+                    start()
+                }
             }
             pins.forEach { pin ->
                 val m = Marker(map).apply {
