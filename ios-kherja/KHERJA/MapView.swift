@@ -166,14 +166,18 @@ struct RideMapView: UIViewRepresentable {
             r.strokeColor = KJ.blue.uiColor
             r.lineWidth = 5
             r.lineCap = .round
-            r.strokeEnd = 0
-            DispatchQueue.main.async {
-                UIView.animate(
-                    withDuration: 0.9,
-                    delay: 0,
-                    options: [.curveEaseInOut, .beginFromCurrentState]
-                ) {
-                    r.strokeEnd = 1
+            if UIAccessibility.isReduceMotionEnabled {
+                r.strokeEnd = 1
+            } else {
+                r.strokeEnd = 0
+                DispatchQueue.main.async {
+                    UIView.animate(
+                        withDuration: 0.9,
+                        delay: 0,
+                        options: [.curveEaseInOut, .beginFromCurrentState]
+                    ) {
+                        r.strokeEnd = 1
+                    }
                 }
             }
             return r
