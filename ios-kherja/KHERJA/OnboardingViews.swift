@@ -68,21 +68,21 @@ struct LanguageSelectView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            KJLogo(height: 96)
+            Spacer(minLength: 32)
+            KJLogo(height: 84)
 
-            Image(systemName: "car.fill")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(KJ.blue)
-                .padding(.top, 18)
-            Divider().opacity(0).frame(width: 0)
+            Image("car_moto")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 210, height: 110)
+                .padding(.top, 12)
 
             Text(store.l("choose_language"))
                 .font(.system(size: 24, weight: .heavy))
                 .foregroundStyle(KJ.ink)
-                .padding(.top, 20)
+                .padding(.top, 12)
 
-            VStack(spacing: 16) {
+            VStack(spacing: 14) {
                 LanguageCard(
                     language: .ar,
                     title: "العربية",
@@ -98,22 +98,17 @@ struct LanguageSelectView: View {
                     selected: store.language == .fr
                 ) { store.setLanguage(.fr) }
             }
-            .padding(.top, 28)
+            .padding(.top, 20)
+            .padding(.horizontal, 28)
 
             Button { onContinue() } label: {
                 Text(store.l("continue"))
             }
             .buttonStyle(KJButtonStyle())
-            .padding(.top, 36)
+            .padding(.top, 24)
             .padding(.horizontal, 28)
 
-            Spacer(minLength: 0)
-
-            Image("car_moto")
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: 260)
-                .padding(.bottom, 8)
+            Spacer(minLength: 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KJ.canvasGradient.ignoresSafeArea())
