@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import PostgREST
+import Supabase
 
 nonisolated struct SavedPlace: Codable, Identifiable, Sendable, Equatable {
     let id: UUID
