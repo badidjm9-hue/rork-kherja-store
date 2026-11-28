@@ -26,6 +26,14 @@ BEGIN
     RAISE EXCEPTION 'existing permission preservation or manager-held permission failed';
   END IF;
 
+  -- A delegated manager may revoke an elevated grant even though they cannot grant it.
+  PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
+  PERFORM public.admin_set_user_permissions(v_target,ARRAY['drivers.read']::text[],true);
+  PERFORM set_config('request.jwt.claim.sub',v_target::text,false);
+  IF public.has_perm('pricing.manage') OR NOT public.has_perm('drivers.read') THEN
+    RAISE EXCEPTION 'manager could not revoke an elevated permission safely';
+  END IF;
+
   PERFORM set_config('request.jwt.claim.sub',v_manager::text,false);
   v_failed := false;
   BEGIN
