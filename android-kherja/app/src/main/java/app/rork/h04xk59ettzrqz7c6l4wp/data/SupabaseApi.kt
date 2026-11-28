@@ -443,7 +443,7 @@ class SupabaseApi(private val session: SessionStore) {
 
     suspend fun saveNotificationPrefs(userId: String, prefs: NotificationPrefs) {
         send(HttpMethod.Post, "/rest/v1/notification_prefs?on_conflict=user_id",
-            jsonOf("user_id" to userId, "rides" to prefs.rides, "promotions" to prefs.promotions, "updated_at" to java.time.Instant.now().toString()).toString(),
+            jsonOf("user_id" to userId, "rides" to prefs.rides, "promotions" to prefs.promotions, "updated_at" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date())).toString(),
             prefer = "resolution=merge-duplicates,return=minimal")
     }
 
