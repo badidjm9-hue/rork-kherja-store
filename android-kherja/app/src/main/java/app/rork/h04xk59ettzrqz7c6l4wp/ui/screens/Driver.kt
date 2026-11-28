@@ -3,7 +3,10 @@ package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -361,7 +364,16 @@ fun DriverHomeScreen(state: AppState) {
                     }
                 }
                 items(requests, key = { it.id }) { req ->
-                    RequestCard(state, req, myOffers.firstOrNull { it.requestId == req.id }, loc?.let { it.latitude to it.longitude }) { selected = req }
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(androidx.compose.animation.core.tween(220)) +
+                            expandVertically(androidx.compose.animation.core.tween(280)),
+                    ) {
+                        RequestCard(
+                            state, req, myOffers.firstOrNull { it.requestId == req.id },
+                            loc?.let { it.latitude to it.longitude },
+                        ) { selected = req }
+                    }
                 }
             }
         }
