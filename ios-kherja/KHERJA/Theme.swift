@@ -123,32 +123,62 @@ struct KJButtonStyle: ButtonStyle {
     var shadowColor: Color = KJ.blue
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 17, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(Capsule().fill(gradient))
-            .shadow(color: shadowColor.opacity(0.35), radius: 14, x: 0, y: 8)
-            .scaleEffect(configuration.isPressed ? pressedScale : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+        KJButtonBody(
+            label: configuration.label
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(Capsule().fill(gradient)),
+            isPressed: configuration.isPressed,
+            pressedScale: pressedScale,
+            shadowColor: shadowColor,
+            highlight: .white
+        )
     }
 }
 
 struct GhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(KJ.blue)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                Capsule()
-                    .fill(.white)
-                    .overlay(Capsule().strokeBorder(KJ.blue.opacity(0.35), lineWidth: 1.5))
-            )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+        KJButtonBody(
+            label: configuration.label
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(KJ.blue)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    Capsule()
+                        .fill(.white)
+                        .overlay(Capsule().strokeBorder(KJ.blue.opacity(0.35), lineWidth: 1.5))
+                ),
+            isPressed: configuration.isPressed,
+            pressedScale: 0.97,
+            shadowColor: .clear,
+            highlight: KJ.blue
+        )
+    }
+}
+
+/// Shared interaction layer: scale, light highlight, disabled fade and a soft haptic on press.
+private struct KJButtonBody<Label: View>: View {
+    let label: Label
+    let isPressed: Bool
+    let pressedScale: CGFloat
+    let shadowColor: Color
+    let highlight: Color
+
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        label
+            .overlay(Capsule().fill(highlight.opacity(isPressed ? 0.16 : 0)).allowsHitTesting(false))
+            .shadow(color: shadowColor.opacity(isEnabled ? (isPressed ? 0.2 : 0.35) : 0), radius: isPressed ? 8 : 14, x: 0, y: isPressed ? 4 : 8)
+            .opacity(isEnabled ? 1 : 0.55)
+            .scaleEffect(isPressed && !reduceMotion ? pressedScale : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+            .animation(.easeInOut(duration: 0.22), value: isEnabled)
+            .sensoryFeedback(.impact(weight: .light), trigger: isPressed) { _, pressed in pressed }
     }
 }
 

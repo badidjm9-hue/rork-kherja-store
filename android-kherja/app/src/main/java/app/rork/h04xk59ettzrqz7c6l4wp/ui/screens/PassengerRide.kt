@@ -1,5 +1,15 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.AnimatedContent
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.rememberReduceMotion
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjShake
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjPop
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjReveal
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -102,6 +112,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RequestScreen(state: AppState, requestId: String) {
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     var request by remember { mutableStateOf<RideRequest?>(null) }
     var offers by remember { mutableStateOf<List<Offer>>(emptyList()) }
     var messages by remember { mutableStateOf<List<RideMessage>>(emptyList()) }
@@ -222,17 +233,15 @@ fun RequestScreen(state: AppState, requestId: String) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.animateContentSize()) {
                     offers.forEach { offer ->
                         key(offer.id) {
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = fadeIn(tween(220)) + expandVertically(tween(280)),
-                                exit = fadeOut(tween(140)) + shrinkVertically(tween(180)),
-                            ) {
+                            // AnimatedVisibility(visible = true) never plays an entrance; kjReveal does.
+                            Box(Modifier.kjReveal(offers.indexOf(offer))) {
                                 OfferCard(state, offer, isBest = offer.id == best?.id && offers.size > 1, accepting = accepting == offer.id) {
                                     accepting = offer.id
                                     error = null
                                     scope.launch {
                                         try {
                                             val rideId = state.api.acceptOffer(offer.id)
+                                            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                                             state.setActiveRide(rideId)
                                             state.setActiveRequest(null)
                                         } catch (e: Exception) {
@@ -356,13 +365,7 @@ private fun OfferCard(state: AppState, offer: Offer, isBest: Boolean, accepting:
 
 @Composable
 fun ChatBubble(text: String, mine: Boolean) {
-    AnimatedVisibility(
-        visible = true,
-        enter = fadeIn(tween(180)) + androidx.compose.animation.slideInVertically(
-            animationSpec = tween(220),
-            initialOffsetY = { it / 5 },
-        ),
-    ) {
+    Box(Modifier.kjReveal()) {
         Row(
             Modifier.fillMaxWidth().padding(vertical = 3.dp),
             horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
@@ -435,7 +438,7 @@ fun RideTrackingScreen(state: AppState, rideId: String) {
             }
             OsmMap(Modifier.fillMaxSize(), pins = pins, fitKey = r.id)
             Row(
-                Modifier.statusBarsPadding().padding(14.dp).shadow(8.dp, RoundedCornerShape(50)).clip(RoundedCornerShape(50))
+                Modifier.statusBarsPadding().padding(14.dp).kjPop(r.id).shadow(8.dp, RoundedCornerShape(50)).clip(RoundedCornerShape(50))
                     .background(Color.White).padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -450,19 +453,32 @@ fun RideTrackingScreen(state: AppState, rideId: String) {
                 .verticalScroll(rememberScrollState()).padding(20.dp),
         ) {
             if (r.status == "cancelled") {
-                Text(state.l("ride_cancelled"), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = KJ.danger)
+                var shake by remember { mutableStateOf(0) }
+                LaunchedEffect(Unit) { shake = 1 }
+                Text(state.l("ride_cancelled"), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = KJ.danger, modifier = Modifier.kjShake(shake))
                 Spacer(Modifier.height(16.dp))
                 KJButton(state.l("back_home")) { state.setActiveRide(null) }
                 return@Column
             }
-            Text(
-                when (r.status) {
-                    "arrived" -> state.l("status_arrived")
-                    "started" -> state.l("status_started")
-                    else -> state.l("driver_on_way")
+            val reduce = rememberReduceMotion()
+            AnimatedContent(
+                targetState = r.status,
+                transitionSpec = {
+                    if (reduce) fadeIn(tween(120)) togetherWith fadeOut(tween(90))
+                    else (fadeIn(tween(260)) + slideInVertically(tween(300)) { it / 2 }) togetherWith
+                        (fadeOut(tween(150)) + slideOutVertically(tween(180)) { -it / 2 })
                 },
-                fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink,
-            )
+                label = "rideStatus",
+            ) { status ->
+                Text(
+                    when (status) {
+                        "arrived" -> state.l("status_arrived")
+                        "started" -> state.l("status_started")
+                        else -> state.l("driver_on_way")
+                    },
+                    fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = KJ.ink,
+                )
+            }
             Spacer(Modifier.height(12.dp))
             StatusSteps(state, r.status)
             Spacer(Modifier.height(16.dp))

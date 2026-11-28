@@ -300,6 +300,7 @@ struct DriverHomeView: View {
                             DriverRequestCard(request: request) {
                                 selectedRequest = request
                             }
+                            .kjReveal(index: requests.firstIndex { $0.id == request.id } ?? 0)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .bottom).combined(with: .opacity),
                                 removal: .opacity
@@ -702,6 +703,7 @@ struct DriverOfferSheet: View {
         Task {
             do {
                 _ = try await SupabaseService.shared.makeOffer(requestId: request.id, price: price, kind: kind)
+                KJHaptics.success()
                 await onDone()
                 submitting = false
             } catch {
@@ -764,6 +766,9 @@ struct DriverActiveRideView: View {
                 }
                 .buttonStyle(KJButtonStyle())
                 .disabled(submitting)
+                .id(next.status)
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .animation(.easeInOut(duration: 0.22), value: next.status)
             }
 
             Button {
@@ -782,6 +787,7 @@ struct DriverActiveRideView: View {
         submitting = true
         do {
             try await SupabaseService.shared.updateRide(rideId: ride.id, status: status)
+            if status == "cancelled" { KJHaptics.selection() } else { KJHaptics.success() }
             if status == "completed" || status == "cancelled" {
                 if status == "completed" { await store.refreshProfile() }
                 onFinish()
@@ -789,6 +795,7 @@ struct DriverActiveRideView: View {
                 await store.refreshProfile()
             }
         } catch {
+            KJHaptics.error()
             print("KHERJA update_ride error: \(error)")
         }
         submitting = false

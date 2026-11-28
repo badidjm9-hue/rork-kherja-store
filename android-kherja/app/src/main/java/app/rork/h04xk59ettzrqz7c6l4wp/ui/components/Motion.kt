@@ -154,10 +154,26 @@ fun Modifier.kjShake(trigger: Int): Modifier = composed {
 /** Press feedback (scale) for any tappable surface; pass the same [interaction] given to `clickable`. */
 fun Modifier.kjPressable(interaction: androidx.compose.foundation.interaction.InteractionSource, pressedScale: Float = 0.97f): Modifier = composed {
     val pressed by interaction.collectIsPressedAsState()
+    val reduce = rememberReduceMotion()
     val scale by animateFloatAsState(
-        if (pressed) pressedScale else 1f,
+        if (pressed && !reduce) pressedScale else 1f,
         spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
         label = "kjPress",
     )
     graphicsLayer { scaleX = scale; scaleY = scale }
+}
+
+/** One-shot "pop" used to confirm a state change (accepted, completed). Replays when [key] changes. */
+fun Modifier.kjPop(key: Any? = Unit): Modifier = composed {
+    val reduce = rememberReduceMotion()
+    val progress = remember(key) { Animatable(if (reduce) 1f else 0f) }
+    LaunchedEffect(key) {
+        if (!reduce) progress.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow))
+    }
+    graphicsLayer {
+        val v = progress.value
+        scaleX = 0.7f + 0.3f * v
+        scaleY = 0.7f + 0.3f * v
+        alpha = v.coerceIn(0f, 1f)
+    }
 }

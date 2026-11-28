@@ -1,5 +1,6 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjReveal
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -418,9 +419,9 @@ fun NotificationsScreen(state: AppState, onBack: () -> Unit) {
                 items == null -> SkeletonList(4)
                 items.orEmpty().isEmpty() -> EmptyState(Icons.Filled.NotificationsNone, state.l("notif_none"), state.l("notif_none_hint"))
                 else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items.orEmpty().forEach { n ->
+                    items.orEmpty().forEachIndexed { index, n -> androidx.compose.runtime.key(n.id) {
                         KJCard(
-                            Modifier.fillMaxWidth().clickable(enabled = n.isUnread) {
+                            Modifier.fillMaxWidth().kjReveal(index).clickable(enabled = n.isUnread) {
                                 scope.launch { runCatching { state.api.markNotificationRead(n.id) }; load() }
                             },
                             padding = 14.dp,
@@ -443,7 +444,7 @@ fun NotificationsScreen(state: AppState, onBack: () -> Unit) {
                             }
                         }
                     }
-                }
+                } }
             }
             Spacer(Modifier.height(24.dp))
         }

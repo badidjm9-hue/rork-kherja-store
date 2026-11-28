@@ -53,6 +53,8 @@ struct NegotiationView: View {
                             accepted: false,
                             accepting: acceptingOfferId == offer.id
                         ) { accept(offer) }
+                        .kjReveal()
+                        .id(offer.id)
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .animation(
                             reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.88),
@@ -313,12 +315,14 @@ struct NegotiationView: View {
                 let rideId = try await SupabaseService.shared.acceptOffer(offer.id)
                 await MainActor.run {
                     acceptingOfferId = nil
+                    KJHaptics.success()
                     onAccepted()
                     _ = rideId
                 }
             } catch {
                 await MainActor.run {
                     acceptingOfferId = nil
+                    KJHaptics.error()
                     errorText = store.l("error_generic")
                 }
             }

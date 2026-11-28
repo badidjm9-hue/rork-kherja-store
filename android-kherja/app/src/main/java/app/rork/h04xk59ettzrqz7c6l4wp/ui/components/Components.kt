@@ -1,5 +1,10 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.components
 
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
@@ -113,13 +118,16 @@ fun KJButton(
     val haptic = LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, label = "press")
+    val reduce = rememberReduceMotion()
+    val scale by animateFloatAsState(if (pressed && !reduce) 0.97f else 1f, label = "press")
+    val highlight by animateFloatAsState(if (pressed) 0.16f else 0f, tween(120), label = "highlight")
+    val enabledAlpha by animateFloatAsState(if (enabled) 1f else 0.5f, tween(220), label = "enabled")
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
             .scale(scale)
-            .alpha(if (enabled) 1f else 0.5f)
+            .alpha(enabledAlpha)
             .shadow(if (enabled) 10.dp else 0.dp, RoundedCornerShape(18.dp), ambientColor = KJ.blue, spotColor = KJ.blue)
             .clip(RoundedCornerShape(18.dp))
             .background(brush)
@@ -129,15 +137,26 @@ fun KJButton(
             },
         contentAlignment = Alignment.Center,
     ) {
-        if (loading) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) {
-                    Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
+        Box(Modifier.matchParentSize().background(Color.White.copy(alpha = highlight)))
+        AnimatedContent(
+            targetState = loading,
+            transitionSpec = {
+                if (reduce) fadeIn(tween(100)) togetherWith fadeOut(tween(80))
+                else (fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.85f)) togetherWith fadeOut(tween(100))
+            },
+            contentAlignment = Alignment.Center,
+            label = "buttonState",
+        ) { busy ->
+            if (busy) {
+                CircularProgressIndicator(color = Color.White, strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (icon != null) {
+                        Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
-                Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
             }
         }
     }
@@ -146,6 +165,7 @@ fun KJButton(
 @Composable
 fun KJOutlineButton(text: String, modifier: Modifier = Modifier, color: Color = KJ.blue, icon: ImageVector? = null, enabled: Boolean = true, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -155,7 +175,10 @@ fun KJOutlineButton(text: String, modifier: Modifier = Modifier, color: Color = 
             .clip(RoundedCornerShape(16.dp))
             .border(1.5.dp, color.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
             .background(Color.White)
-            .clickable(interaction, null, enabled = enabled, onClick = onClick),
+            .clickable(interaction, androidx.compose.material3.ripple(color = color), enabled = enabled) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -249,9 +272,12 @@ fun PulsingDots() {
 
 @Composable
 fun IconCircle(icon: ImageVector, tint: Color = KJ.blue, bg: Color = KJ.softBlue, size: Dp = 40.dp, onClick: (() -> Unit)? = null) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
-        Modifier.size(size).clip(CircleShape).background(bg)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        Modifier.size(size)
+            .then(if (onClick != null) Modifier.kjPressable(interaction, 0.9f) else Modifier)
+            .clip(CircleShape).background(bg)
+            .then(if (onClick != null) Modifier.clickable(interaction, androidx.compose.material3.ripple(), onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(size * 0.5f))

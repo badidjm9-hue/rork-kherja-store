@@ -1,5 +1,6 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjReveal
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -154,7 +155,11 @@ fun HistoryScreen(state: AppState, driver: Boolean) {
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(filtered, key = { it.id }) { RideRow(state, it, driver) { receiptRideId = it.id } }
+                    items(filtered, key = { it.id }) { ride ->
+                        Box(Modifier.animateItem().kjReveal(filtered.indexOf(ride))) {
+                            RideRow(state, ride, driver) { receiptRideId = ride.id }
+                        }
+                    }
                 }
             }
         }
@@ -277,7 +282,9 @@ fun WalletScreen(state: AppState, driver: Boolean) {
                         EmptyState(Icons.Filled.AccountBalanceWallet, state.l("no_transactions"))
                     }
                 }
-                else -> items(list, key = { it.id }) { tx -> TxRow(state, tx) }
+                else -> items(list, key = { it.id }) { tx ->
+                    Box(Modifier.animateItem().kjReveal(list.indexOf(tx))) { TxRow(state, tx) }
+                }
             }
         }
     }

@@ -1,5 +1,9 @@
 package app.rork.h04xk59ettzrqz7c6l4wp.ui.screens
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjPressable
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjPop
+import app.rork.h04xk59ettzrqz7c6l4wp.ui.components.kjReveal
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -364,11 +368,8 @@ fun DriverHomeScreen(state: AppState) {
                     }
                 }
                 items(requests, key = { it.id }) { req ->
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(androidx.compose.animation.core.tween(220)) +
-                            expandVertically(androidx.compose.animation.core.tween(280)),
-                    ) {
+                    // animateItem handles reordering and removal (request taken or expired).
+                    Box(Modifier.animateItem().kjReveal(requests.indexOf(req))) {
                         RequestCard(
                             state, req, myOffers.firstOrNull { it.requestId == req.id },
                             loc?.let { it.latitude to it.longitude },
@@ -401,7 +402,12 @@ private fun haversineKm(a: Pair<Double, Double>, lat: Double, lng: Double): Doub
 @Composable
 private fun RequestCard(state: AppState, req: RideRequest, myOffer: Offer?, me: Pair<Double, Double>?, onClick: () -> Unit) {
     val ok = req.estimatedFare == null || req.proposedFare >= req.estimatedFare
-    KJCard(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).clickable(onClick = onClick), padding = 16.dp) {
+    val interaction = remember { MutableInteractionSource() }
+    KJCard(
+        Modifier.fillMaxWidth().kjPressable(interaction).clip(RoundedCornerShape(22.dp))
+            .clickable(interaction, androidx.compose.material3.ripple(), onClick = onClick),
+        padding = 16.dp,
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Avatar(req.passenger?.name ?: "K", size = 40.dp)
             Spacer(Modifier.width(10.dp))
@@ -557,7 +563,7 @@ private fun OfferSheet(state: AppState, req: RideRequest, existing: Offer?, onSe
         Spacer(Modifier.height(14.dp))
         val already = sent
         if (already != null) {
-            Pill("${state.l("your_offer_sent")} · ${dzd(already.price)}", KJ.success, KJ.successBg, icon = Icons.Filled.CheckCircle)
+            Pill("${state.l("your_offer_sent")} · ${dzd(already.price)}", KJ.success, KJ.successBg, Modifier.kjPop(already.price), icon = Icons.Filled.CheckCircle)
             Spacer(Modifier.height(6.dp))
             Text(state.l("waiting_accept"), color = KJ.muted, fontSize = 13.sp)
             Spacer(Modifier.height(10.dp))
@@ -681,10 +687,12 @@ private fun DriverActiveRide(state: AppState, rideId: String) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(30.dp))
-                IconCircle(
-                    if (done) Icons.Filled.CheckCircle else Icons.Filled.Block,
-                    tint = if (done) KJ.success else KJ.danger, bg = if (done) KJ.successBg else KJ.dangerBg, size = 84.dp,
-                )
+                Box(Modifier.kjPop(r.status)) {
+                    IconCircle(
+                        if (done) Icons.Filled.CheckCircle else Icons.Filled.Block,
+                        tint = if (done) KJ.success else KJ.danger, bg = if (done) KJ.successBg else KJ.dangerBg, size = 84.dp,
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 Text(
                     if (done) state.l("ride_done") else state.l("ride_cancelled"),

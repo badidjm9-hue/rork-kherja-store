@@ -47,6 +47,11 @@ struct RideTrackingView: View {
             }
         }
         .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.88), value: ride?.status)
+        .sensoryFeedback(trigger: ride?.status) { old, new in
+            // Only real changes while the screen is open, not the first load.
+            guard old != nil, old != new else { return nil }
+            return new == "completed" ? .success : .impact(weight: .light)
+        }
         .sheet(isPresented: $showRating, onDismiss: { if finished { store.setActiveRide(nil) } }) {
             RatingSheet(ride: ride) { store.setActiveRide(nil) }
                 .environmentObject(store)
@@ -68,6 +73,8 @@ struct RideTrackingView: View {
                     Text(statusLabel(ride.status))
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(KJ.blue)
+                        .id(ride.status)
+                        .transition(reduceMotion ? .opacity : .push(from: .bottom))
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 0) {
