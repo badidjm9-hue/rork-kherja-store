@@ -74,7 +74,7 @@ struct RideTrackingView: View {
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(KJ.blue)
                         .id(ride.status)
-                        .transition(reduceMotion ? .opacity : .push(from: .bottom))
+                        .transition(reduceMotion ? AnyTransition.opacity : AnyTransition.push(from: .bottom))
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 0) {

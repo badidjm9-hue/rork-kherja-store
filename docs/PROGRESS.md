@@ -258,3 +258,28 @@ Not executed (environment cannot): Android/iOS builds, device/simulator runs, RT
 - Old raster car/moto images (`car_hero`, `car_moto`, `moto_art`) removed on both platforms. New original vector artwork lives in `design/artwork/` (`kherja_car.svg`, `kherja_moto.svg`, composed `kherja_duo.svg`), drawn in the KHERJA palette; `build_assets.py` generates Android VectorDrawables (`kj_car`, `kj_moto`, `kj_duo`) and iOS vector PDFs (asset catalog, vector preserved).
 - Used by: splash, language, role selection, sign-in hero, vehicle pickers, driver/ride history cards (replacing every previous reference).
 - Not yet built or rendered on a device here; SVG previews were rendered with rsvg-convert only.
+
+## Demo accounts, welcome scene and motion pass (2026-11-28, branch feature/kherja-premium-motion, from 6e0d130)
+
+Done
+- Demo passenger (0500000001) and driver (0500000002) created in the `kherja-test` Supabase project; passwords are not stored in the repo (see docs/DEMO_ACCOUNTS.md, supabase/seed/demo_accounts.sql).
+- New welcome scene on iOS and Android: front-view car with driver and passenger drives in, brakes, flashes and honks; Arabic brand line and start button. Tap skips; Reduce Motion shows the final frame.
+- Car and motorcycle redrawn; new `kj_front` asset.
+- Buttons: press highlight, state transitions, haptics. Android history, wallet, notification, offer and driver request rows now animate in (the previous `AnimatedVisibility(visible = true)` wrappers never played). Ride status transitions.
+
+Verified
+- SQL-level end-to-end ride on `kherja-test` under the `authenticated` role with each demo user's JWT claims: request, offer, accept, arrived, started, completed (fare 120, commission 18, driver net 102). Wrong-role actions were rejected by the database. This left one completed demo ride and its transactions.
+- Stored password hashes match the issued passwords.
+- Kotlin 2.0.21 parse of the Android sources: no syntax errors (dependencies unavailable, so types were NOT checked).
+- Drawable XML parses; SVG artwork rendered with rsvg-convert.
+
+NOT verified
+- No Android build, no iOS build, no unit tests, no device or simulator run; animations and haptics have never been seen running.
+- HTTP sign-in through the `auth-otp` edge function was not called.
+- The seed .sql file was not run through psql; the accounts were created with equivalent SQL.
+- GitHub Actions jobs do not start: "account is locked due to a billing issue" (also true before these changes).
+
+Open
+- `kherja-test` has migrations 0001-0012 only; 0013-0029 (account deletion, push devices, admin permissions) are not applied.
+- Any account, including the passenger demo, may switch role to driver, but stays `pending` until an admin approves it.
+- The React admin dashboard was not changed.
